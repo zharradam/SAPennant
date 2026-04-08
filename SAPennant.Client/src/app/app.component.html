@@ -1,0 +1,34 @@
+<div class="app">
+  <nav class="nav">
+    <div class="nav-inner">
+      <div class="nav-brand">⛳ SA Pennant</div>
+      <div class="nav-tabs">
+        <button
+          class="nav-tab"
+          [class.active]="activeTab() === 'search'"
+          (click)="activeTab.set('search')">
+          Player Search
+        </button>
+        <button
+          class="nav-tab"
+          [class.active]="activeTab() === 'leaderboard'"
+          (click)="activeTab.set('leaderboard')">
+          Leaderboard
+        </button>
+        <button
+          class="nav-tab"
+          [class.active]="activeTab() === 'admin'"
+          (click)="activeTab.set('admin')">
+          Admin
+        </button>
+      </div>
+      <div class="nav-updated" *ngIf="lastUpdated()">
+        Updated {{ lastUpdated() }}
+      </div>
+    </div>
+  </nav>
+
+  <sa-pennant-search *ngIf="activeTab() === 'search'"></sa-pennant-search>
+  <sa-pennant-leaderboard *ngIf="activeTab() === 'leaderboard'" (playerSelected)="navigateToPlayer($event)"></sa-pennant-leaderboard>
+  <sa-pennant-admin *ngIf="activeTab() === 'admin'"></sa-pennant-admin>
+</div>

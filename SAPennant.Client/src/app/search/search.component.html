@@ -1,0 +1,162 @@
+<div class="page">
+  <div class="hero">
+    <div class="hero-inner">
+      <div class="hero-text">
+        <h1>SA Pennant Player Search</h1>
+        <p>Search any player across regular season and finals, 2021–2026</p>
+      </div>
+      <div class="search-wrap">
+        <div class="input-wrap">
+          <input
+            type="text"
+            [(ngModel)]="query"
+            (ngModelChange)="onQueryChange()"
+            (keyup.enter)="doSearch()"
+            (blur)="hideSuggestions()"
+            (focus)="showSuggestions.set(suggestions().length > 0)"
+            placeholder="Search by player name…"
+            autocomplete="off"
+          />
+          <div class="suggestions" *ngIf="showSuggestions()">
+            <div
+              class="suggestion-item"
+              *ngFor="let name of suggestions()"
+              (mousedown)="selectSuggestion(name)"
+            >
+              {{ name }}
+            </div>
+          </div>
+        </div>
+        <button (click)="doSearch()">Search</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="content">
+
+    <div class="status loading" *ngIf="isLoading()">
+      <span class="spinner"></span> Searching…
+    </div>
+
+    <ng-container *ngIf="!isLoading() && allResults.length > 0">
+
+      <div class="player-header">
+        <div class="player-avatar">{{ playerName | slice:0:1 }}</div>
+        <div class="player-info">
+          <h2>{{ playerName }}</h2>
+          <p>{{ playerClub }}</p>
+        </div>
+      </div>
+
+      <div class="summary-bar">
+        <div class="summary-stat">
+          <div class="val">{{ results.length }}</div>
+          <div class="lbl">matches</div>
+        </div>
+        <div class="summary-divider"></div>
+        <div class="summary-stat win">
+          <div class="val">{{ wins }}</div>
+          <div class="lbl">wins</div>
+        </div>
+        <div class="summary-stat loss">
+          <div class="val">{{ losses }}</div>
+          <div class="lbl">losses</div>
+        </div>
+        <div class="summary-stat halved">
+          <div class="val">{{ halved }}</div>
+          <div class="lbl">halved</div>
+        </div>
+        <div class="summary-divider"></div>
+        <div class="summary-stat">
+          <div class="val highlight">{{ winRate }}%</div>
+          <div class="lbl">win rate</div>
+        </div>
+        <div class="summary-stat">
+          <div class="val">{{ finalsRecord }}</div>
+          <div class="lbl">finals W/P</div>
+        </div>
+      </div>
+
+      <div class="year-filter">
+        <div
+          *ngFor="let year of availableYears"
+          class="year-chip"
+          [class.active]="selectedYears.has(year)"
+          (click)="toggleYear(year)"
+        >
+          {{ year }}
+          <span class="year-count">{{ allResults | yearCount: year }}</span>
+        </div>
+      </div>
+
+      <div class="pool-filter" *ngIf="availablePools.length > 1">
+        <div
+          *ngFor="let pool of availablePools"
+          class="pool-chip"
+          [class.active]="selectedPools.has(pool)"
+          (click)="togglePool(pool)"
+        >
+          {{ pool }}
+          <span class="year-count">{{ allResults | poolCount: pool }}</span>
+        </div>
+      </div>
+
+      <ng-container *ngFor="let group of groupedResults">
+        <div class="group-header">
+          <div class="group-title">
+            {{ group.year }}
+            <span class="finals-tag" *ngIf="group.isFinals">Finals</span>
+          </div>
+          <div class="group-record">{{ divisionRecord(group.matches) }}</div>
+        </div>
+
+        <div class="match-card" 
+          *ngFor="let m of group.matches" 
+          [class.finals]="m.isFinals"
+          [class.win-card]="m.playerWon === true"
+          [class.loss-card]="m.playerWon === false">
+          <div class="match-left">
+            <div class="match-meta">
+              <span class="pill division">{{ m.division }}</span>
+              <span class="pill pool">{{ m.pool }}</span>
+            </div>
+            <div class="match-clubs">{{ m.homeClub }} vs {{ m.awayClub }}</div>
+            <div class="match-player">
+              <b>{{ m.playerName }}</b>
+              <span class="vs">vs</span>
+              {{ m.opponentName }}
+            </div>
+            <div class="match-detail">
+              {{ m.round }}
+              <span *ngIf="m.venue"> · {{ m.venue }}</span>
+              <span *ngIf="m.format === 'foursome'"> · Foursomes</span>
+              <span *ngIf="m.playerHandicap"> · HCP {{ m.playerHandicap }} vs {{ m.opponentHandicap }}</span>
+            </div>
+          </div>
+          <div class="match-right">
+            <div class="match-date">{{ m.date }}</div>
+            <div class="result-wrap">
+              <span class="result-badge win" *ngIf="m.playerWon === true">Win</span>
+              <span class="result-badge loss" *ngIf="m.playerWon === false">Loss</span>
+              <span class="result-badge halved" *ngIf="m.playerWon === null">Halved</span>
+              <span class="result-score" *ngIf="m.playerWon !== null">{{ formatResult(m) }}</span>
+            </div>
+          </div>
+        </div>
+      </ng-container>
+
+    </ng-container>
+
+    <div class="no-results" *ngIf="!isLoading() && hasSearched && allResults.length === 0">
+      <div class="no-results-icon">⛳</div>
+      <p>No results found for "{{ query }}"</p>
+      <span>Try searching by surname only</span>
+    </div>
+
+    <div class="empty-state" *ngIf="!isLoading() && !hasSearched">
+      <div class="empty-icon">⛳</div>
+      <p>Enter a player name above to get started</p>
+    </div>
+
+  </div>
+</div>

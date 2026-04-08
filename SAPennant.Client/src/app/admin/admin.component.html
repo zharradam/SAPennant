@@ -1,0 +1,111 @@
+<div class="page">
+  <div class="hero">
+    <div class="hero-inner">
+      <h1>Admin</h1>
+      <p>Manage data sync and season configuration</p>
+    </div>
+  </div>
+
+  <div class="content">
+
+    <div class="login-wrap" *ngIf="!auth.isAuthenticated()">
+      <div class="login-card">
+        <div class="login-icon">⛳</div>
+        <h2>Admin Access</h2>
+        <p>Sign in to manage SA Pennant data</p>
+        <div class="login-fields">
+          <div class="field-wrap">
+            <label>Username</label>
+            <input
+              type="text"
+              [(ngModel)]="usernameInput"
+              placeholder="Enter username"
+              autocomplete="off"
+              (keyup.enter)="login()"
+            />
+          </div>
+          <div class="field-wrap">
+            <label>Password</label>
+            <input
+              type="password"
+              [(ngModel)]="passwordInput"
+              placeholder="Enter password"
+              (keyup.enter)="login()"
+            />
+          </div>
+          <div class="error-msg" *ngIf="authError">
+            <span>⚠</span> {{ authError }}
+          </div>
+          <button class="btn-login" (click)="login()">Sign in</button>
+        </div>
+      </div>
+    </div>
+
+    <ng-container *ngIf="auth.isAuthenticated()">
+
+      <div class="section-card">
+        <div class="section-header">
+          <div>
+            <h2>Sync Missing Seasons</h2>
+            <p>Fetch any seasons not yet in the database</p>
+          </div>
+          <div class="header-right">
+            <span class="last-updated" *ngIf="lastUpdated()">Last updated: {{ lastUpdated() }}</span>
+            <button class="btn-primary" (click)="syncAll()" [disabled]="isSyncingAll()">
+              <span *ngIf="isSyncingAll()">⏳ Syncing...</span>
+              <span *ngIf="!isSyncingAll()">Sync all</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="section-card">
+        <h2>Seasons</h2>
+        <p class="section-desc">Refresh a specific year or update the finals ID when available</p>
+
+        <div class="season-list">
+          <div class="season-row" *ngFor="let s of seasons()">
+            <div class="season-info">
+              <div class="season-year">{{ s.year }}</div>
+              <div class="season-ids">
+                <span class="id-badge">Regular: {{ s.regularId }}</span>
+                <span class="id-badge finals" *ngIf="s.finalsId">Finals: {{ s.finalsId }}</span>
+                <span class="id-badge missing" *ngIf="!s.finalsId">No finals ID</span>
+              </div>
+            </div>
+
+            <div class="season-finals-id" *ngIf="!s.finalsId">
+              <input
+                type="number"
+                [(ngModel)]="newFinalsId[s.year]"
+                placeholder="Enter finals ID..."
+              />
+              <button class="btn-secondary" (click)="updateFinalsId(s)" [disabled]="!newFinalsId[s.year]">
+                Save
+              </button>
+            </div>
+
+            <div class="season-actions">
+              <span class="message"
+                [class.success]="s.messageType === 'success'"
+                [class.error]="s.messageType === 'error'"
+                [class.info]="s.messageType === 'info'"
+                *ngIf="s.message">
+                {{ s.message }}
+              </span>
+              <button class="btn-primary" (click)="refreshYear(s)" [disabled]="s.isSyncing">
+                <span *ngIf="s.isSyncing">⏳ Syncing...</span>
+                <span *ngIf="!s.isSyncing">Refresh {{ s.year }}</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="logout-wrap">
+        <button class="btn-logout" (click)="logout()">Sign out</button>
+      </div>
+
+    </ng-container>
+  </div>
+</div>

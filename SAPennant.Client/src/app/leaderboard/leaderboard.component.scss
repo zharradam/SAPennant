@@ -1,0 +1,274 @@
+.page {
+  min-height: 100vh;
+  background: #f0f2f5;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
+.hero {
+  background: linear-gradient(135deg, #1a2f5a 0%, #2a4a8a 100%);
+  padding: 3rem 1rem;
+  color: #fff;
+  text-align: center;
+}
+
+.hero-inner {
+  max-width: 760px;
+  margin: 0 auto;
+
+  h1 {
+    font-size: 36px;
+    font-weight: 700;
+    margin: 0 0 8px;
+    letter-spacing: -0.5px;
+  }
+
+  p {
+    font-size: 15px;
+    opacity: 0.7;
+    margin: 0;
+  }
+}
+
+.content {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 2rem 1rem 3rem;
+}
+
+.filters {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 1.5rem;
+  background: #fff;
+  border-radius: 12px;
+  padding: 1.25rem;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+}
+
+.filter-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+  min-width: 140px;
+
+  label {
+    font-size: 11px;
+    font-weight: 600;
+    color: #888;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+
+  select {
+    padding: 8px 12px;
+    font-size: 14px;
+    font-family: inherit;
+    border: 1px solid #d0d0ce;
+    border-radius: 8px;
+    background: #fff;
+    color: #1a1a1a;
+    cursor: pointer;
+    outline: none;
+
+    &:focus {
+      border-color: #1a2f5a;
+      box-shadow: 0 0 0 3px rgba(26, 47, 90, 0.1);
+    }
+  }
+}
+
+.status {
+  background: #fff;
+  border-radius: 12px;
+  padding: 1rem 1.25rem;
+  margin-bottom: 1rem;
+  font-size: 14px;
+  color: #1a2f5a;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid #e0e0e0;
+  border-top-color: #1a2f5a;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+  flex-shrink: 0;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.results-count {
+  font-size: 13px;
+  color: #888;
+  margin-bottom: 0.75rem;
+  padding: 0 4px;
+}
+
+.table-wrap {
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+  overflow: hidden;
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+  }
+
+  thead {
+    background: #1a2f5a;
+    color: #fff;
+
+    th {
+      padding: 12px 16px;
+      text-align: left;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      white-space: nowrap;
+
+      &.num { text-align: center; }
+      &.rank { text-align: center; width: 50px; }
+    }
+  }
+
+  tbody {
+    tr {
+      border-bottom: 1px solid #f0f0ee;
+      transition: background 0.1s;
+
+      &:hover { background: #f8f9fc; }
+      &:last-child { border-bottom: none; }
+
+      &.top3 {
+        font-weight: 500;
+      }
+    }
+
+    td {
+      padding: 12px 16px;
+      color: #1a1a1a;
+
+      &.num { text-align: center; }
+      &.rank { text-align: center; }
+      &.player-name { font-weight: 600; }
+      &.club { color: #666; font-size: 13px; }
+      &.win { color: #3a7a12; font-weight: 600; }
+      &.loss { color: #b33030; font-weight: 600; }
+      &.halved { color: #8a5210; font-weight: 600; }
+      &.best { font-weight: 600; color: #1a2f5a; }
+    }
+  }
+}
+
+.rank-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  font-size: 12px;
+  font-weight: 700;
+  background: #f0f0ee;
+  color: #555;
+
+  &.gold {
+    background: #FFD700;
+    color: #7a5a00;
+  }
+
+  &.silver {
+    background: #C0C0C0;
+    color: #444;
+  }
+
+  &.bronze {
+    background: #CD7F32;
+    color: #fff;
+  }
+}
+
+.win-rate {
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 99px;
+  font-size: 13px;
+
+  &.high {
+    background: #e8f5e0;
+    color: #3a7a12;
+  }
+
+  &.mid {
+    background: #faeeda;
+    color: #8a5210;
+  }
+
+  &.low {
+    background: #fde8e8;
+    color: #b33030;
+  }
+}
+
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  margin-top: 1rem;
+
+  button {
+    padding: 8px 16px;
+    font-size: 14px;
+    font-family: inherit;
+    background: #fff;
+    border: 1px solid #d0d0ce;
+    border-radius: 8px;
+    cursor: pointer;
+    color: #1a2f5a;
+    font-weight: 500;
+
+    &:hover:not(:disabled) { background: #f0f4ff; }
+    &:disabled { opacity: 0.4; cursor: default; }
+  }
+
+  span {
+    font-size: 14px;
+    color: #888;
+  }
+}
+
+.sortable {
+  cursor: pointer;
+  user-select: none;
+
+  &:hover {
+    background: rgba(255,255,255,0.1);
+  }
+}
+
+.sort-icon {
+  font-size: 11px;
+  opacity: 0.6;
+  margin-left: 4px;
+}
+
+.clickable {
+  cursor: pointer;
+  color: #1a2f5a;
+
+  &:hover {
+    text-decoration: underline;
+  }
+}

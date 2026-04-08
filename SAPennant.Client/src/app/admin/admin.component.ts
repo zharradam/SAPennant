@@ -1,0 +1,133 @@
+import { Component, OnInit, signal } from '@angular/core';
+import { PennantService } from '../pennant.service';
+import { AuthService } from '../auth.service';
+
+interface SyncStatus {
+  year: number;
+  regularId: number;
+  finalsId: number | null;
+  isSyncing: boolean;
+  message: string;
+  messageType: 'success' | 'error' | 'info' | '';
+}
+
+@Component({
+  selector: 'sa-pennant-admin',
+  standalone: false,
+  templateUrl: './admin.component.html',
+  styleUrl: './admin.component.scss',
+})
+export class AdminComponent implements OnInit {
+  seasons = signal<SyncStatus[]>([]);
+  isSyncingAll = signal(false);
+  lastUpdated = signal('');
+  newFinalsId: { [year: number]: number | null } = {};
+  usernameInput = '';
+  passwordInput = '';
+  authError = '';
+
+  constructor(private pennant: PennantService, public auth: AuthService) {}
+
+  ngOnInit(): void {
+    if (this.auth.isAuthenticated()) {
+      this.loadSeasons();
+      this.pennant.getLastUpdated().subscribe(data => {
+        this.lastUpdated.set(data.display);
+      });
+    }
+  }
+
+  login(): void {
+    this.authError = '';
+    this.auth.login(this.usernameInput, this.passwordInput).subscribe({
+      next: () => {
+        this.loadSeasons();
+        this.pennant.getLastUpdated().subscribe(data => {
+          this.lastUpdated.set(data.display);
+        });
+      },
+      error: () => {
+        this.authError = 'Invalid username or password';
+      }
+    });
+  }
+
+  logout(): void {
+    this.auth.logout();
+  }
+
+  loadSeasons(): void {
+    this.pennant.getAdminSeasons().subscribe(data => {
+      this.seasons.set(data.map((s: any) => ({
+        year: s.year,
+        regularId: s.regularId,
+        finalsId: s.finalsId,
+        isSyncing: false,
+        message: '',
+        messageType: ''
+      })));
+      data.forEach((s: any) => {
+        this.newFinalsId[s.year] = s.finalsId;
+      });
+    });
+  }
+
+  refreshYear(season: SyncStatus): void {
+    season.isSyncing = true;
+    season.message = 'Syncing...';
+    season.messageType = 'info';
+    this.seasons.set([...this.seasons()]);
+
+    this.pennant.refreshYear(season.year).subscribe({
+      next: (res: any) => {
+        season.isSyncing = false;
+        season.message = res.message ?? 'Sync complete';
+        season.messageType = 'success';
+        this.seasons.set([...this.seasons()]);
+        // Reload last updated
+        this.pennant.getLastUpdated().subscribe(data => {
+          this.lastUpdated.set(data.display);
+          // Also update app-level last updated
+        });
+      },
+      error: () => {
+        season.isSyncing = false;
+        season.message = 'Sync failed';
+        season.messageType = 'error';
+        this.seasons.set([...this.seasons()]);
+      }
+    });
+  }
+
+  updateFinalsId(season: SyncStatus): void {
+    const newId = this.newFinalsId[season.year];
+    if (!newId) return;
+
+    this.pennant.updateFinalsId(season.year, newId).subscribe({
+      next: () => {
+        season.finalsId = newId;
+        season.message = `Finals ID updated to ${newId}`;
+        season.messageType = 'success';
+        this.seasons.set([...this.seasons()]);
+      },
+      error: () => {
+        season.message = 'Failed to update finals ID';
+        season.messageType = 'error';
+        this.seasons.set([...this.seasons()]);
+      }
+    });
+  }
+
+  syncAll(): void {
+    this.isSyncingAll.set(true);
+    this.pennant.syncAll().subscribe({
+      next: () => {
+        this.isSyncingAll.set(false);
+        this.pennant.getLastUpdated().subscribe(data => this.lastUpdated.set(data.display));
+      },
+      error: () => {
+        this.isSyncingAll.set(false);
+      }
+    });
+  }
+}

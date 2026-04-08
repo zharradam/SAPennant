@@ -1,0 +1,121 @@
+<div class="page">
+  <div class="hero">
+    <div class="hero-inner">
+      <h1>SA Pennant Leaderboard</h1>
+      <p>Top performers across all divisions, 2021–2026</p>
+    </div>
+  </div>
+
+  <div class="content">
+    <div class="filters">
+      <div class="filter-group">
+        <label>Year</label>
+        <select [(ngModel)]="selectedYear" (ngModelChange)="loadLeaderboard()">
+          <option [ngValue]="undefined">All years</option>
+          <option *ngFor="let y of years" [ngValue]="y">{{ y }}</option>
+        </select>
+      </div>
+
+      <div class="filter-group">
+        <label>Division</label>
+        <select [(ngModel)]="selectedDivision" (ngModelChange)="onDivisionChange()">
+          <option value="">All divisions</option>
+          <option *ngFor="let d of divisions" [ngValue]="d">{{ d }}</option>
+        </select>
+      </div>
+
+      <div class="filter-group">
+        <label>Pool</label>
+        <select [(ngModel)]="selectedPool" (ngModelChange)="loadLeaderboard()">
+          <option value="">All pools</option>
+          <option *ngFor="let p of filteredPools" [ngValue]="p">{{ p }}</option>
+        </select>
+      </div>
+
+      <div class="filter-group">
+        <label>Min games</label>
+        <select [(ngModel)]="minGames" (ngModelChange)="loadLeaderboard()">
+          <option [ngValue]="1">1+</option>
+          <option [ngValue]="3">3+</option>
+          <option [ngValue]="5">5+</option>
+          <option [ngValue]="10">10+</option>
+          <option [ngValue]="20">20+</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="status loading" *ngIf="isLoading()">
+      <span class="spinner"></span> Loading leaderboard…
+    </div>
+
+    <ng-container *ngIf="!isLoading()">
+      <div class="results-count">{{ leaderboard().length }} players</div>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th class="rank">#</th>
+              <th class="sortable" (click)="sortBy('playerName')">
+                Player <span class="sort-icon">{{ sortColumn === 'playerName' ? (sortDirection === 'desc' ? '↓' : '↑') : '↕' }}</span>
+              </th>
+              <th class="sortable" (click)="sortBy('club')">
+                Club <span class="sort-icon">{{ sortColumn === 'club' ? (sortDirection === 'desc' ? '↓' : '↑') : '↕' }}</span>
+              </th>
+              <th class="num sortable" (click)="sortBy('played')">
+                P <span class="sort-icon">{{ sortColumn === 'played' ? (sortDirection === 'desc' ? '↓' : '↑') : '↕' }}</span>
+              </th>
+              <th class="num sortable" (click)="sortBy('wins')">
+                W <span class="sort-icon">{{ sortColumn === 'wins' ? (sortDirection === 'desc' ? '↓' : '↑') : '↕' }}</span>
+              </th>
+              <th class="num sortable" (click)="sortBy('losses')">
+                L <span class="sort-icon">{{ sortColumn === 'losses' ? (sortDirection === 'desc' ? '↓' : '↑') : '↕' }}</span>
+              </th>
+              <th class="num sortable" (click)="sortBy('halved')">
+                H <span class="sort-icon">{{ sortColumn === 'halved' ? (sortDirection === 'desc' ? '↓' : '↑') : '↕' }}</span>
+              </th>
+              <th class="num sortable" (click)="sortBy('winRate')">
+                Win % <span class="sort-icon">{{ sortColumn === 'winRate' ? (sortDirection === 'desc' ? '↓' : '↑') : '↕' }}</span>
+              </th>
+              <th class="num sortable" (click)="sortBy('finalsWins')">
+                Finals <span class="sort-icon">{{ sortColumn === 'finalsWins' ? (sortDirection === 'desc' ? '↓' : '↑') : '↕' }}</span>
+              </th>
+              <th class="num">Best</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let p of pagedLeaderboard; let i = index" [class.top3]="currentPage === 0 && i < 3">
+              <td class="rank">
+                <span class="rank-badge" 
+                  [class.gold]="currentPage === 0 && i === 0" 
+                  [class.silver]="currentPage === 0 && i === 1" 
+                  [class.bronze]="currentPage === 0 && i === 2">
+                  {{ getPosition(i) }}
+                </span>
+              </td>
+              <td class="player-name clickable" (click)="selectPlayer(p.playerName)">{{ p.playerName }}</td>
+              <td class="club">{{ p.club }}</td>
+              <td class="num">{{ p.played }}</td>
+              <td class="num win">{{ p.wins }}</td>
+              <td class="num loss">{{ p.losses }}</td>
+              <td class="num halved">{{ p.halved }}</td>
+              <td class="num">
+                <span class="win-rate" [class.high]="p.winRate >= 70" [class.mid]="p.winRate >= 50 && p.winRate < 70" [class.low]="p.winRate < 50">
+                  {{ p.winRate }}%
+                </span>
+              </td>
+              <td class="num">{{ p.finalsRecord }}</td>
+              <td class="num best">{{ p.bestResult }}</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div class="pagination" *ngIf="totalPages > 1">
+          <button (click)="prevPage()" [disabled]="currentPage === 0">← Prev</button>
+          <span>Page {{ currentPage + 1 }} of {{ totalPages }}</span>
+          <button (click)="nextPage()" [disabled]="currentPage === totalPages - 1">Next →</button>
+        </div>
+      </div>
+    </ng-container>
+  </div>
+</div>

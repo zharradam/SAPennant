@@ -1,0 +1,352 @@
+.page {
+  min-height: 100vh;
+  background: #f0f2f5;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
+.hero {
+  background: linear-gradient(135deg, #1a2f5a 0%, #2a4a8a 100%);
+  padding: 3rem 1rem;
+  color: #fff;
+  text-align: center;
+}
+
+.hero-inner {
+  max-width: 760px;
+  margin: 0 auto;
+
+  h1 {
+    font-size: 36px;
+    font-weight: 700;
+    margin: 0 0 8px;
+    letter-spacing: -0.5px;
+  }
+
+  p {
+    font-size: 15px;
+    opacity: 0.7;
+    margin: 0;
+  }
+}
+
+.content {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 2rem 1rem 3rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+// Login
+.login-wrap {
+  display: flex;
+  justify-content: center;
+  padding: 1rem 0;
+}
+
+.login-card {
+  background: #fff;
+  border-radius: 16px;
+  padding: 2.5rem 2rem;
+  width: 100%;
+  max-width: 380px;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+  text-align: center;
+}
+
+.login-icon {
+  font-size: 48px;
+  margin-bottom: 1rem;
+}
+
+.login-card h2 {
+  font-size: 22px;
+  font-weight: 700;
+  color: #1a1a1a;
+  margin: 0 0 6px;
+}
+
+.login-card p {
+  font-size: 14px;
+  color: #888;
+  margin: 0 0 1.75rem;
+}
+
+.login-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  text-align: left;
+}
+
+.field-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+
+  label {
+    font-size: 12px;
+    font-weight: 600;
+    color: #555;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  input {
+    padding: 12px 14px;
+    font-size: 15px;
+    font-family: inherit;
+    border: 1.5px solid #e0e0de;
+    border-radius: 10px;
+    outline: none;
+    transition: all 0.15s;
+    color: #1a1a1a;
+
+    &:focus {
+      border-color: #1a2f5a;
+      box-shadow: 0 0 0 3px rgba(26, 47, 90, 0.1);
+    }
+  }
+}
+
+.error-msg {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: #fde8e8;
+  color: #b33030;
+  font-size: 13px;
+  font-weight: 500;
+  padding: 10px 14px;
+  border-radius: 8px;
+}
+
+.btn-login {
+  width: 100%;
+  padding: 13px;
+  font-size: 15px;
+  font-weight: 700;
+  font-family: inherit;
+  background: linear-gradient(135deg, #1a2f5a 0%, #2a4a8a 100%);
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.15s;
+  margin-top: 4px;
+  letter-spacing: 0.02em;
+
+  &:hover {
+    opacity: 0.9;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(26, 47, 90, 0.3);
+  }
+
+  &:active {
+    transform: translateY(0);
+  }
+}
+
+// Section cards
+.section-card {
+  background: #fff;
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+
+  h2 {
+    font-size: 16px;
+    font-weight: 700;
+    color: #1a1a1a;
+    margin: 0 0 4px;
+  }
+
+  p {
+    font-size: 13px;
+    color: #888;
+    margin: 0;
+  }
+}
+
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.last-updated {
+  font-size: 12px;
+  color: #aaa;
+}
+
+.section-desc {
+  margin-bottom: 1.25rem !important;
+}
+
+// Season list
+.season-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 1rem;
+}
+
+.season-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 12px 16px;
+  background: #f8f9fc;
+  border-radius: 10px;
+  border: 1px solid #e8edf5;
+}
+
+.season-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.season-year {
+  font-size: 18px;
+  font-weight: 700;
+  color: #1a2f5a;
+  min-width: 50px;
+}
+
+.season-ids {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.id-badge {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: 99px;
+  background: #e8edf5;
+  color: #1a2f5a;
+
+  &.finals {
+    background: #e8f5e0;
+    color: #3a7a12;
+  }
+
+  &.missing {
+    background: #fde8e8;
+    color: #b33030;
+  }
+}
+
+.season-finals-id {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+
+  input {
+    padding: 7px 12px;
+    font-size: 14px;
+    font-family: inherit;
+    border: 1px solid #d0d0ce;
+    border-radius: 8px;
+    outline: none;
+    width: 160px;
+
+    &:focus {
+      border-color: #1a2f5a;
+      box-shadow: 0 0 0 3px rgba(26, 47, 90, 0.1);
+    }
+  }
+}
+
+.season-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+  min-width: 200px;
+  justify-content: flex-end;
+}
+
+.message {
+  font-size: 12px;
+  font-weight: 500;
+
+  &.success { color: #3a7a12; }
+  &.error { color: #b33030; }
+  &.info { color: #1a2f5a; }
+}
+
+// Buttons
+.btn-primary {
+  padding: 8px 20px;
+  font-size: 14px;
+  font-weight: 600;
+  font-family: inherit;
+  background: #1a2f5a;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+
+  &:hover:not(:disabled) {
+    background: #2a4a8a;
+    transform: translateY(-1px);
+  }
+  &:disabled { opacity: 0.5; cursor: default; }
+}
+
+.btn-secondary {
+  padding: 8px 16px;
+  font-size: 14px;
+  font-weight: 600;
+  font-family: inherit;
+  background: #fff;
+  color: #1a2f5a;
+  border: 1.5px solid #1a2f5a;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+
+  &:hover:not(:disabled) { background: #e8edf5; }
+  &:disabled { opacity: 0.5; cursor: default; }
+}
+
+.logout-wrap {
+  display: flex;
+  justify-content: center;
+  margin-top: 1rem;
+}
+
+.btn-logout {
+  padding: 10px 32px;
+  font-size: 14px;
+  font-weight: 600;
+  font-family: inherit;
+  background: transparent;
+  color: #888;
+  border: 1.5px solid #d0d0ce;
+  border-radius: 99px;
+  cursor: pointer;
+  transition: all 0.15s;
+
+  &:hover {
+    border-color: #b33030;
+    color: #b33030;
+    background: #fde8e8;
+  }
+}
