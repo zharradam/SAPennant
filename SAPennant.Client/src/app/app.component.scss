@@ -19,6 +19,7 @@
 }
 
 .nav-brand {
+  min-width: 160px;
   display: flex;
   flex-direction: column;
   line-height: 1;
@@ -81,6 +82,8 @@
   font-size: 11px;
   color: rgba(255,255,255,0.3);
   white-space: nowrap;
+  min-width: 160px;
+  text-align: right;
 }
 
 .footer {
@@ -157,4 +160,16 @@
   sa-pennant-club,
   sa-pennant-leaderboard,
   sa-pennant-admin { flex: 1; }
+}
+
+.nav-spinner {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border: 1.5px solid rgba(255,255,255,0.2);
+  border-top-color: rgba(255,255,255,0.6);
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+  vertical-align: middle;
+  margin-right: 4px;
 }

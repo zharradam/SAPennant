@@ -1,6 +1,6 @@
 import { Injectable, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { Observable, tap, map } from 'rxjs';
 import { PlayerMatch, ClubPlayer } from './models/pennant.models';
 import { environment } from '../environments/environment';
 
@@ -83,9 +83,10 @@ export class PennantService {
     );
   }
 
-  refreshLastUpdated(): void {
-    this.getLastUpdated().subscribe(data => {
-      this.lastUpdated.set(data.display);
-    });
+  refreshLastUpdated(): Observable<void> {
+    return this.getLastUpdated().pipe(
+      tap(data => this.lastUpdated.set(data.display)),
+      map(() => void 0)
+    );
   }
 }

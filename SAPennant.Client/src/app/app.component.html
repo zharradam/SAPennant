@@ -12,7 +12,14 @@
           <button class="nav-tab" [class.active]="activeTab() === 'leaderboard'" (click)="activeTab.set('leaderboard')">Leaderboard</button>
           <button class="nav-tab" [class.active]="activeTab() === 'admin'"       (click)="activeTab.set('admin')">Admin</button>
         </div>
-        <div class="nav-updated" *ngIf="lastUpdated()">Updated {{ lastUpdated() }}</div>
+        <div class="nav-updated">
+          <ng-container *ngIf="isLoadingApi()">
+            <span class="nav-spinner"></span> Loading API…
+          </ng-container>
+          <ng-container *ngIf="!isLoadingApi() && lastUpdated()">
+            Updated {{ lastUpdated() }}
+          </ng-container>
+        </div>
       </div>
     </nav>
   </nav>

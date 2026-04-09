@@ -1,5 +1,6 @@
 import { Component, signal, OnInit } from '@angular/core';
 import { PennantService } from './pennant.service';
+import { retry } from 'rxjs/operators';
 
 @Component({
   selector: 'sa-pennant-root',
@@ -10,11 +11,17 @@ import { PennantService } from './pennant.service';
 export class App implements OnInit {
   activeTab = signal<'search' | 'club' | 'leaderboard' | 'admin'>('search');
   selectedPlayer = signal('');
+  isLoadingApi = signal(true);
 
   constructor(private pennant: PennantService) {}
 
   ngOnInit(): void {
-    this.pennant.refreshLastUpdated();
+    this.pennant.refreshLastUpdated().pipe(
+      retry({ count: 10, delay: 3000 })
+    ).subscribe({
+      next: () => this.isLoadingApi.set(false),
+      error: () => this.isLoadingApi.set(false)
+    });
   }
 
   navigateToPlayer(name: string): void {
