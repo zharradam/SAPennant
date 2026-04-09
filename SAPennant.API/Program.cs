@@ -48,7 +48,8 @@ builder.Services.AddCors(options =>
     {
         policy.WithOrigins(
             "http://localhost:4200",
-            "https://zharradam.github.io")
+            "https://zharradam.github.io",
+            "https://zharradam.github.io/SAPennant")
               .AllowAnyHeader()
               .AllowAnyMethod();
     });
