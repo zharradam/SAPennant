@@ -30,7 +30,7 @@ export class ClubSearchComponent {
   sortDir: 'asc' | 'desc' = 'desc';
 
   private readonly clubLogos: Record<string, string> = {
-    'Royal Adelaide Golf Club': 'assets/clubs/royal-adelaide.png',
+    'Royal Adelaide Golf Club': 'assets/clubs/royal_adelaide.png',
     'Aston Hills Golf Club at Mount Barker': '',
     'Balaklava Golf Club': '',
     'Barmera Golf Club': '',
