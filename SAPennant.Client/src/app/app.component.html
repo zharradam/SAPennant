@@ -1,7 +1,10 @@
 <div class="app">
   <nav class="nav">
     <div class="nav-inner">
-      <div class="nav-brand">⛳ SA Pennant</div>
+      <div class="nav-brand">
+        <div class="nav-brand-top">SA Pennant</div>
+        <div class="nav-brand-sub">South Australia · Golf</div>
+      </div>
       <div class="nav-tabs">
         <button
           class="nav-tab"
@@ -38,4 +41,14 @@
   <sa-pennant-club      *ngIf="activeTab() === 'club'" (playerSelected)="navigateToPlayer($event)"></sa-pennant-club>
   <sa-pennant-leaderboard *ngIf="activeTab() === 'leaderboard'" (playerSelected)="navigateToPlayer($event)"></sa-pennant-leaderboard>
   <sa-pennant-admin     *ngIf="activeTab() === 'admin'"></sa-pennant-admin>
+
+  <footer class="footer">
+    <div class="footer-inner">
+      <div class="footer-left"></div>
+      <div class="footer-centre">SA Pennant 2021–2026</div>
+      <div class="footer-right">
+        <a href="https://golf.com.au/south-australian-pennant" target="_blank" rel="noopener">Match data sourced from Golf SA</a>
+      </div>
+    </div>
+  </footer>
 </div>
