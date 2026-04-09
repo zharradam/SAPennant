@@ -29,6 +29,75 @@ export class ClubSearchComponent {
   sortCol: 'playerName' | 'played' | 'wins' | 'losses' | 'halved' | 'winRate' = 'winRate';
   sortDir: 'asc' | 'desc' = 'desc';
 
+  private readonly clubLogos: Record<string, string> = {
+    'Royal Adelaide Golf Club': 'assets/clubs/royal-adelaide.png',
+    'Aston Hills Golf Club at Mount Barker': '',
+    'Balaklava Golf Club': '',
+    'Barmera Golf Club': '',
+    'Barossa Valley Golf Club': '',
+    'Berri Golf Club': '',
+    'Blackwood Golf Club': '',
+    'Blue Lake Golf Club': '',
+    'Blyth Golf Club': '',
+    'Booleroo Centre Golf Club': '',
+    'Bordertown Golf Club': '',
+    'Burra Golf Club': '',
+    'Clare Golf Club': '',
+    'Copperclub, The Dunes Port Hughes': '',
+    'Echunga Golf Club': '',
+    'Flagstaff Hill Golf Club': '',
+    'Future Golf': '',
+    'Glenelg Golf Club': '',
+    'Highercombe Golf + Country Club': '',
+    'Horsham Golf Club': '',
+    'Kadina Golf Club': '',
+    'Kapunda Golf Club': '',
+    'Kingston SE Golf Club': '',
+    'Kiwi Golf Club': '',
+    'Kooyonga Golf Club': '',
+    'Lameroo Golf Club': '',
+    'Links Lady Bay Golf Club': '',
+    'Loxton Golf Club': '',
+    'Maitland Golf Club (SA)': '',
+    'McCracken Country Club': '',
+    'Mitsubishi Staff Golf Club': '',
+    'Mount Compass Golf Club': '',
+    'Mount Osmond Golf Club': '',
+    'Mt Gambier Golf Club': '',
+    'Murray Bridge Golf Club': '',
+    'Naracoorte Golf Club': '',
+    'North Adelaide Golf Club': '',
+    'North Haven Golf Club': '',
+    'Oakbank Golf Club': '',
+    'Penfield Golf Club': '',
+    'Peterborough Golf Club': '',
+    'Pinnaroo Golf Club': '',
+    'Playford Lakes Golf Club': '',
+    'Port Augusta Golf Club': '',
+    'Port Broughton Golf Club': '',
+    'Regency Park Golf Club': '',
+    'Robe Golf Club': '',
+    'SA Police Golf Club': '',
+    'Sandy Creek Golf Club': '',
+    'South Lakes Golf Club': '',
+    'Streaky Bay Golf Club': '',
+    'Tanunda Pines Golf Club': '',
+    'Tea Tree Gully Golf Club': '',
+    'Thaxted Park Golf Club': '',
+    'The Grange Golf Club (SA)': '',
+    'The Gums Golf Club Salisbury': '',
+    'The Stirling Golf Club (ex Mt Lofty)': '',
+    'The Vines Golf Club of Reynella': '',
+    'Victor Harbor Golf Club': '',
+    'Waikerie Golf Club': '',
+    'Waratah Golf Club': '',
+    'West Lakes Golf Club': '',
+    'Westward HO Golf Club': '',
+    'Whyalla Golf Club': '',
+    'Willunga Golf Club': '',
+    'Yacka Golf Club': '',
+  };
+
   private suggestSubject = new Subject<string>();
 
   constructor(private pennant: PennantService) {
@@ -187,5 +256,10 @@ export class ClubSearchComponent {
       p.pool === pool &&
       this.selectedYears.has(p.year)
     ).length;
+  }
+
+  getClubLogo(clubName: string): string | null {
+    const logo = this.clubLogos[clubName];
+    return logo || null;
   }
 }

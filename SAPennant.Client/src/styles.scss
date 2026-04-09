@@ -369,3 +369,13 @@ body {
     color: #fff;
   }
 }
+
+.club-logo {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  object-fit: contain;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  flex-shrink: 0;
+}

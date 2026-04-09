@@ -41,7 +41,13 @@
     <ng-container *ngIf="!isLoading() && players.length > 0">
 
       <div class="player-header">
-        <div class="player-avatar">⛳</div>
+        <div class="player-avatar" *ngIf="!getClubLogo(selectedClub!)">⛳</div>
+        <img
+          *ngIf="getClubLogo(selectedClub!)"
+          [src]="getClubLogo(selectedClub!)"
+          [alt]="selectedClub!"
+          class="club-logo"
+        />
         <div class="player-info">
           <h2>{{ selectedClub }}</h2>
           <p>{{ players.length }} player{{ players.length !== 1 ? 's' : '' }}</p>
