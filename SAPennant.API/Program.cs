@@ -62,5 +62,5 @@ app.UseCors("AllowAngular");
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
-
+app.MapGet("/", () => "SA Pennant API is running!");
 app.Run();
