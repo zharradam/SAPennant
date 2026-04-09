@@ -2,12 +2,13 @@ import { Injectable, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { PlayerMatch } from './models/pennant.models';
+import { environment } from '../environments/environment';
 
 @Injectable({
   providedIn: 'root',
 })
 export class PennantService {
-  private readonly API_URL = 'https://localhost:7007/api';
+  private readonly API_URL = environment.apiUrl;
   pendingSearch = signal('');
 
   constructor(private http: HttpClient) {}

@@ -1,12 +1,13 @@
 import { Injectable, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, tap } from 'rxjs';
+import { environment } from '../environments/environment';
 
 @Injectable({
   providedIn: 'root',
 })
 export class AuthService {
-  private readonly API_URL = 'https://localhost:7007/api';
+  private readonly API_URL = environment.apiUrl;
   private readonly TOKEN_KEY = 'sa_pennant_admin_token';
 
   isAuthenticated = signal(false);
