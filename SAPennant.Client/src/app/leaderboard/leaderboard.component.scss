@@ -241,3 +241,22 @@
     text-decoration: underline;
   }
 }
+
+@media (max-width: 768px) {
+  .table-wrap {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+
+    table {
+      min-width: 600px;
+    }
+  }
+
+  .filters {
+    gap: 8px;
+
+    .filter-group {
+      min-width: 120px;
+    }
+  }
+}

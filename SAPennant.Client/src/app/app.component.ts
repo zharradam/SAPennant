@@ -12,6 +12,7 @@ export class App implements OnInit {
   activeTab = signal<'search' | 'club' | 'leaderboard' | 'admin'>('search');
   selectedPlayer = signal('');
   isLoadingApi = signal(true);
+  menuOpen = signal(false);
 
   constructor(private pennant: PennantService) {}
 
@@ -31,5 +32,14 @@ export class App implements OnInit {
 
   get lastUpdated() {
      return this.pennant.lastUpdated; 
+  }
+
+  toggleMenu(): void {
+    this.menuOpen.set(!this.menuOpen());
+  }
+
+  selectTab(tab: 'search' | 'club' | 'leaderboard' | 'admin'): void {
+    this.activeTab.set(tab);
+    this.menuOpen.set(false);
   }
 }

@@ -1,17 +1,17 @@
 <div class="app">
   <nav class="nav">
-    <nav class="nav">
-      <div class="nav-inner">
-        <div class="nav-brand">
-          <div class="nav-brand-top">SA Pennant</div>
-          <div class="nav-brand-sub">South Australia · Golf</div>
-        </div>
-        <div class="nav-tabs">
-          <button class="nav-tab" [class.active]="activeTab() === 'search'"      (click)="activeTab.set('search')">Player Search</button>
-          <button class="nav-tab" [class.active]="activeTab() === 'club'"        (click)="activeTab.set('club')">Club Search</button>
-          <button class="nav-tab" [class.active]="activeTab() === 'leaderboard'" (click)="activeTab.set('leaderboard')">Leaderboard</button>
-          <button class="nav-tab" [class.active]="activeTab() === 'admin'"       (click)="activeTab.set('admin')">Admin</button>
-        </div>
+    <div class="nav-inner">
+      <div class="nav-brand">
+        <div class="nav-brand-top">SA Pennant</div>
+        <div class="nav-brand-sub">South Australia · Golf</div>
+      </div>
+      <div class="nav-tabs">
+        <button class="nav-tab" [class.active]="activeTab() === 'search'"      (click)="selectTab('search')">Player Search</button>
+        <button class="nav-tab" [class.active]="activeTab() === 'club'"        (click)="selectTab('club')">Club Search</button>
+        <button class="nav-tab" [class.active]="activeTab() === 'leaderboard'" (click)="selectTab('leaderboard')">Leaderboard</button>
+        <button class="nav-tab" [class.active]="activeTab() === 'admin'"       (click)="selectTab('admin')">Admin</button>
+      </div>
+      <div class="nav-right">
         <div class="nav-updated">
           <ng-container *ngIf="isLoadingApi()">
             <span class="nav-spinner"></span> Loading API…
@@ -20,14 +20,34 @@
             Updated {{ lastUpdated() }}
           </ng-container>
         </div>
+        <button class="hamburger" (click)="toggleMenu()" aria-label="Menu">
+          <span class="ham-line" [class.open1]="menuOpen()"></span>
+          <span class="ham-line" [class.open2]="menuOpen()"></span>
+          <span class="ham-line" [class.open3]="menuOpen()"></span>
+        </button>
       </div>
-    </nav>
+    </div>
   </nav>
 
-  <sa-pennant-search    *ngIf="activeTab() === 'search'"></sa-pennant-search>
-  <sa-pennant-club      *ngIf="activeTab() === 'club'" (playerSelected)="navigateToPlayer($event)"></sa-pennant-club>
+  <div class="nav-drawer" [class.open]="menuOpen()">
+    <button class="drawer-tab" [class.active]="activeTab() === 'search'"      (click)="selectTab('search')">
+      <span class="drawer-dot"></span>Player Search
+    </button>
+    <button class="drawer-tab" [class.active]="activeTab() === 'club'"        (click)="selectTab('club')">
+      <span class="drawer-dot"></span>Club Search
+    </button>
+    <button class="drawer-tab" [class.active]="activeTab() === 'leaderboard'" (click)="selectTab('leaderboard')">
+      <span class="drawer-dot"></span>Leaderboard
+    </button>
+    <button class="drawer-tab" [class.active]="activeTab() === 'admin'"       (click)="selectTab('admin')">
+      <span class="drawer-dot"></span>Admin
+    </button>
+  </div>
+
+  <sa-pennant-search      *ngIf="activeTab() === 'search'"></sa-pennant-search>
+  <sa-pennant-club        *ngIf="activeTab() === 'club'" (playerSelected)="navigateToPlayer($event)"></sa-pennant-club>
   <sa-pennant-leaderboard *ngIf="activeTab() === 'leaderboard'" (playerSelected)="navigateToPlayer($event)"></sa-pennant-leaderboard>
-  <sa-pennant-admin     *ngIf="activeTab() === 'admin'"></sa-pennant-admin>
+  <sa-pennant-admin       *ngIf="activeTab() === 'admin'"></sa-pennant-admin>
 
   <footer class="footer">
     <div class="footer-inner">
