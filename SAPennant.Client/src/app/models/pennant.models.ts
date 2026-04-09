@@ -41,3 +41,15 @@ export interface PlayerMatch {
   playerWon: boolean | null;
   format: string;
 }
+
+export interface ClubPlayer {
+  playerName: string;
+  club: string;
+  year: number;
+  pool: string;
+  played: number;
+  wins: number;
+  losses: number;
+  halved: number;
+  winRate: number;
+}

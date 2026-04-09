@@ -8,7 +8,7 @@ import { PennantService } from './pennant.service';
   styleUrl: './app.component.scss'
 })
 export class App implements OnInit {
-  activeTab = signal<'search' | 'leaderboard' | 'admin'>('search');
+  activeTab = signal<'search' | 'club' | 'leaderboard' | 'admin'>('search');
   lastUpdated = signal('');
   selectedPlayer = signal('');
 
@@ -21,7 +21,7 @@ export class App implements OnInit {
   }
 
   navigateToPlayer(name: string): void {
-    this.selectedPlayer.set(name);
+    this.pennant.pendingSearch.set(name);
     this.activeTab.set('search');
   }
 }

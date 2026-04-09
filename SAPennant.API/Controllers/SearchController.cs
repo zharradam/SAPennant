@@ -215,4 +215,68 @@ public class SearchController : ControllerBase
                 : "Never"
         });
     }
+
+    [HttpGet("clubs/search")]
+    public async Task<IActionResult> ClubSuggestions([FromQuery] string q)
+    {
+        if (string.IsNullOrWhiteSpace(q) || q.Length < 2)
+            return Ok(new List<string>());
+
+        var clubs = await _db.PennantMatches
+            .Where(m =>
+                m.PlayerClub != null &&
+                m.PlayerClub.Length > 0 &&
+                EF.Functions.Like(m.PlayerClub.ToLower(), $"%{q.Trim().ToLower()}%"))
+            .Select(m => m.PlayerClub!)
+            .Distinct()
+            .OrderBy(c => c)
+            .Take(15)
+            .ToListAsync();
+
+        return Ok(clubs);
+    }
+
+    [HttpGet("clubs/{clubName}/players")]
+    public async Task<IActionResult> ClubPlayers(
+    string clubName,
+    [FromQuery] int minGames = 1)
+    {
+        var matches = await _db.PennantMatches
+            .Where(m => m.PlayerClub == clubName &&
+                   !string.IsNullOrWhiteSpace(m.PlayerName) &&
+                   !m.PlayerName.StartsWith("-") &&
+                   m.PlayerName.Length > 3)
+            .ToListAsync();
+
+        var players = matches
+            .GroupBy(m => new { m.PlayerName, m.Year, m.Pool })
+            .Select(g =>
+            {
+                var all = g.ToList();
+                var wins = all.Count(m => m.PlayerWon == true);
+                var losses = all.Count(m => m.PlayerWon == false);
+                var halved = all.Count(m => m.PlayerWon == null);
+                var played = all.Count;
+                var winRate = played > 0 ? Math.Round((double)wins / played * 100, 1) : 0;
+
+                return new
+                {
+                    playerName = g.Key.PlayerName,
+                    club = clubName,
+                    year = g.Key.Year,
+                    pool = g.Key.Pool,
+                    played,
+                    wins,
+                    losses,
+                    halved,
+                    winRate,
+                };
+            })
+            .Where(p => p.played >= minGames)
+            .OrderByDescending(p => p.winRate)
+            .ThenByDescending(p => p.played)
+            .ToList();
+
+        return Ok(players);
+    }
 }

@@ -1,0 +1,150 @@
+<div class="page">
+  <div class="hero">
+    <div class="hero-inner">
+      <div class="hero-text">
+        <h1>SA Pennant Club Search</h1>
+        <p>Browse all players from any club, 2021–2026</p>
+      </div>
+      <div class="search-wrap">
+        <div class="input-wrap">
+          <input
+            type="text"
+            [(ngModel)]="query"
+            (ngModelChange)="onQueryChange()"
+            (keyup.enter)="doSearch()"
+            (blur)="hideSuggestions()"
+            (focus)="showSuggestions.set(suggestions().length > 0)"
+            placeholder="Search by club name…"
+            autocomplete="off"
+          />
+          <div class="suggestions" *ngIf="showSuggestions()">
+            <div
+              class="suggestion-item"
+              *ngFor="let club of suggestions()"
+              (mousedown)="selectSuggestion(club)"
+            >
+              {{ club }}
+            </div>
+          </div>
+        </div>
+        <button (click)="doSearch()">Search</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="content">
+
+    <div class="status loading" *ngIf="isLoading()">
+      <span class="spinner"></span> Searching…
+    </div>
+
+    <ng-container *ngIf="!isLoading() && players.length > 0">
+
+      <div class="player-header">
+        <div class="player-avatar">⛳</div>
+        <div class="player-info">
+          <h2>{{ selectedClub }}</h2>
+          <p>{{ players.length }} player{{ players.length !== 1 ? 's' : '' }}</p>
+        </div>
+      </div>
+
+      <div class="summary-bar">
+        <div class="summary-stat">
+          <div class="val">{{ players.length }}</div>
+          <div class="lbl">players</div>
+        </div>
+        <div class="summary-divider"></div>
+        <div class="summary-stat">
+          <div class="val">{{ totalPlayed }}</div>
+          <div class="lbl">matches</div>
+        </div>
+        <div class="summary-stat win">
+          <div class="val">{{ totalWins }}</div>
+          <div class="lbl">wins</div>
+        </div>
+        <div class="summary-divider"></div>
+        <div class="summary-stat">
+          <div class="val highlight">{{ clubWinRate }}%</div>
+          <div class="lbl">win rate</div>
+        </div>
+      </div>
+
+      <div class="year-filter" *ngIf="availableYears.length > 1">
+        <div
+          *ngFor="let year of availableYears"
+          class="year-chip"
+          [class.active]="selectedYears.has(year)"
+          (click)="toggleYear(year)"
+        >
+          {{ year }}
+          <span class="year-count">{{ yearCount(year) }}</span>
+        </div>
+      </div>
+
+      <div class="year-filter" *ngIf="availablePools.length > 1">
+        <div
+          *ngFor="let pool of availablePools"
+          class="pool-chip"
+          [class.active]="selectedPools.has(pool)"
+          (click)="togglePool(pool)"
+        >
+          {{ pool }}
+          <span class="year-count">{{ poolCount(pool) }}</span>
+        </div>
+      </div>
+
+      <table class="club-table">
+        <thead>
+          <tr>
+            <th class="sortable" (click)="setSort('playerName')" [class.sort-active]="sortCol === 'playerName'">
+              Player <span class="sort-icon">{{ sortCol === 'playerName' ? (sortDir === 'asc' ? '↑' : '↓') : '↕' }}</span>
+            </th>
+            <th class="sortable" (click)="setSort('played')" [class.sort-active]="sortCol === 'played'">
+              P <span class="sort-icon">{{ sortCol === 'played' ? (sortDir === 'asc' ? '↑' : '↓') : '↕' }}</span>
+            </th>
+            <th class="sortable" (click)="setSort('wins')" [class.sort-active]="sortCol === 'wins'">
+              W <span class="sort-icon">{{ sortCol === 'wins' ? (sortDir === 'asc' ? '↑' : '↓') : '↕' }}</span>
+            </th>
+            <th class="sortable" (click)="setSort('losses')" [class.sort-active]="sortCol === 'losses'">
+              L <span class="sort-icon">{{ sortCol === 'losses' ? (sortDir === 'asc' ? '↑' : '↓') : '↕' }}</span>
+            </th>
+            <th class="sortable" (click)="setSort('halved')" [class.sort-active]="sortCol === 'halved'">
+              H <span class="sort-icon">{{ sortCol === 'halved' ? (sortDir === 'asc' ? '↑' : '↓') : '↕' }}</span>
+            </th>
+            <th class="sortable" (click)="setSort('winRate')" [class.sort-active]="sortCol === 'winRate'">
+              Win % <span class="sort-icon">{{ sortCol === 'winRate' ? (sortDir === 'asc' ? '↑' : '↓') : '↕' }}</span>
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr
+            *ngFor="let p of players"
+            (click)="goToPlayer(p.playerName)"
+            class="club-row"
+            title="View {{ p.playerName }}'s match history"
+          >
+            <td class="name-cell">{{ p.playerName }}</td>
+            <td>{{ p.played }}</td>
+            <td class="win">{{ p.wins }}</td>
+            <td class="loss">{{ p.losses }}</td>
+            <td class="halved">{{ p.halved }}</td>
+            <td class="win-rate">{{ p.winRate }}%</td>
+          </tr>
+        </tbody>
+      </table>
+
+    </ng-container>
+
+    <div class="no-results" *ngIf="!isLoading() && hasSearched && players.length === 0">
+      <div class="no-results-icon">⛳</div>
+      <p>No results found for "{{ query }}"</p>
+      <span>Try searching by partial club name</span>
+    </div>
+
+    <div class="empty-state" *ngIf="!isLoading() && !hasSearched">
+      <div class="empty-icon">⛳</div>
+      <p>Enter a club name above to get started</p>
+    </div>
+
+  </div>
+</div>

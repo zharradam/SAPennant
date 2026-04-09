@@ -10,13 +10,22 @@ import { AdminComponent } from './admin/admin.component';
 import { YearCountPipe } from './year-count.pipe';
 import { PoolCountPipe } from './pool-count.pipe';
 import { authInterceptor } from './auth.interceptor';
+import { ClubSearchComponent } from './club-search/club-search.component';
 
 @NgModule({
-  declarations: [App, SearchComponent, LeaderboardComponent, AdminComponent, YearCountPipe, PoolCountPipe],
+  declarations: [
+    App,
+    SearchComponent,
+    LeaderboardComponent,
+    AdminComponent,
+    YearCountPipe,
+    PoolCountPipe,
+    ClubSearchComponent,
+  ],
   imports: [BrowserModule, FormsModule, HttpClientModule],
   providers: [
     provideBrowserGlobalErrorListeners(),
-    provideHttpClient(withInterceptors([authInterceptor]))
+    provideHttpClient(withInterceptors([authInterceptor])),
   ],
   bootstrap: [App],
 })

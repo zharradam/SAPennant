@@ -11,6 +11,12 @@
         </button>
         <button
           class="nav-tab"
+          [class.active]="activeTab() === 'club'"
+          (click)="activeTab.set('club')">
+          Club Search
+        </button>
+        <button
+          class="nav-tab"
           [class.active]="activeTab() === 'leaderboard'"
           (click)="activeTab.set('leaderboard')">
           Leaderboard
@@ -28,7 +34,8 @@
     </div>
   </nav>
 
-  <sa-pennant-search *ngIf="activeTab() === 'search'"></sa-pennant-search>
+  <sa-pennant-search    *ngIf="activeTab() === 'search'"></sa-pennant-search>
+  <sa-pennant-club      *ngIf="activeTab() === 'club'" (playerSelected)="navigateToPlayer($event)"></sa-pennant-club>
   <sa-pennant-leaderboard *ngIf="activeTab() === 'leaderboard'" (playerSelected)="navigateToPlayer($event)"></sa-pennant-leaderboard>
-  <sa-pennant-admin *ngIf="activeTab() === 'admin'"></sa-pennant-admin>
+  <sa-pennant-admin     *ngIf="activeTab() === 'admin'"></sa-pennant-admin>
 </div>
