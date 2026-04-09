@@ -63,8 +63,8 @@ app.UseSwaggerUI(c =>
     c.SwaggerEndpoint("/openapi/v1.json", "SAPennant API");
 });
 
-app.UseHttpsRedirection();
 app.UseCors("AllowAngular");
+app.UseHttpsRedirection();
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();

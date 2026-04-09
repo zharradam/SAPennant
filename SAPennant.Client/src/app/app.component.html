@@ -1,40 +1,20 @@
 <div class="app">
   <nav class="nav">
-    <div class="nav-inner">
-      <div class="nav-brand">
-        <div class="nav-brand-top">SA Pennant</div>
-        <div class="nav-brand-sub">South Australia · Golf</div>
+    <nav class="nav">
+      <div class="nav-inner">
+        <div class="nav-brand">
+          <div class="nav-brand-top">SA Pennant</div>
+          <div class="nav-brand-sub">South Australia · Golf</div>
+        </div>
+        <div class="nav-tabs">
+          <button class="nav-tab" [class.active]="activeTab() === 'search'"      (click)="activeTab.set('search')">Player Search</button>
+          <button class="nav-tab" [class.active]="activeTab() === 'club'"        (click)="activeTab.set('club')">Club Search</button>
+          <button class="nav-tab" [class.active]="activeTab() === 'leaderboard'" (click)="activeTab.set('leaderboard')">Leaderboard</button>
+          <button class="nav-tab" [class.active]="activeTab() === 'admin'"       (click)="activeTab.set('admin')">Admin</button>
+        </div>
+        <div class="nav-updated" *ngIf="lastUpdated()">Updated {{ lastUpdated() }}</div>
       </div>
-      <div class="nav-tabs">
-        <button
-          class="nav-tab"
-          [class.active]="activeTab() === 'search'"
-          (click)="activeTab.set('search')">
-          Player Search
-        </button>
-        <button
-          class="nav-tab"
-          [class.active]="activeTab() === 'club'"
-          (click)="activeTab.set('club')">
-          Club Search
-        </button>
-        <button
-          class="nav-tab"
-          [class.active]="activeTab() === 'leaderboard'"
-          (click)="activeTab.set('leaderboard')">
-          Leaderboard
-        </button>
-        <button
-          class="nav-tab"
-          [class.active]="activeTab() === 'admin'"
-          (click)="activeTab.set('admin')">
-          Admin
-        </button>
-      </div>
-      <div class="nav-updated" *ngIf="lastUpdated()">
-        Updated {{ lastUpdated() }}
-      </div>
-    </div>
+    </nav>
   </nav>
 
   <sa-pennant-search    *ngIf="activeTab() === 'search'"></sa-pennant-search>

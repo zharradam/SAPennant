@@ -18,20 +18,15 @@ body {
 
 .hero {
   position: relative;
-  padding: 5rem 1rem 5.5rem;
+  height: 280px;
   color: #fff;
   text-align: center;
-  overflow: visible;  // ← change from hidden to visible
-
-  &::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background-image: url('/assets/hero-bg.jpg');
-    background-size: cover;
-    background-position: center 35%;
-    z-index: 0;
-  }
+  overflow: visible;
+  background-size: cover;
+  background-position: center 35%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 
   &::after {
     content: '';
@@ -51,6 +46,8 @@ body {
   position: relative;
   z-index: 2;
   max-width: 620px;
+  width: 100%;
+  padding: 0 1rem;
   margin: 0 auto;
 
   &::before {
@@ -151,15 +148,15 @@ body {
   font-size: 14px;
   font-weight: 600;
   font-family: inherit;
-  background: #fff;
-  color: #1a2f5a;
+  background: #3b82f6;
+  color: #fff;
   border: none;
   border-radius: 10px;
   cursor: pointer;
   transition: all 0.15s;
   white-space: nowrap;
 
-  &:hover { background: #e8edf5; }
+  &:hover { background: #2563eb; }
 }
 
 .content {
@@ -315,7 +312,7 @@ body {
   overflow: hidden;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
 
- th {
+  th {
     text-align: left;
     padding: 12px 16px;
     font-size: 12px;
