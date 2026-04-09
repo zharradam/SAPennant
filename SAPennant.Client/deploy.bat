@@ -1,13 +1,14 @@
 @echo off
 echo Building...
-ng build --configuration production --base-href "https://zharradam.github.io/SAPennant/"
+cmd /c ng build --configuration production --base-href "https://zharradam.github.io/SAPennant/"
+echo Build step complete.
 
-if %ERRORLEVEL% NEQ 0 (
-  echo Build failed. Aborting deploy.
-  exit /b 1
+if exist "dist\SAPennant\browser\index.html" (
+  echo Deploying to GitHub Pages...
+  cmd /c npx angular-cli-ghpages --dir=dist/SAPennant/browser
+  echo Done.
+) else (
+  echo Build failed - index.html not found. Aborting.
 )
 
-echo Deploying to GitHub Pages...
-npx angular-cli-ghpages --dir=dist/SAPennant/browser
-
-echo Done.
+pause
