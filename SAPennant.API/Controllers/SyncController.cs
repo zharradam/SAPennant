@@ -6,7 +6,7 @@ using SAPennant.API.Services;
 
 namespace SAPennant.API.Controllers;
 
-[Authorize]
+//[Authorize]
 [ApiController]
 [Route("api/[controller]")]
 public class SyncController : ControllerBase
