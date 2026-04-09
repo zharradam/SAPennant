@@ -1,4 +1,6 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.ApplicationInsights;
+using Microsoft.ApplicationInsights.Channel;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using SAPennant.API.Data;
 using SAPennant.API.Models;
@@ -13,17 +15,26 @@ public class SyncController : ControllerBase
 {
     private readonly GolfboxSyncService _sync;
     private readonly AppDbContext _db;
+    private readonly TelemetryClient _telemetry;
 
-    public SyncController(GolfboxSyncService sync, AppDbContext db)
+    public SyncController(GolfboxSyncService sync, AppDbContext db, TelemetryClient telemetry)
     {
         _sync = sync;
         _db = db;
+        _telemetry = telemetry;
     }
 
     [HttpPost("run")]
     public async Task<IActionResult> Run()
     {
         await _sync.SyncAllAsync();
+
+        _telemetry.TrackEvent("SyncCompleted", new Dictionary<string, string>
+        {
+            { "year", "all" },
+            { "type", "full" }
+        });
+
         return Ok(new { message = "Sync complete" });
     }
 
@@ -31,6 +42,11 @@ public class SyncController : ControllerBase
     public async Task<IActionResult> Refresh(int year)
     {
         await _sync.RefreshYearAsync(year);
+        _telemetry.TrackEvent("SyncCompleted", new Dictionary<string, string>
+        {
+            { "year", year.ToString() },
+            { "type", "refresh" }
+        });
         return Ok(new { message = $"Refresh complete for {year}" });
     }
 

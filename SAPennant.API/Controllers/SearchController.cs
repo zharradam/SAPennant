@@ -1,4 +1,6 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.ApplicationInsights;
+using Microsoft.ApplicationInsights.Channel;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using SAPennant.API.Data;
 
@@ -9,19 +11,27 @@ namespace SAPennant.API.Controllers;
 public class SearchController : ControllerBase
 {
     private readonly AppDbContext _db;
+    private readonly TelemetryClient _telemetry;
 
-    public SearchController(AppDbContext db)
+    public SearchController(AppDbContext db, TelemetryClient telemetry)
     {
         _db = db;
+        _telemetry = telemetry;
     }
 
     [HttpGet]
-    public async Task<IActionResult> Search([FromQuery] string q)
+    public async Task<IActionResult> Search([FromQuery] string q, [FromQuery] string? source = "search")
     {
         if (string.IsNullOrWhiteSpace(q) || q.Length < 2)
             return BadRequest(new { error = "Query must be at least 2 characters" });
 
         var searchTerm = q.Trim().ToLower();
+
+        _telemetry.TrackEvent("PlayerSearch", new Dictionary<string, string>
+        {
+            { "query", searchTerm },
+            { "source", source ?? "search" }
+        });
 
         var results = await _db.PennantMatches
             .Where(m =>
@@ -64,11 +74,18 @@ public class SearchController : ControllerBase
 
     [HttpGet("leaderboard")]
     public async Task<IActionResult> Leaderboard(
-     [FromQuery] int? year,
-     [FromQuery] string? division,
-     [FromQuery] string? pool,
-     [FromQuery] int minGames = 5)
+    [FromQuery] int? year,
+    [FromQuery] string? division,
+    [FromQuery] string? pool,
+    [FromQuery] int minGames = 5)
     {
+        _telemetry.TrackEvent("LeaderboardView", new Dictionary<string, string>
+        {
+            { "year", year?.ToString() ?? "all" },
+            { "division", division ?? "all" },
+            { "pool", pool ?? "all" }
+        });
+
         var query = _db.PennantMatches.AsQueryable();
 
         if (year.HasValue)
@@ -237,10 +254,13 @@ public class SearchController : ControllerBase
     }
 
     [HttpGet("clubs/{clubName}/players")]
-    public async Task<IActionResult> ClubPlayers(
-    string clubName,
-    [FromQuery] int minGames = 1)
+    public async Task<IActionResult> ClubPlayers(string clubName, [FromQuery] int minGames = 1)
     {
+        _telemetry.TrackEvent("ClubSearch", new Dictionary<string, string>
+        {
+            { "club", clubName }
+        });
+
         var matches = await _db.PennantMatches
             .Where(m => m.PlayerClub == clubName &&
                    !string.IsNullOrWhiteSpace(m.PlayerName) &&

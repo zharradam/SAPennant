@@ -1,3 +1,4 @@
+using Microsoft.ApplicationInsights.Extensibility;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -9,7 +10,19 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
 builder.Services.AddOpenApi();
+
 builder.Services.AddApplicationInsightsTelemetry();
+builder.Services.Configure<TelemetryConfiguration>(config =>
+{
+    var connectionString = builder.Configuration["APPLICATIONINSIGHTS_CONNECTION_STRING"]
+        ?? builder.Configuration["ApplicationInsights:ConnectionString"];
+
+    if (!string.IsNullOrWhiteSpace(connectionString))
+        config.ConnectionString = connectionString;
+    else
+        config.DisableTelemetry = true;
+});
+
 builder.Services.AddSwaggerGen(c =>
 {
     c.SwaggerDoc("v1", new() { Title = "SAPennant API", Version = "v1" });

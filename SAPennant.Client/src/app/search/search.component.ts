@@ -1,4 +1,4 @@
-import { Component, signal } from '@angular/core';
+import { Component, OnInit, signal } from '@angular/core';
 import { PennantService } from '../pennant.service';
 import { PlayerMatch } from '../models/pennant.models';
 import { Subject } from 'rxjs';
@@ -10,10 +10,11 @@ import { debounceTime, distinctUntilChanged, switchMap } from 'rxjs/operators';
   templateUrl: './search.component.html',
   styleUrl: './search.component.scss',
 })
-export class SearchComponent {
+export class SearchComponent implements OnInit {
   query = '';
   allResults: PlayerMatch[] = [];
   isLoading = signal(false);
+  isSlowResponse = signal(false);
   hasSearched = false;
   availableYears: number[] = [];
   selectedYears = new Set<number>();
@@ -22,12 +23,15 @@ export class SearchComponent {
   suggestions = signal<string[]>([]);
   showSuggestions = signal(false);
 
+  slowTimeout: any = null;
+
   private suggestSubject = new Subject<string>();
   private searchSubject = new Subject<string>();
+  private searchSource = 'search';
 
   constructor(private pennant: PennantService) {
     this.searchSubject.pipe(
-      debounceTime(50),
+      debounceTime(0),
       distinctUntilChanged(),
       switchMap(q => {
         if (!q || q.length < 2) {
@@ -35,23 +39,32 @@ export class SearchComponent {
           this.availableYears = [];
           this.selectedYears.clear();
           this.hasSearched = false;
-          this.isLoading.set(false)
+          this.isLoading.set(false);
           return [];
         }
-        this.isLoading.set(true)
+        this.isLoading.set(true);
+        this.isSlowResponse.set(false);
+        clearTimeout(this.slowTimeout);
+        this.slowTimeout = setTimeout(() => this.isSlowResponse.set(true), 2000);
         this.hasSearched = true;
-        return this.pennant.search(q);
+        return this.pennant.search(q, this.searchSource);
       })
     ).subscribe({
-        next: (data) => this.handleSearchResults(data),
-        error: (err) => {
-          console.error(err);
-          this.isLoading.set(false)
-        }
-      });
+      next: (data) => {
+        clearTimeout(this.slowTimeout);
+        this.isSlowResponse.set(false);
+        this.handleSearchResults(data);
+      },
+      error: (err) => {
+        clearTimeout(this.slowTimeout);
+        this.isSlowResponse.set(false);
+        console.error(err);
+        this.isLoading.set(false);
+      }
+    });
 
     this.suggestSubject.pipe(
-      debounceTime(50),
+      debounceTime(300),
       switchMap(q => {
         if (!q || q.trim().length < 2) {
           this.suggestions.set([]);
@@ -71,7 +84,7 @@ export class SearchComponent {
     if (pending) {
       this.query = pending;
       this.pennant.pendingSearch.set('');
-      this.executeSearch(this.query);
+      this.executeSearch(this.query, 'leaderboard');
     }
   }
 
@@ -89,11 +102,13 @@ export class SearchComponent {
   }
 
   doSearch(): void {
+    this.searchSource = 'search';
     this.showSuggestions.set(false);
     this.searchSubject.next(this.query);
   }
 
   selectSuggestion(name: string): void {
+    this.searchSource = 'suggestion';
     this.query = name;
     this.showSuggestions.set(false);
     this.suggestions.set([]);
@@ -101,9 +116,7 @@ export class SearchComponent {
   }
 
   hideSuggestions(): void {
-    setTimeout(() => {
-      this.showSuggestions.set(false);
-    }, 200);
+    setTimeout(() => this.showSuggestions.set(false), 200);
   }
 
   toggleYear(year: number): void {
@@ -216,21 +229,24 @@ export class SearchComponent {
     return r;
   }
 
-  private executeSearch(query: string): void {
-    this.isLoading.set(true)
+  private executeSearch(query: string, source: string = 'search'): void {
+    this.searchSource = source;
+    this.isLoading.set(true);
+    this.isSlowResponse.set(false);
+    clearTimeout(this.slowTimeout);
+    this.slowTimeout = setTimeout(() => this.isSlowResponse.set(true), 2000);
     this.hasSearched = true;
-    this.pennant.search(query).subscribe({
+    this.pennant.search(query, source).subscribe({
       next: (data) => {
-        this.allResults = data;
-        this.availableYears = [...new Set(data.map(m => m.year))].sort((a, b) => b - a);
-        this.selectedYears = new Set(this.availableYears);
-        this.availablePools = [...new Set(data.map(m => m.pool))].sort();
-        this.selectedPools = new Set(this.availablePools);
-        this.isLoading.set(false)
+        clearTimeout(this.slowTimeout);
+        this.isSlowResponse.set(false);
+        this.handleSearchResults(data);
       },
       error: (err) => {
+        clearTimeout(this.slowTimeout);
+        this.isSlowResponse.set(false);
         console.error(err);
-        this.isLoading.set(false)
+        this.isLoading.set(false);
       }
     });
   }
@@ -241,6 +257,6 @@ export class SearchComponent {
     this.selectedYears = new Set(this.availableYears);
     this.availablePools = [...new Set(data.map(m => m.pool))].sort();
     this.selectedPools = new Set(this.availablePools);
-    this.isLoading.set(false)
+    this.isLoading.set(false);
   }
 }

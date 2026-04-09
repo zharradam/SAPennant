@@ -1,5 +1,6 @@
 import { Component, signal, OnInit } from '@angular/core';
 import { PennantService } from './pennant.service';
+import { InsightsService } from './insights.service';
 import { retry } from 'rxjs/operators';
 
 @Component({
@@ -14,7 +15,7 @@ export class App implements OnInit {
   isLoadingApi = signal(true);
   menuOpen = signal(false);
 
-  constructor(private pennant: PennantService) {}
+  constructor(private pennant: PennantService, private insights: InsightsService) {}
 
   ngOnInit(): void {
     this.pennant.refreshLastUpdated().pipe(
@@ -41,5 +42,6 @@ export class App implements OnInit {
   selectTab(tab: 'search' | 'club' | 'leaderboard' | 'admin'): void {
     this.activeTab.set(tab);
     this.menuOpen.set(false);
+    this.insights.trackTabView(tab);
   }
 }

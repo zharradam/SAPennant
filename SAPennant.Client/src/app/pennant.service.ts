@@ -15,9 +15,11 @@ export class PennantService {
 
   constructor(private http: HttpClient) {}
 
-  search(query: string): Observable<PlayerMatch[]> {
-    return this.http.get<PlayerMatch[]>(`${this.API_URL}/search?q=${query}`);
-  }
+  search(query: string, source: string = 'search'): Observable<PlayerMatch[]> {
+    return this.http.get<PlayerMatch[]>(
+      `${this.API_URL}/search?q=${query}&source=${source}`
+    );
+}
 
   getSuggestions(query: string): Observable<string[]> {
     return this.http.get<string[]>(`${this.API_URL}/search/suggestions?q=${query}`);
