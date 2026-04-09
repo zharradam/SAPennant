@@ -1,0 +1,10 @@
+# API secrets
+SAPennant.API/appsettings.Development.json
+
+# Build output
+SAPennant.API/bin/
+SAPennant.API/obj/
+
+# Visual Studio
+.vs/
+*.user
