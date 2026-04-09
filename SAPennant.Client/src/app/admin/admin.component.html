@@ -50,7 +50,7 @@
             <p>Fetch any seasons not yet in the database</p>
           </div>
           <div class="header-right">
-            <span class="last-updated" *ngIf="lastUpdated()">Last updated: {{ lastUpdated() }}</span>
+            <span class="last-updated" *ngIf="pennant.lastUpdated()">Last updated: {{ pennant.lastUpdated() }}</span>
             <button class="btn-primary" (click)="syncAll()" [disabled]="isSyncingAll()">
               <span *ngIf="isSyncingAll()">⏳ Syncing...</span>
               <span *ngIf="!isSyncingAll()">Sync all</span>

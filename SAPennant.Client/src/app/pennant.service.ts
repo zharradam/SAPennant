@@ -10,6 +10,7 @@ import { environment } from '../environments/environment';
 export class PennantService {
   private readonly API_URL = environment.apiUrl;
   pendingSearch = signal('');
+  lastUpdated = signal('');
   searchMode = signal<'player' | 'club'>('player');
 
   constructor(private http: HttpClient) {}
@@ -80,5 +81,11 @@ export class PennantService {
     return this.http.get<ClubPlayer[]>(
       `${this.API_URL}/search/clubs/${encodeURIComponent(clubName)}/players?${query.toString()}`
     );
+  }
+
+  refreshLastUpdated(): void {
+    this.getLastUpdated().subscribe(data => {
+      this.lastUpdated.set(data.display);
+    });
   }
 }

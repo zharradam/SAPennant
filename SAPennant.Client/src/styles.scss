@@ -88,10 +88,34 @@ body {
 .search-wrap {
   display: flex;
   flex-direction: row;
+  align-items: center;
   gap: 8px;
   position: relative;
   max-width: 420px;
   margin: 0 auto;
+  width: 100%;
+}
+
+.search-wrap button {
+  padding: 14px 28px;
+  font-size: 14px;
+  font-weight: 600;
+  font-family: inherit;
+  background: linear-gradient(135deg, #60a5fa 0%, #2563eb 50%, #1d4ed8 100%);
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+  flex-shrink: 0;
+  text-shadow: 0 1px 3px rgba(0,0,0,0.3);
+  box-shadow: 0 0 12px rgba(59,130,246,0.5), 0 2px 4px rgba(0,0,0,0.3);
+
+  &:hover {
+    background: linear-gradient(135deg, #93c5fd 0%, #3b82f6 50%, #2563eb 100%);
+    box-shadow: 0 0 18px rgba(59,130,246,0.7), 0 2px 6px rgba(0,0,0,0.3);
+  }
 }
 
 .input-wrap {
@@ -141,22 +165,6 @@ body {
 
   &:hover { background: rgba(59, 130, 246, 0.15); color: #fff; }
   &:not(:last-child) { border-bottom: 1px solid rgba(255,255,255,0.06); }
-}
-
-.search-wrap button {
-  padding: 14px 28px;
-  font-size: 14px;
-  font-weight: 600;
-  font-family: inherit;
-  background: #3b82f6;
-  color: #fff;
-  border: none;
-  border-radius: 10px;
-  cursor: pointer;
-  transition: all 0.15s;
-  white-space: nowrap;
-
-  &:hover { background: #2563eb; }
 }
 
 .content {
@@ -284,21 +292,19 @@ body {
   color: #888;
 
   .no-results-icon, .empty-icon {
-    font-size: 48px;
-    margin-bottom: 1rem;
+    margin-bottom: 12px;
+    display: flex;
+    justify-content: center;
   }
 
   p {
-    font-size: 16px;
-    font-weight: 500;
-    color: #555;
-    margin: 0 0 4px;
+    font-size: 15px;
+    font-weight: 600;
+    color: #374151;
+    margin: 0;
   }
 
-  span {
-    font-size: 13px;
-    color: #aaa;
-  }
+  span { display: none; }
 }
 
 /* ── Club table (club-search only) ── */

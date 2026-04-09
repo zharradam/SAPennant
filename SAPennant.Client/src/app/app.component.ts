@@ -9,19 +9,20 @@ import { PennantService } from './pennant.service';
 })
 export class App implements OnInit {
   activeTab = signal<'search' | 'club' | 'leaderboard' | 'admin'>('search');
-  lastUpdated = signal('');
   selectedPlayer = signal('');
 
   constructor(private pennant: PennantService) {}
 
   ngOnInit(): void {
-    this.pennant.getLastUpdated().subscribe(data => {
-      this.lastUpdated.set(data.display);
-    });
+    this.pennant.refreshLastUpdated();
   }
 
   navigateToPlayer(name: string): void {
     this.pennant.pendingSearch.set(name);
     this.activeTab.set('search');
+  }
+
+  get lastUpdated() {
+     return this.pennant.lastUpdated; 
   }
 }

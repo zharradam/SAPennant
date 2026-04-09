@@ -20,20 +20,17 @@ interface SyncStatus {
 export class AdminComponent implements OnInit {
   seasons = signal<SyncStatus[]>([]);
   isSyncingAll = signal(false);
-  lastUpdated = signal('');
   newFinalsId: { [year: number]: number | null } = {};
   usernameInput = '';
   passwordInput = '';
   authError = '';
 
-  constructor(private pennant: PennantService, public auth: AuthService) {}
+  constructor(public pennant: PennantService, public auth: AuthService) {}
 
   ngOnInit(): void {
     if (this.auth.isAuthenticated()) {
       this.loadSeasons();
-      this.pennant.getLastUpdated().subscribe(data => {
-        this.lastUpdated.set(data.display);
-      });
+      this.pennant.refreshLastUpdated();
     }
   }
 
@@ -42,9 +39,7 @@ export class AdminComponent implements OnInit {
     this.auth.login(this.usernameInput, this.passwordInput).subscribe({
       next: () => {
         this.loadSeasons();
-        this.pennant.getLastUpdated().subscribe(data => {
-          this.lastUpdated.set(data.display);
-        });
+        this.pennant.refreshLastUpdated();
       },
       error: () => {
         this.authError = 'Invalid username or password';
@@ -85,10 +80,7 @@ export class AdminComponent implements OnInit {
         season.messageType = 'success';
         this.seasons.set([...this.seasons()]);
         // Reload last updated
-        this.pennant.getLastUpdated().subscribe(data => {
-          this.lastUpdated.set(data.display);
-          // Also update app-level last updated
-        });
+        this.pennant.refreshLastUpdated();
       },
       error: () => {
         season.isSyncing = false;
@@ -123,7 +115,7 @@ export class AdminComponent implements OnInit {
     this.pennant.syncAll().subscribe({
       next: () => {
         this.isSyncingAll.set(false);
-        this.pennant.getLastUpdated().subscribe(data => this.lastUpdated.set(data.display));
+        this.pennant.refreshLastUpdated();
       },
       error: () => {
         this.isSyncingAll.set(false);
