@@ -1,5 +1,8 @@
 <div class="app">
   <nav class="nav">
+    <div class="api-wakeup-bar" *ngIf="isLoadingApi()">
+      <div class="api-wakeup-fill"></div>
+    </div>
     <div class="nav-inner">
       <div class="nav-brand">
         <div class="nav-brand-top">SA Pennant</div>

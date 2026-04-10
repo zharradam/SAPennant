@@ -1,7 +1,8 @@
 import { Component, signal, OnInit } from '@angular/core';
 import { PennantService } from './pennant.service';
 import { InsightsService } from './insights.service';
-import { retry } from 'rxjs/operators';
+import { retry, switchMap } from 'rxjs/operators';
+import { interval } from 'rxjs';
 
 @Component({
   selector: 'sa-pennant-root',
@@ -24,6 +25,11 @@ export class App implements OnInit {
       next: () => this.isLoadingApi.set(false),
       error: () => this.isLoadingApi.set(false)
     });
+
+    // keepalive every 15 minutes
+    interval(15 * 60 * 1000).pipe(
+      switchMap(() => this.pennant.getLastUpdated())
+    ).subscribe();
   }
 
   navigateToPlayer(name: string): void {

@@ -21,6 +21,8 @@ export class ClubSearchComponent {
   selectedClub: string | null = null;
   suggestions = signal<string[]>([]);
   showSuggestions = signal(false);
+  isSlowResponse = signal(false);
+  slowTimeout: any = null;
 
   availableYears: number[] = [];
   selectedYears = new Set<number>();
@@ -73,20 +75,27 @@ export class ClubSearchComponent {
     this.showSuggestions.set(false);
     this.selectedClub = this.query.trim();
     this.isLoading.set(true);
+    this.isSlowResponse.set(false);
+    clearTimeout(this.slowTimeout);
+    this.slowTimeout = setTimeout(() => this.isSlowResponse.set(true), 2000);
     this.hasSearched = true;
     this.pennant.getClubPlayers(this.selectedClub).subscribe({
       next: players => {
+        clearTimeout(this.slowTimeout);
+        this.isSlowResponse.set(false);
         this.allPlayers = players;
-
         this.availableYears = [...new Set(players.map(p => p.year))].sort((a, b) => b - a);
         this.selectedYears = new Set(this.availableYears);
-
         this.availablePools = [...new Set(players.map(p => p.pool).filter(Boolean))].sort();
         this.selectedPools = new Set(this.availablePools);
-
         this.isLoading.set(false);
       },
-      error: err => { console.error(err); this.isLoading.set(false); }
+      error: err => {
+        clearTimeout(this.slowTimeout);
+        this.isSlowResponse.set(false);
+        console.error(err);
+        this.isLoading.set(false);
+      }
     });
   }
 

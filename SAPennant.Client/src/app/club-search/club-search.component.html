@@ -35,7 +35,8 @@
   <div class="content">
 
     <div class="status loading" *ngIf="isLoading()">
-      <span class="spinner"></span> Searching…
+      <span class="spinner"></span>
+      {{ isSlowResponse() ? 'Almost there, API is waking up…' : 'Searching…' }}
     </div>
 
     <ng-container *ngIf="!isLoading() && players.length > 0">
