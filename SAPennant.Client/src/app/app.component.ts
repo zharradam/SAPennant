@@ -15,6 +15,7 @@ export class App implements OnInit {
   selectedPlayer = signal('');
   isLoadingApi = signal(true);
   menuOpen = signal(false);
+  aboutOpen = signal(false);
 
   constructor(private pennant: PennantService, private insights: InsightsService) {}
 
@@ -49,5 +50,14 @@ export class App implements OnInit {
     this.activeTab.set(tab);
     this.menuOpen.set(false);
     this.insights.trackTabView(tab);
+  }
+
+  openAbout(e: Event): void {
+    e.preventDefault();
+    this.aboutOpen.set(true);
+  }
+
+  closeAbout(): void {
+    this.aboutOpen.set(false);
   }
 }

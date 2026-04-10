@@ -63,11 +63,25 @@
 
   <footer class="footer">
     <div class="footer-inner">
-      <div class="footer-left"></div>
+      <div class="footer-links">
+        <a href="#" (click)="openAbout($event)">About</a>
+      </div>
       <div class="footer-centre">SA Pennant 2021–2026</div>
       <div class="footer-right">
         <a href="https://golf.com.au/south-australian-pennant" target="_blank" rel="noopener">Match data sourced from Golf SA</a>
       </div>
     </div>
   </footer>
+
+  <div class="about-overlay" *ngIf="aboutOpen()" (click)="closeAbout()">
+    <div class="about-modal" (click)="$event.stopPropagation()">
+      <button class="about-close" (click)="closeAbout()">✕</button>
+      <div class="about-title">SA Pennant</div>
+      <div class="about-body">
+        <p>An unofficial player and club search tool for the South Australian Golf Pennant competition, covering the 2021–2026 season. Built for the SA golf community.</p>
+        <p>Match data is sourced from <a href="https://golf.com.au/south-australian-pennant" target="_blank" rel="noopener">Golf SA</a>.</p>
+       <p>Built by <a href="mailto:zharradam@hotmail.com">Mike Cherry</a>.</p>
+      </div>
+    </div>
+  </div>
 </div>
