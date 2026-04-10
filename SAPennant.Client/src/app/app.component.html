@@ -1,7 +1,11 @@
 <div class="app">
   <nav class="nav">
-    <div class="api-wakeup-bar" *ngIf="isLoadingApi()">
-      <div class="api-wakeup-fill"></div>
+    <div class="api-overlay" *ngIf="isLoadingApi()">
+      <div class="api-overlay-card">
+        <div class="api-overlay-title">Starting up…</div>
+        <div class="api-overlay-sub">The server goes to sleep when not in use. It's waking up now — this will only take a few seconds and won't happen again during your visit.</div>
+        <div class="api-overlay-bar"><div class="api-overlay-fill"></div></div>
+      </div>
     </div>
     <div class="nav-inner">
       <div class="nav-brand">
