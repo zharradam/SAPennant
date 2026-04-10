@@ -77,11 +77,13 @@ export class PennantService {
     pool?: string;
   } = {}): Observable<ClubPlayer[]> {
     const query = new URLSearchParams();
+    query.set('clubName', clubName);
     if (params.year) query.set('year', params.year.toString());
     if (params.division) query.set('division', params.division);
     if (params.pool) query.set('pool', params.pool);
+
     return this.http.get<ClubPlayer[]>(
-      `${this.API_URL}/search/clubs/${encodeURIComponent(clubName)}/players?${query.toString()}`
+      `${this.API_URL}/search/clubs/players?${query.toString()}`
     );
   }
 
@@ -89,6 +91,16 @@ export class PennantService {
     return this.getLastUpdated().pipe(
       tap(data => this.lastUpdated.set(data.display)),
       map(() => void 0)
+    );
+  }
+
+  getHandicapLeaderboard(): Observable<any[]> {
+    return this.http.get<any[]>(`${this.API_URL}/search/handicap-leaderboard`);
+  }
+
+  getHandicapHistory(playerName: string): Observable<any[]> {
+    return this.http.get<any[]>(
+      `${this.API_URL}/search/handicap-history/${encodeURIComponent(playerName)}`
     );
   }
 }

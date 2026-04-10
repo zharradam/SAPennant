@@ -1,0 +1,220 @@
+<div class="page">
+  <div class="hero" style="background-image: url('assets/hero-bg.jpg')">
+    <div class="hero-inner">
+      <h1>SA Pennant Handicap Tracker</h1>
+      <p>Lowest recorded handicaps across all players, 2021–2026</p>
+    </div>
+  </div>
+
+  <div class="content">
+    <div class="status loading" *ngIf="isLoading()">
+      <span class="spinner"></span> Loading Handicaps…
+    </div>
+
+    <ng-container *ngIf="!isLoading()">
+      <div class="results-count">{{ players.length }} players</div>
+
+      <div class="search-filter">
+        <input
+          type="text"
+          [(ngModel)]="searchQuery"
+          placeholder="Filter by player or club…"
+          autocomplete="off"
+        />
+        <button *ngIf="searchQuery" (click)="searchQuery = ''">✕</button>
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th class="rank">#</th>
+              <th class="sortable" (click)="setSort('playerName')">
+                Player <span class="sort-icon">{{ sortCol === 'playerName' ? (sortDir === 'asc' ? '↑' : '↓') : '↕' }}</span>
+              </th>
+              <th class="sortable" (click)="setSort('club')">
+                Club <span class="sort-icon">{{ sortCol === 'club' ? (sortDir === 'asc' ? '↑' : '↓') : '↕' }}</span>
+              </th>
+              <th class="num sortable" (click)="setSort('lowestHandicap')">
+                Best HCP <span class="sort-icon">{{ sortCol === 'lowestHandicap' ? (sortDir === 'asc' ? '↑' : '↓') : '↕' }}</span>
+              </th>
+              <th class="num sortable" (click)="setSort('currentHandicap')">
+                Last Known HCP <span class="sort-icon">{{ sortCol === 'currentHandicap' ? (sortDir === 'asc' ? '↑' : '↓') : '↕' }}</span>
+              </th>
+              <th class="num">Data Points</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let p of filteredPlayers; let i = index">
+              <td class="rank">
+                <span class="rank-badge"
+                  [class.gold]="i === 0"
+                  [class.silver]="i === 1"
+                  [class.bronze]="i === 2">
+                  {{ i + 1 }}
+                </span>
+              </td>
+              <td class="player-name clickable" (click)="openModal(p)">{{ p.playerName }}</td>
+              <td class="club">{{ p.club }}</td>
+              <td class="num best-hcp">{{ displayHandicap(p.lowestHandicap) }}</td>
+              <td class="num">{{ displayHandicap(p.currentHandicap) }}</td>
+              <td class="num">{{ p.dataPoints }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </ng-container>
+  </div>
+</div>
+
+<!-- Modal -->
+<div class="modal-overlay" *ngIf="selectedPlayer" (click)="onOverlayClick($event)">
+  <div class="modal">
+   <div class="modal-header">
+      <img
+        *ngIf="getClubLogo(selectedPlayer.club)"
+        [src]="getClubLogo(selectedPlayer.club)"
+        [alt]="selectedPlayer.club"
+        class="modal-club-logo"
+      />
+      <div class="modal-avatar" *ngIf="!getClubLogo(selectedPlayer.club)">
+        {{ selectedPlayer.playerName | slice:0:1 }}
+      </div>
+      <div class="modal-header-text">
+        <div class="modal-title">{{ selectedPlayer.playerName }}</div>
+        <div class="modal-sub">{{ selectedPlayer.club }}</div>
+      </div>
+      <button class="modal-close" (click)="closeModal()">✕</button>
+    </div>
+
+    <div class="modal-stats">
+      <div class="modal-stat">
+        <div class="modal-stat-val best">{{ displayHandicap(selectedPlayer.lowestHandicap) }}</div>
+        <div class="modal-stat-lbl">Best HCP</div>
+      </div>
+      <div class="modal-stat">
+        <div class="modal-stat-val">{{ displayHandicap(selectedPlayer.currentHandicap) }}</div>
+        <div class="modal-stat-lbl">Last Known HCP</div>
+      </div>
+      <div class="modal-stat">
+        <div class="modal-stat-val">{{ selectedPlayer.dataPoints }}</div>
+        <div class="modal-stat-lbl">Data points</div>
+      </div>
+    </div>
+
+    <div class="status loading" *ngIf="historyLoading()">
+      <span class="spinner"></span> Loading history…
+    </div>
+
+    <div class="chart-wrap" *ngIf="!historyLoading() && history.length > 1" style="position: relative;">
+
+      <!-- Tooltip -->
+      <div class="chart-tooltip" *ngIf="tooltip"
+        [style.left.px]="tooltip.x"
+        [style.top.px]="tooltip.y">
+        {{ tooltip.text }}
+      </div>
+
+      <svg [attr.viewBox]="'0 0 ' + chartMeta.width + ' ' + (chartMeta.height + 30)" width="100%">
+        <defs>
+          <linearGradient id="areaGrad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#3b82f6" stop-opacity="0.15"/>
+            <stop offset="100%" stop-color="#3b82f6" stop-opacity="0.01"/>
+          </linearGradient>
+        </defs>
+
+        <!-- Background -->
+        <rect
+          [attr.x]="chartMeta.padding"
+          [attr.y]="chartMeta.padding"
+          [attr.width]="chartMeta.width - chartMeta.padding * 2"
+          [attr.height]="chartMeta.height - chartMeta.padding * 2"
+          fill="#fafafa"
+          rx="4"/>
+
+        <!-- Horizontal grid lines -->
+        <ng-container *ngFor="let h of [chartMeta.maxH, (chartMeta.minH + chartMeta.maxH) / 2, chartMeta.minH]">
+          <line
+            [attr.x1]="chartMeta.padding"
+            [attr.x2]="chartMeta.width - chartMeta.padding"
+            [attr.y1]="chartMeta.padding + ((h - chartMeta.minH) / (chartMeta.maxH - chartMeta.minH)) * (chartMeta.height - chartMeta.padding * 2)"
+            [attr.y2]="chartMeta.padding + ((h - chartMeta.minH) / (chartMeta.maxH - chartMeta.minH)) * (chartMeta.height - chartMeta.padding * 2)"
+            stroke="#e8edf5" stroke-width="1"/>
+          <text
+            [attr.x]="chartMeta.padding - 6"
+            [attr.y]="chartMeta.padding + ((h - chartMeta.minH) / (chartMeta.maxH - chartMeta.minH)) * (chartMeta.height - chartMeta.padding * 2) + 4"
+            text-anchor="end" font-size="10" fill="#666">
+            {{ displayHandicap(h) }}
+          </text>
+        </ng-container>
+
+        <!-- Scratch line -->
+        <ng-container *ngIf="chartMeta.minH < 0 && chartMeta.maxH > 0">
+          <line
+            [attr.x1]="chartMeta.padding"
+            [attr.x2]="chartMeta.width - chartMeta.padding"
+            [attr.y1]="scratchY"
+            [attr.y2]="scratchY"
+            stroke="#27500a"
+            stroke-width="1"
+            stroke-dasharray="4,4"
+            opacity="0.6"/>
+          <text
+            [attr.x]="chartMeta.width - chartMeta.padding + 4"
+            [attr.y]="scratchY + 4"
+            font-size="10"
+            fill="#27500a"
+            opacity="0.8">
+            Scratch
+          </text>
+        </ng-container>
+
+        <!-- Area fill -->
+        <polygon
+          [attr.points]="chartFillPoints"
+          fill="url(#areaGrad)"/>
+
+        <!-- Line -->
+        <polyline
+          [attr.points]="chartPoints"
+          fill="none"
+          stroke="#3b82f6"
+          stroke-width="2.5"
+          stroke-linejoin="round"
+          stroke-linecap="round"/>
+
+        <!-- Dots -->
+        <ng-container *ngFor="let h of history; let i = index">
+          <circle
+            [attr.cx]="chartMeta.padding + (i / (history.length - 1)) * (chartMeta.width - chartMeta.padding * 2)"
+            [attr.cy]="chartMeta.padding + ((h.handicap - chartMeta.minH) / (chartMeta.maxH - chartMeta.minH)) * (chartMeta.height - chartMeta.padding * 2)"
+            r="5"
+            fill="#3b82f6"
+            stroke="none"
+            style="cursor: pointer;"
+            (mouseenter)="showTooltip($event, h, i)"
+            (mouseleave)="hideTooltip()"/>
+        </ng-container>
+
+        <!-- X axis labels -->
+        <text
+          [attr.x]="chartMeta.padding"
+          [attr.y]="chartMeta.height + 16"
+          text-anchor="middle" font-size="10" fill="#666">
+          {{ history[0].date }}
+        </text>
+        <text
+          [attr.x]="chartMeta.width - chartMeta.padding"
+          [attr.y]="chartMeta.height + 16"
+          text-anchor="middle" font-size="10" fill="#666">
+          {{ history[history.length - 1].date }}
+        </text>
+      </svg>
+      <div class="chart-note">Time axis not to scale</div>
+    </div>
+
+    <div class="no-results" *ngIf="!historyLoading() && history.length <= 1">
+      <p>Not enough data points to show a graph</p>
+    </div>
+  </div>
+</div>

@@ -53,3 +53,21 @@ export interface ClubPlayer {
   halved: number;
   winRate: number;
 }
+
+export interface HandicapPlayer {
+  playerName: string;
+  club: string;
+  lowestHandicap: number;
+  currentHandicap: number;
+  dataPoints: number;
+}
+
+export interface HandicapDataPoint {
+  date: string;
+  sortDate: string;
+  handicap: number;
+  opponent: string;
+  result: string;
+  pool: string;
+  year: number;
+}

@@ -87,13 +87,15 @@
 }
 
 .footer {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
   background: rgba(10, 18, 25, 0.25);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   border-top: 1px solid rgba(255,255,255,0.04);
   padding: 1.25rem 1.5rem;
-  position: sticky;
-  bottom: 0;
   z-index: 100;
 }
 
@@ -159,6 +161,7 @@
   sa-pennant-search,
   sa-pennant-club,
   sa-pennant-leaderboard,
+  sa-pennant-handicap,
   sa-pennant-admin { flex: 1; }
 }
 

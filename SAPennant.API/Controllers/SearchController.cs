@@ -253,9 +253,9 @@ public class SearchController : ControllerBase
         return Ok(clubs);
     }
 
-    [HttpGet("clubs/{clubName}/players")]
-    public async Task<IActionResult> ClubPlayers(string clubName, [FromQuery] int minGames = 1)
-    {
+    [HttpGet("clubs/players")]
+    public async Task<IActionResult> ClubPlayers([FromQuery] string clubName, [FromQuery] int minGames = 1)
+    { 
         _telemetry.TrackEvent("ClubSearch", new Dictionary<string, string>
         {
             { "club", clubName }
@@ -298,5 +298,82 @@ public class SearchController : ControllerBase
             .ToList();
 
         return Ok(players);
+    }
+
+    [HttpGet("handicap-leaderboard")]
+    public async Task<IActionResult> HandicapLeaderboard()
+    {
+        var matches = await _db.PennantMatches
+            .Where(m =>
+                m.Format == "single" &&
+                m.PlayerHandicap != null &&
+                m.PlayerHandicap != "")
+            .ToListAsync();
+
+        var players = matches
+            .Where(m => decimal.TryParse(m.PlayerHandicap, out var h) && h >= -10 && h <= 54)
+            .GroupBy(m => m.PlayerName)
+            .Where(g =>
+                !string.IsNullOrWhiteSpace(g.Key) &&
+                !g.Key.StartsWith("-") &&
+                g.Key.Length > 3)
+            .Select(g =>
+            {
+                var handicaps = g
+                    .Where(m => decimal.TryParse(m.PlayerHandicap, out var h) && h >= -10 && h <= 54)
+                    .OrderBy(m => m.SortDate)
+                    .ToList();
+
+                var lowestHcp = handicaps.Min(m => decimal.Parse(m.PlayerHandicap!));
+                var latestHcp = handicaps.Last();
+
+                var club = g
+                    .GroupBy(m => m.PlayerClub)
+                    .OrderByDescending(c => c.Count())
+                    .First().Key;
+
+                return new
+                {
+                    playerName = g.Key,
+                    club,
+                    lowestHandicap = lowestHcp,
+                    currentHandicap = decimal.Parse(latestHcp.PlayerHandicap!),
+                    dataPoints = handicaps.Count
+                };
+            })
+            .Where(p => p.dataPoints >= 3)
+            .OrderBy(p => p.lowestHandicap)
+            .ToList();
+
+        return Ok(players);
+    }
+
+    [HttpGet("handicap-history/{playerName}")]
+    public async Task<IActionResult> HandicapHistory(string playerName)
+    {
+        var matches = await _db.PennantMatches
+            .Where(m =>
+                m.PlayerName == playerName &&
+                m.Format == "single" &&
+                m.PlayerHandicap != null &&
+                m.PlayerHandicap != "")
+            .ToListAsync(); // load into memory first
+
+        var history = matches
+            .Where(m => decimal.TryParse(m.PlayerHandicap, out var h) && h >= -10 && h <= 54)
+            .Select(m => new
+            {
+                date = m.Date,
+                sortDate = m.SortDate,
+                handicap = decimal.Parse(m.PlayerHandicap!),
+                opponent = m.OpponentName,
+                result = m.PlayerWon == true ? "Win" : m.PlayerWon == false ? "Loss" : "Halved",
+                pool = m.Pool,
+                year = m.Year
+            })
+            .OrderBy(m => m.sortDate) // sort in memory after projection
+            .ToList();
+
+        return Ok(history);
     }
 }

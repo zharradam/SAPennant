@@ -66,3 +66,7 @@ export const CLUB_LOGOS: Record<string, string> = {
   'Willunga Golf Club': '',
   'Yacka Golf Club': '',
 };
+
+export function getClubLogo(clubName: string): string | null {
+  return CLUB_LOGOS[clubName] || null;
+};

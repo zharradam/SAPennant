@@ -11,7 +11,7 @@ import { interval } from 'rxjs';
   styleUrl: './app.component.scss'
 })
 export class App implements OnInit {
-  activeTab = signal<'search' | 'club' | 'leaderboard' | 'admin'>('search');
+  activeTab = signal<'search' | 'club' | 'leaderboard' | 'handicap' | 'admin'>('search');
   selectedPlayer = signal('');
   isLoadingApi = signal(true);
   menuOpen = signal(false);
@@ -45,7 +45,7 @@ export class App implements OnInit {
     this.menuOpen.set(!this.menuOpen());
   }
 
-  selectTab(tab: 'search' | 'club' | 'leaderboard' | 'admin'): void {
+  selectTab(tab: 'search' | 'club' | 'leaderboard' | 'handicap' | 'admin'): void {
     this.activeTab.set(tab);
     this.menuOpen.set(false);
     this.insights.trackTabView(tab);
