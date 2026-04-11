@@ -129,6 +129,13 @@ export class TeamPennantComponent implements OnInit {
     return 'tied';
   }
 
+  getArrowWidth(home: number, away: number): number {
+    const margin = Math.abs(home - away);
+    const maxMargin = 7;  // ← maximum possible margin (7 points)
+    const maxWidth = 150; // ← max arrow length in px — increase this to make arrows longer
+    return Math.max(Math.round((margin / maxMargin) * maxWidth), 20); // ← minimum arrow length
+  }
+
   formatResult(result: string, playerWon: boolean | null): string {
     const formatted = PennantService.formatResult(result, playerWon);
     if (playerWon === true) return `won ${formatted}`;

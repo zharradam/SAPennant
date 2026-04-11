@@ -112,7 +112,25 @@
                   {{ match.homeClub }}
                 </span>
               </div>
-              <div class="match-score">{{ formatScore(match.homePoints, match.awayPoints) }}</div>
+              <div class="score-area">
+                <div class="arrow-spacer">
+                  <ng-container *ngIf="getMatchResult(match.homePoints, match.awayPoints) === 'home'">
+                    <div class="arrow-left-wrap">
+                      <div class="arrow-tip-left"></div>
+                      <div class="arrow-bar" [style.width.px]="getArrowWidth(match.homePoints, match.awayPoints)"></div>
+                    </div>
+                  </ng-container>
+                </div>
+                <div class="match-score">{{ formatScore(match.homePoints, match.awayPoints) }}</div>
+                <div class="arrow-spacer">
+                  <ng-container *ngIf="getMatchResult(match.homePoints, match.awayPoints) === 'away'">
+                    <div class="arrow-right-wrap">
+                      <div class="arrow-bar" [style.width.px]="getArrowWidth(match.homePoints, match.awayPoints)"></div>
+                      <div class="arrow-tip-right"></div>
+                    </div>
+                  </ng-container>
+                </div>
+              </div>
               <div class="match-team away">
                 <span [class.team-name-win]="getMatchResult(match.homePoints, match.awayPoints) === 'away'"
                       [class.team-name-loss]="getMatchResult(match.homePoints, match.awayPoints) === 'home'"
