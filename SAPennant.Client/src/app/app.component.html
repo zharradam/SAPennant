@@ -13,6 +13,7 @@
         <div class="nav-brand-sub">South Australia · Golf</div>
       </div>
       <div class="nav-tabs">
+        <button class="nav-tab" [class.active]="activeTab() === 'team'"        (click)="selectTab('team')">Team Results</button>
         <button class="nav-tab" [class.active]="activeTab() === 'search'"      (click)="selectTab('search')">Player Search</button>
         <button class="nav-tab" [class.active]="activeTab() === 'club'"        (click)="selectTab('club')">Club Search</button>
         <button class="nav-tab" [class.active]="activeTab() === 'leaderboard'" (click)="selectTab('leaderboard')">Leaderboard</button>
@@ -38,6 +39,9 @@
   </nav>
 
   <div class="nav-drawer" [class.open]="menuOpen()">
+    <button class="drawer-tab" [class.active]="activeTab() === 'team'" (click)="selectTab('team')">
+      <span class="drawer-dot"></span>Team Results
+    </button>
     <button class="drawer-tab" [class.active]="activeTab() === 'search'"      (click)="selectTab('search')">
       <span class="drawer-dot"></span>Player Search
     </button>
@@ -55,6 +59,7 @@
     </button>
   </div>
 
+  <sa-pennant-team        *ngIf="activeTab() === 'team'"></sa-pennant-team>
   <sa-pennant-search      *ngIf="activeTab() === 'search'"></sa-pennant-search>
   <sa-pennant-club        *ngIf="activeTab() === 'club'" (playerSelected)="navigateToPlayer($event)"></sa-pennant-club>
   <sa-pennant-leaderboard *ngIf="activeTab() === 'leaderboard'" (playerSelected)="navigateToPlayer($event)"></sa-pennant-leaderboard>

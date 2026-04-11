@@ -1,0 +1,380 @@
+.content {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 2rem 1rem 3rem;
+}
+
+.filters {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 1.5rem;
+  background: #fff;
+  border-radius: 12px;
+  padding: 1.25rem;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+}
+
+.filter-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+  min-width: 140px;
+
+  label {
+    font-size: 11px;
+    font-weight: 600;
+    color: #888;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+
+  select {
+    padding: 8px 12px;
+    font-size: 14px;
+    font-family: inherit;
+    border: 1px solid #d0d0ce;
+    border-radius: 8px;
+    background: #fff;
+    color: #1a1a1a;
+    cursor: pointer;
+    outline: none;
+
+    &:focus {
+      border-color: #1a2f5a;
+      box-shadow: 0 0 0 3px rgba(26, 47, 90, 0.1);
+    }
+  }
+}
+
+.panels {
+  display: flex;
+  gap: 1.5rem;
+  align-items: flex-start;
+
+  @media (max-width: 900px) {
+    flex-direction: column;
+  }
+}
+
+.panel {
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+  overflow: hidden;
+
+  &-leaderboard {
+    flex: 0 0 600px;
+    .club-name { white-space: nowrap; }
+
+    @media (max-width: 900px) {
+      flex: none;
+      width: 100%;
+    }
+  }
+
+  &-rounds {
+    flex: 1;
+
+    @media (max-width: 900px) {
+      width: 100%;
+    }
+  }
+}
+
+.panel-title {
+  background: #1a2f5a;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 12px 16px;
+}
+
+.status {
+  padding: 1rem 1.25rem;
+  font-size: 14px;
+  color: #1a2f5a;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid #e0e0e0;
+  border-top-color: #1a2f5a;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+  flex-shrink: 0;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+// ── Season Standings Table ──────────────────────────────
+.table-wrap {
+  @media (max-width: 900px) {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+
+    table { min-width: 480px; }
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+  }
+
+  thead {
+    background: #1a2f5a;
+    color: #fff;
+
+    th {
+      padding: 10px 16px;
+      text-align: left;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      white-space: nowrap;
+
+      &.num { text-align: center; }
+      &.rank { text-align: center; width: 50px; }
+    }
+  }
+
+  tbody tr {
+    border-bottom: 1px solid #f0f0ee;
+    transition: background 0.1s;
+
+    &:hover { background: #f8f9fc; }
+    &:last-child { border-bottom: none; }
+
+    td {
+      padding: 10px 16px;
+      color: #1a1a1a;
+
+      &.num { text-align: center; }
+      &.rank { text-align: center; }
+      &.club-name { font-weight: 600; }
+      &.win { color: #3a7a12; font-weight: 600; }
+      &.loss { color: #b33030; font-weight: 600; }
+      &.halved { color: #8a5210; font-weight: 600; }
+      &.score { font-size: 13px; color: #555; }
+      &.pts { font-weight: 700; color: #1a2f5a; }
+    }
+  }
+}
+
+.rank-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  font-size: 12px;
+  font-weight: 700;
+  background: #f0f0ee;
+  color: #555;
+
+  &.gold { background: #FFD700; color: #7a5a00; }
+  &.silver { background: #C0C0C0; color: #444; }
+  &.bronze { background: #CD7F32; color: #fff; }
+}
+
+// ── Round Match Cards ───────────────────────────────────
+.match-card {
+  border-bottom: 1px solid #f0f0ee;
+  cursor: pointer;
+  transition: background 0.15s;
+
+  &:last-child { border-bottom: none; }
+  &.team-won  { background: #dff5cc; &:hover { background: #d0f0b8; } }
+  &.team-lost { background: #fcd0d0; &:hover { background: #f9bebe; } }
+  &.team-tied { background: #faecc0; &:hover { background: #f5e0a0; } }
+}
+
+.match-header {
+  display: flex;
+  align-items: center;
+  padding: 14px 16px;
+  gap: 12px;
+
+  @media (max-width: 900px) {
+    padding: 10px 12px;
+    gap: 8px;
+  }
+}
+
+.match-team {
+  flex: 1;
+  font-size: 14px;
+  font-weight: 600;
+  color: #555;
+
+  &.away { text-align: right; }
+  &.winner { color: #1a2f5a; }
+
+  @media (max-width: 900px) {
+    font-size: 13px;
+  }
+}
+
+.match-score {
+  font-size: 15px;
+  font-weight: 700;
+  color: #1a1a1a;
+  white-space: nowrap;
+  padding: 4px 12px;
+  background: #f0f4ff;
+  border-radius: 8px;
+
+  @media (max-width: 900px) {
+    font-size: 13px;
+    padding: 4px 8px;
+  }
+}
+
+.match-chevron {
+  font-size: 18px;
+  color: #aaa;
+  transition: transform 0.2s;
+
+  &.open { transform: rotate(90deg); }
+}
+
+// ── Expanded Match Detail ───────────────────────────────
+.match-detail {
+  border-top: 1px solid #f0f0ee;
+  background: #fafbfd;
+  animation: slideDown 0.2s ease;
+}
+
+.detail-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+
+  @media (max-width: 900px) {
+    font-size: 12px;
+  }
+
+  thead th {
+    padding: 8px 16px;
+    text-align: left;
+    font-size: 11px;
+    font-weight: 600;
+    color: #888;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    background: #f0f4ff;
+
+    &.num { text-align: center; }
+  }
+
+  tbody tr {
+    border-bottom: 1px solid #f0f0ee;
+
+    &:last-child { border-bottom: none; }
+
+    &.won {
+      background: #f0fae8;
+      td.player-name { color: #3a7a12; font-weight: 600; }
+    }
+    &.lost {
+      background: #fde8e8;
+      td.player-name { color: #b33030; font-weight: 600; }
+    }
+    &.halved {
+      background: #fdf6e0;
+      td.player-name { color: #8a5210; font-weight: 600; }
+    }
+
+    td {
+      padding: 9px 16px;
+      color: #1a1a1a;
+
+      &.result-cell { text-align: center; white-space: nowrap; }
+      &.opponent-name { text-align: right; }
+
+      @media (max-width: 900px) {
+        padding: 8px 10px;
+      }
+    }
+  }
+}
+
+.result-badge {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 99px;
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+
+  &.badge-won { background: #3a7a12; color: #fff; }
+  &.badge-lost { background: #b33030; color: #fff; }
+  &.badge-halved { background: #8a5210; color: #fff; }
+}
+
+// ── Champion Banner ─────────────────────────────────────
+.champion-banner {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  background: linear-gradient(135deg, #1a2f5a 0%, #2a4a8a 100%);
+  border-radius: 12px;
+  padding: 1.25rem 1.5rem;
+  margin-bottom: 1.5rem;
+  box-shadow: 0 2px 8px rgba(26,47,90,0.3);
+
+  .champion-trophy { font-size: 2rem; }
+
+  .champion-info {
+    flex: 1;
+    &.runner-up { text-align: right; }
+  }
+
+  .champion-label {
+    font-size: 11px;
+    font-weight: 600;
+    color: rgba(255,255,255,0.5);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+
+  .champion-name {
+    font-size: 18px;
+    font-weight: 700;
+    color: #fff;
+  }
+
+  .champion-score {
+    font-size: 22px;
+    font-weight: 700;
+    color: #FFD700;
+    white-space: nowrap;
+    padding: 0 1rem;
+  }
+
+  @media (max-width: 900px) {
+    gap: 0.75rem;
+    padding: 1rem;
+
+    .champion-trophy { font-size: 1.5rem; }
+    .champion-name { font-size: 14px; }
+    .champion-score { font-size: 16px; padding: 0 0.5rem; }
+  }
+}

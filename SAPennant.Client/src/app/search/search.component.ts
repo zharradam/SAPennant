@@ -217,16 +217,7 @@ export class SearchComponent implements OnInit {
   }
 
   formatResult(m: PlayerMatch): string {
-    if (!m.result) return '';
-    const r = m.result.trim();
-    if (r.match(/^\d+ Hole/i)) {
-      const holes = r.match(/^(\d+)/)?.[1] ?? '';
-      if (m.playerWon === true) return `${holes} Up`;
-      if (m.playerWon === false) return `${holes} Down`;
-      return 'Halved';
-    }
-    if (r === 'A/S') return 'Halved';
-    return r;
+    return PennantService.formatResult(m.result, m.playerWon);
   }
 
   private executeSearch(query: string, source: string = 'search'): void {

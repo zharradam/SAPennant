@@ -12,6 +12,7 @@ import { PoolCountPipe } from './pool-count.pipe';
 import { authInterceptor } from './auth.interceptor';
 import { ClubSearchComponent } from './club-search/club-search.component';
 import { HandicapComponent } from './handicap/handicap.component';
+import { TeamPennantComponent } from './team-pennant/team-pennant.component';
 
 @NgModule({
   declarations: [
@@ -23,6 +24,7 @@ import { HandicapComponent } from './handicap/handicap.component';
     PoolCountPipe,
     ClubSearchComponent,
     HandicapComponent,
+    TeamPennantComponent,
   ],
   imports: [BrowserModule, FormsModule, HttpClientModule],
   providers: [

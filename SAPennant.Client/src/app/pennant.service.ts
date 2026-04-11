@@ -103,4 +103,50 @@ export class PennantService {
       `${this.API_URL}/search/handicap-history/${encodeURIComponent(playerName)}`
     );
   }
+
+  getTeamLeaderboard(year: number, pool: string): Observable<any[]> {
+    const query = new URLSearchParams();
+    query.set('year', year.toString());
+    query.set('pool', pool);
+    return this.http.get<any[]>(`${this.API_URL}/teampennant/leaderboard?${query.toString()}`);
+  }
+
+  getTeamRound(year: number, pool: string, round: string): Observable<any[]> {
+    const query = new URLSearchParams();
+    query.set('year', year.toString());
+    query.set('pool', pool);
+    query.set('round', round);
+    return this.http.get<any[]>(`${this.API_URL}/teampennant/rounds?${query.toString()}`);
+  }
+
+  getTeamMatch(year: number, pool: string, round: string, home: string, away: string): Observable<any[]> {
+    const query = new URLSearchParams();
+    query.set('year', year.toString());
+    query.set('pool', pool);
+    query.set('round', round);
+    query.set('home', home);
+    query.set('away', away);
+    return this.http.get<any[]>(`${this.API_URL}/teampennant/match?${query.toString()}`);
+  }
+
+  getTeamRoundsList(year: number, pool: string): Observable<string[]> {
+    return this.http.get<string[]>(`${this.API_URL}/teampennant/rounds-list?year=${year}&pool=${pool}`);
+  }
+
+  getTeamChampion(year: number, pool: string): Observable<any> {
+    return this.http.get<any>(`${this.API_URL}/teampennant/champion?year=${year}&pool=${pool}`);
+  }
+
+  static formatResult(result: string, playerWon: boolean | null): string {
+    if (!result) return '';
+    const r = result.trim();
+    if (r.match(/^\d+ Hole/i)) {
+      const holes = r.match(/^(\d+)/)?.[1] ?? '';
+      if (playerWon === true) return `${holes} up`;
+      if (playerWon === false) return `${holes} down`;
+      return 'Halved';
+    }
+    if (r === 'A/S') return 'Halved';
+    return r;
+  }
 }

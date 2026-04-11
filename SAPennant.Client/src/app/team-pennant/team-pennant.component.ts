@@ -1,0 +1,132 @@
+import { Component, OnInit, signal } from '@angular/core';
+import { PennantService } from '../pennant.service';
+
+@Component({
+  selector: 'sa-pennant-team',
+  standalone: false,
+  templateUrl: './team-pennant.component.html',
+  styleUrl: './team-pennant.component.scss',
+})
+export class TeamPennantComponent implements OnInit {
+  isLoadingLeaderboard = signal(false);
+  isLoadingRound = signal(false);
+  isLoadingMatch = signal(false);
+
+  leaderboard = signal<any[]>([]);
+  roundMatches = signal<any[]>([]);
+  expandedMatch = signal<any | null>(null);
+  expandedMatchPlayers = signal<any[]>([]);
+  champion = signal<any>(null);
+
+  years: number[] = [];
+  pools: string[] = [];
+  rounds: string[] = [];
+
+  selectedYear = new Date().getFullYear();
+  selectedPool = '';
+  selectedRound = '';
+
+  constructor(private pennant: PennantService) {}
+
+  ngOnInit(): void {
+    this.pennant.getFilters().subscribe(filters => {
+      this.years = filters.years;
+      this.pools = filters.pools;
+
+      if (this.pools.length > 0) {
+        this.selectedPool = this.pools.includes('Simpson Cup') ? 'Simpson Cup' : this.pools[0];
+        this.loadRoundsList();
+      }
+    });
+  }
+
+  load(): void {
+    if (!this.selectedYear || !this.selectedPool) return;
+    this.expandedMatch.set(null);
+    this.expandedMatchPlayers.set([]);
+    this.loadRoundsList();
+  }
+
+  loadRoundsList(): void {
+    this.pennant.getTeamRoundsList(this.selectedYear, this.selectedPool).subscribe({
+      next: (rounds) => {
+        this.rounds = rounds;
+        this.selectedRound = rounds.length > 0 ? rounds[0] : '';
+        this.loadLeaderboard();
+        this.loadRound();
+        this.pennant.getTeamChampion(this.selectedYear, this.selectedPool).subscribe({
+          next: (data) => this.champion.set(data),
+          error: () => this.champion.set(null)
+        });
+      },
+      error: () => {}
+    });
+  }
+
+  loadLeaderboard(): void {
+    this.isLoadingLeaderboard.set(true);
+    this.pennant.getTeamLeaderboard(this.selectedYear, this.selectedPool).subscribe({
+      next: (data) => {
+        this.leaderboard.set(data);
+        this.isLoadingLeaderboard.set(false);
+      },
+      error: () => this.isLoadingLeaderboard.set(false)
+    });
+  }
+
+  loadRound(): void {
+    if (!this.selectedRound) return;
+    this.isLoadingRound.set(true);
+    this.expandedMatch.set(null);
+    this.pennant.getTeamRound(this.selectedYear, this.selectedPool, this.selectedRound).subscribe({
+      next: (data) => {
+        this.roundMatches.set(data);
+        this.isLoadingRound.set(false);
+      },
+      error: () => this.isLoadingRound.set(false)
+    });
+  }
+
+  toggleMatch(match: any): void {
+    const current = this.expandedMatch();
+    if (current && current.homeClub === match.homeClub && current.awayClub === match.awayClub) {
+      this.expandedMatch.set(null);
+      this.expandedMatchPlayers.set([]);
+      return;
+    }
+
+    this.expandedMatch.set(match);
+    this.expandedMatchPlayers.set([]);
+    this.isLoadingMatch.set(true);
+
+    this.pennant.getTeamMatch(this.selectedYear, this.selectedPool, this.selectedRound, match.homeClub, match.awayClub).subscribe({
+      next: (data) => {
+        this.expandedMatchPlayers.set(data);
+        this.isLoadingMatch.set(false);
+      },
+      error: () => this.isLoadingMatch.set(false)
+    });
+  }
+
+  isExpanded(match: any): boolean {
+    const current = this.expandedMatch();
+    return !!current && current.homeClub === match.homeClub && current.awayClub === match.awayClub;
+  }
+
+  formatScore(home: number, away: number): string {
+    return `${home % 1 === 0 ? home : home.toFixed(1)} - ${away % 1 === 0 ? away : away.toFixed(1)}`;
+  }
+
+  getMatchResult(home: number, away: number): 'home' | 'away' | 'tied' {
+    if (home > away) return 'home';
+    if (away > home) return 'away';
+    return 'tied';
+  }
+
+  formatResult(result: string, playerWon: boolean | null): string {
+    const formatted = PennantService.formatResult(result, playerWon);
+    if (playerWon === true) return `won ${formatted}`;
+    if (playerWon === false) return `lost ${formatted}`;
+    return 'halved';
+  }
+}

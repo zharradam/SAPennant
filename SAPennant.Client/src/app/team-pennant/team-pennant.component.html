@@ -1,0 +1,151 @@
+<div class="page">
+  <div class="hero" style="background-image: url('assets/hero-bg.jpg')">
+    <div class="hero-inner">
+      <h1>SA Pennant Team Results</h1>
+      <p>Division standings and round results, 2021–2026</p>
+    </div>
+  </div>
+
+  <div class="content">
+    <div class="filters">
+      <div class="filter-group">
+        <label>Year</label>
+        <select [(ngModel)]="selectedYear" (ngModelChange)="load()">
+          <option *ngFor="let y of years" [ngValue]="y">{{ y }}</option>
+        </select>
+      </div>
+      <div class="filter-group">
+        <label>Pool</label>
+        <select [(ngModel)]="selectedPool" (ngModelChange)="load()">
+          <option *ngFor="let p of pools" [ngValue]="p">{{ p }}</option>
+        </select>
+      </div>
+      <div class="filter-group">
+        <label>Round</label>
+        <select [(ngModel)]="selectedRound" (ngModelChange)="loadRound()">
+          <option *ngFor="let r of rounds" [ngValue]="r">{{ r }}</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="champion-banner" *ngIf="champion()">
+      <div class="champion-trophy">🏆</div>
+      <div class="champion-info">
+        <div class="champion-label">{{ selectedYear }} Champion</div>
+        <div class="champion-name">{{ champion().champion }}</div>
+      </div>
+      <div class="champion-score">{{ champion().score }}</div>
+      <div class="champion-info runner-up">
+        <div class="champion-label">Runner Up</div>
+        <div class="champion-name">{{ champion().runnerUp }}</div>
+      </div>
+    </div>
+
+    <div class="panels">
+
+      <!-- LEFT: Season Leaderboard -->
+      <div class="panel panel-leaderboard">
+        <div class="panel-title">Season Standings</div>
+
+        <div class="status loading" *ngIf="isLoadingLeaderboard()">
+          <span class="spinner"></span> Loading standings…
+        </div>
+
+        <div class="table-wrap" *ngIf="!isLoadingLeaderboard()">
+          <table>
+            <thead>
+              <tr>
+                <th class="rank">#</th>
+                <th>Club</th>
+                <th class="num">P</th>
+                <th class="num">W</th>
+                <th class="num">L</th>
+                <th class="num">T</th>
+                <th class="num">Score</th>
+                <th class="num">Pts</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let row of leaderboard()">
+                <td class="rank">
+                  <span class="rank-badge"
+                    [class.gold]="row.position === 1"
+                    [class.silver]="row.position === 2"
+                    [class.bronze]="row.position === 3">
+                    {{ row.position }}
+                  </span>
+                </td>
+                <td class="club-name">{{ row.club }}</td>
+                <td class="num">{{ row.played }}</td>
+                <td class="num win">{{ row.won }}</td>
+                <td class="num loss">{{ row.lost }}</td>
+                <td class="num halved">{{ row.tied }}</td>
+                <td class="num score">{{ row.scoreFor % 1 === 0 ? row.scoreFor : row.scoreFor.toFixed(1) }} - {{ row.scoreAgainst % 1 === 0 ? row.scoreAgainst : row.scoreAgainst.toFixed(1) }}</td>
+                <td class="num pts">{{ row.pts }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- RIGHT: Round Results -->
+      <div class="panel panel-rounds">
+        <div class="panel-title">{{ selectedRound }} Results</div>
+
+        <div class="status loading" *ngIf="isLoadingRound()">
+          <span class="spinner"></span> Loading round…
+        </div>
+
+        <ng-container *ngIf="!isLoadingRound()">
+          <div class="match-card" 
+            [class.team-won]="getMatchResult(match.homePoints, match.awayPoints) === 'home'"
+            [class.team-lost]="getMatchResult(match.homePoints, match.awayPoints) === 'away'"
+            [class.team-tied]="getMatchResult(match.homePoints, match.awayPoints) === 'tied'"
+            *ngFor="let match of roundMatches()" (click)="toggleMatch(match)">
+            <div class="match-header">
+              <div class="match-team" [class.winner]="getMatchResult(match.homePoints, match.awayPoints) === 'home'">
+                {{ match.homeClub }}
+              </div>
+              <div class="match-score">
+                {{ formatScore(match.homePoints, match.awayPoints) }}
+              </div>
+              <div class="match-team away" [class.winner]="getMatchResult(match.homePoints, match.awayPoints) === 'away'">
+                {{ match.awayClub }}
+              </div>
+              <div class="match-chevron" [class.open]="isExpanded(match)">›</div>
+            </div>
+
+            <div class="match-detail" *ngIf="isExpanded(match)">
+              <div class="status loading" *ngIf="isLoadingMatch()">
+                <span class="spinner"></span> Loading match…
+              </div>
+              <table class="detail-table" *ngIf="!isLoadingMatch()">
+                <thead>
+                  <tr>
+                    <th>Player</th>
+                    <th class="num">Result</th>
+                    <th>Opponent</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let p of expandedMatchPlayers()">
+                    <td class="player-name" [class.won]="p.playerWon === true" [class.lost]="p.playerWon === false" [class.halved]="p.playerWon === null">
+                      {{ p.playerName }}
+                    </td>
+                    <td class="num result-cell">
+                      <span class="result-badge" [class.badge-won]="p.playerWon === true" [class.badge-lost]="p.playerWon === false" [class.badge-halved]="p.playerWon === null">
+                        {{ formatResult(p.result, p.playerWon) }}
+                      </span>
+                    </td>
+                    <td class="opponent-name">{{ p.opponentName }}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </ng-container>
+      </div>
+
+    </div>
+  </div>
+</div>
