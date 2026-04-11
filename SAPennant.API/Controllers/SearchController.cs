@@ -193,7 +193,7 @@ public class SearchController : ControllerBase
     }
 
     [HttpGet("filters")]
-    public async Task<IActionResult> Filters()
+    public async Task<IActionResult> Filters([FromQuery] int? year = null)
     {
         var years = await _db.PennantMatches
             .Select(m => m.Year)
@@ -201,7 +201,11 @@ public class SearchController : ControllerBase
             .OrderByDescending(y => y)
             .ToListAsync();
 
-        var pools = await _db.PennantMatches
+        var poolsQuery = _db.PennantMatches.AsQueryable();
+        if (year.HasValue)
+            poolsQuery = poolsQuery.Where(m => m.Year == year.Value);
+
+        var pools = await poolsQuery
             .Select(m => m.Pool)
             .Distinct()
             .OrderBy(p => p)

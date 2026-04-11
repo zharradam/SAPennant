@@ -29,7 +29,7 @@ export class TeamPennantComponent implements OnInit {
   constructor(private pennant: PennantService) {}
 
   ngOnInit(): void {
-    this.pennant.getFilters().subscribe(filters => {
+    this.pennant.getFilters(this.selectedYear).subscribe(filters => {
       this.years = filters.years;
       this.pools = filters.pools;
 
@@ -44,7 +44,13 @@ export class TeamPennantComponent implements OnInit {
     if (!this.selectedYear || !this.selectedPool) return;
     this.expandedMatch.set(null);
     this.expandedMatchPlayers.set([]);
-    this.loadRoundsList();
+    this.pennant.getFilters(this.selectedYear).subscribe(filters => {
+      this.pools = filters.pools;
+      if (!this.pools.includes(this.selectedPool)) {
+        this.selectedPool = this.pools.includes('Simpson Cup') ? 'Simpson Cup' : this.pools[0];
+      }
+      this.loadRoundsList();
+    });
   }
 
   loadRoundsList(): void {

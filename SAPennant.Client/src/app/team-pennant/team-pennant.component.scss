@@ -196,21 +196,20 @@
 
 // ── Round Match Cards ───────────────────────────────────
 .match-card {
-  border-bottom: 1px solid #f0f0ee;
+  border-bottom: 0.5px solid var(--color-border-tertiary);
   cursor: pointer;
   transition: background 0.15s;
+  background: var(--color-background-primary);
 
   &:last-child { border-bottom: none; }
-  &.team-won  { background: #dff5cc; &:hover { background: #d0f0b8; } }
-  &.team-lost { background: #fcd0d0; &:hover { background: #f9bebe; } }
-  &.team-tied { background: #faecc0; &:hover { background: #f5e0a0; } }
+  &:hover { background: #f8f9fc; }
 }
 
 .match-header {
   display: flex;
   align-items: center;
-  padding: 14px 16px;
-  gap: 12px;
+  padding: 16px 18px;
+  gap: 14px;
 
   @media (max-width: 900px) {
     padding: 10px 12px;
@@ -221,25 +220,48 @@
 .match-team {
   flex: 1;
   font-size: 14px;
-  font-weight: 600;
-  color: #555;
+  font-weight: 500;
 
   &.away { text-align: right; }
-  &.winner { color: #1a2f5a; }
+}
 
-  @media (max-width: 900px) {
-    font-size: 13px;
-  }
+.team-name-win {
+  font-weight: 500;
+  background: linear-gradient(90deg, #3a7a12 0%, #6dbf2f 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  filter: drop-shadow(0 1px 2px rgba(58,122,18,0.25));
+}
+
+.team-name-loss {
+  font-weight: 500;
+  background: linear-gradient(90deg, #b33030 0%, #e05555 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  filter: drop-shadow(0 1px 2px rgba(179,48,48,0.25));
+}
+
+.team-name-tied {
+  font-weight: 500;
+  background: linear-gradient(90deg, #8a5210 0%, #c47a1e 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  filter: drop-shadow(0 1px 2px rgba(138,82,16,0.25));
 }
 
 .match-score {
-  font-size: 15px;
-  font-weight: 700;
-  color: #1a1a1a;
+  font-size: 14px;
+  font-weight: 500;
   white-space: nowrap;
-  padding: 4px 12px;
-  background: #f0f4ff;
-  border-radius: 8px;
+  padding: 5px 16px;
+  border-radius: 99px;
+  border: 0.5px solid var(--color-border-tertiary);
+  background: var(--color-background-secondary);
+  color: var(--color-text-primary);
+  box-shadow: 0 2px 6px rgba(0,0,0,0.08), inset 0 1px 0 rgba(255,255,255,0.6);
 
   @media (max-width: 900px) {
     font-size: 13px;
@@ -257,9 +279,11 @@
 
 // ── Expanded Match Detail ───────────────────────────────
 .match-detail {
-  border-top: 1px solid #f0f0ee;
-  background: #fafbfd;
+  border-top: 0.5px solid var(--color-border-tertiary);
+  background: #e8ecf2;
   animation: slideDown 0.2s ease;
+  box-shadow: inset 0 4px 8px rgba(0,0,0,0.08);
+  border-left: 4px solid #1a2f5a;
 }
 
 .detail-table {
@@ -377,4 +401,31 @@
     .champion-name { font-size: 14px; }
     .champion-score { font-size: 16px; padding: 0 0.5rem; }
   }
+}
+
+.rank-1 {
+  font-weight: 500;
+  background: linear-gradient(90deg, #7a5a00 0%, #FFD700 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  filter: drop-shadow(0 1px 2px rgba(122,90,0,0.3));
+}
+
+.rank-2 {
+  font-weight: 500;
+  background: linear-gradient(90deg, #444 0%, #C0C0C0 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  filter: drop-shadow(0 1px 2px rgba(100,100,100,0.3));
+}
+
+.rank-3 {
+  font-weight: 500;
+  background: linear-gradient(90deg, #7a3a00 0%, #CD7F32 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  filter: drop-shadow(0 1px 2px rgba(122,58,0,0.3));
 }

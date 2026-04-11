@@ -25,8 +25,9 @@ export class PennantService {
     return this.http.get<string[]>(`${this.API_URL}/search/suggestions?q=${query}`);
   }
 
-  getFilters(): Observable<any> {
-    return this.http.get<any>(`${this.API_URL}/search/filters`);
+  getFilters(year?: number): Observable<any> {
+    const query = year ? `?year=${year}` : '';
+    return this.http.get<any>(`${this.API_URL}/search/filters${query}`);
   }
 
   getLeaderboard(params: {

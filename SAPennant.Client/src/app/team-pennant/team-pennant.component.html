@@ -75,7 +75,13 @@
                     {{ row.position }}
                   </span>
                 </td>
-                <td class="club-name">{{ row.club }}</td>
+                <td class="club-name">
+                  <span [class.rank-1]="row.position === 1"
+                        [class.rank-2]="row.position === 2"
+                        [class.rank-3]="row.position === 3">
+                    {{ row.club }}
+                  </span>
+                </td>
                 <td class="num">{{ row.played }}</td>
                 <td class="num win">{{ row.won }}</td>
                 <td class="num loss">{{ row.lost }}</td>
@@ -97,20 +103,22 @@
         </div>
 
         <ng-container *ngIf="!isLoadingRound()">
-          <div class="match-card" 
-            [class.team-won]="getMatchResult(match.homePoints, match.awayPoints) === 'home'"
-            [class.team-lost]="getMatchResult(match.homePoints, match.awayPoints) === 'away'"
-            [class.team-tied]="getMatchResult(match.homePoints, match.awayPoints) === 'tied'"
-            *ngFor="let match of roundMatches()" (click)="toggleMatch(match)">
+          <div class="match-card" *ngFor="let match of roundMatches()" (click)="toggleMatch(match)">
             <div class="match-header">
-              <div class="match-team" [class.winner]="getMatchResult(match.homePoints, match.awayPoints) === 'home'">
-                {{ match.homeClub }}
+              <div class="match-team">
+                <span [class.team-name-win]="getMatchResult(match.homePoints, match.awayPoints) === 'home'"
+                      [class.team-name-loss]="getMatchResult(match.homePoints, match.awayPoints) === 'away'"
+                      [class.team-name-tied]="getMatchResult(match.homePoints, match.awayPoints) === 'tied'">
+                  {{ match.homeClub }}
+                </span>
               </div>
-              <div class="match-score">
-                {{ formatScore(match.homePoints, match.awayPoints) }}
-              </div>
-              <div class="match-team away" [class.winner]="getMatchResult(match.homePoints, match.awayPoints) === 'away'">
-                {{ match.awayClub }}
+              <div class="match-score">{{ formatScore(match.homePoints, match.awayPoints) }}</div>
+              <div class="match-team away">
+                <span [class.team-name-win]="getMatchResult(match.homePoints, match.awayPoints) === 'away'"
+                      [class.team-name-loss]="getMatchResult(match.homePoints, match.awayPoints) === 'home'"
+                      [class.team-name-tied]="getMatchResult(match.homePoints, match.awayPoints) === 'tied'">
+                  {{ match.awayClub }}
+                </span>
               </div>
               <div class="match-chevron" [class.open]="isExpanded(match)">›</div>
             </div>
