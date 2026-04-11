@@ -3,6 +3,7 @@ import { PennantService } from './pennant.service';
 import { InsightsService } from './insights.service';
 import { retry, switchMap } from 'rxjs/operators';
 import { interval } from 'rxjs';
+import { buildInfo } from '../environments/build-info';
 
 @Component({
   selector: 'sa-pennant-root',
@@ -16,7 +17,8 @@ export class App implements OnInit {
   isLoadingApi = signal(true);
   menuOpen = signal(false);
   aboutOpen = signal(false);
-
+  buildInfo = buildInfo;
+  
   constructor(private pennant: PennantService, private insights: InsightsService) {}
 
   ngOnInit(): void {

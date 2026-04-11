@@ -9,8 +9,8 @@
     </div>
     <div class="nav-inner">
       <div class="nav-brand">
-        <div class="nav-brand-top">SA Pennant</div>
-        <div class="nav-brand-sub">South Australia · Golf</div>
+        <div class="nav-brand-top">SA Pennant Golf</div>
+        <div class="nav-brand-sub">South Australia</div>
       </div>
       <div class="nav-tabs">
         <button class="nav-tab" [class.active]="activeTab() === 'team'"        (click)="selectTab('team')">Team Results</button>
@@ -71,7 +71,7 @@
       <div class="footer-links">
         <a href="#" (click)="openAbout($event)">About</a>
       </div>
-      <div class="footer-centre">SA Pennant 2021–2026</div>
+      <div class="footer-centre">SA Pennant Golf · Built {{ buildInfo.date }} {{ buildInfo.time }} · {{ buildInfo.commit }}</div>
       <div class="footer-right">
         <a href="https://golf.com.au/south-australian-pennant" target="_blank" rel="noopener">Match data sourced from Golf SA</a>
       </div>
