@@ -1,10 +1,16 @@
 const fs = require('fs');
 const { execSync } = require('child_process');
 
+let commit = 'unknown';
+try {
+  commit = execSync('git rev-parse --short HEAD').toString().trim();
+} catch (e) {
+  commit = 'unknown';
+}
+
 const info = {
-  date: new Date().toLocaleDateString('en-AU', { day: '2-digit', month: 'short', year: 'numeric' }),
-  time: new Date().toLocaleTimeString('en-AU', { hour: '2-digit', minute: '2-digit' }),
-  commit: execSync('git rev-parse --short HEAD').toString().trim(),
+  version: `v${new Date().toLocaleDateString('en-AU', { day: '2-digit', month: 'short', year: 'numeric' })}`,
+  commit,
 };
 
 fs.writeFileSync(
