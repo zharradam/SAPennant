@@ -29,13 +29,19 @@ export class TeamPennantComponent implements OnInit {
   constructor(private pennant: PennantService) {}
 
   ngOnInit(): void {
-    this.pennant.getFilters(this.selectedYear).subscribe(filters => {
-      this.years = filters.years;
-      this.pools = filters.pools;
+    this.pennant.getFilters(this.selectedYear).subscribe({
+      next: filters => {
+        this.years = filters.years;
+        this.pools = filters.pools;
 
-      if (this.pools.length > 0) {
-        this.selectedPool = this.pools.includes('Simpson Cup') ? 'Simpson Cup' : this.pools[0];
-        this.loadRoundsList();
+        if (this.pools.length > 0) {
+          this.selectedPool = this.pools.includes('Simpson Cup') ? 'Simpson Cup' : this.pools[0];
+          this.loadRoundsList();
+        }
+      },
+      error: () => {
+        // retry after 3 seconds if API not ready
+        setTimeout(() => this.ngOnInit(), 3000);
       }
     });
   }
