@@ -138,6 +138,14 @@ export class PennantService {
     return this.http.get<any>(`${this.API_URL}/teampennant/champion?year=${year}&pool=${pool}`);
   }
 
+  getClubRounds(year: number, pool: string, club: string): Observable<any[]> {
+    const query = new URLSearchParams();
+    query.set('year', year.toString());
+    query.set('pool', pool);
+    query.set('club', club);
+    return this.http.get<any[]>(`${this.API_URL}/teampennant/club-rounds?${query.toString()}`);
+  }
+
   static formatResult(result: string, playerWon: boolean | null): string {
     if (!result) return '';
     const r = result.trim();

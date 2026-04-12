@@ -194,4 +194,42 @@ public class TeamPennantController : ControllerBase
                 : $"{(awayPoints % 1 == 0 ? awayPoints.ToString("0") : awayPoints.ToString("0.0"))} - {(homePoints % 1 == 0 ? homePoints.ToString("0") : homePoints.ToString("0.0"))}"
         });
     }
+
+    [HttpGet("club-rounds")]
+    public async Task<IActionResult> GetClubRounds([FromQuery] int year, [FromQuery] string pool, [FromQuery] string club)
+    {
+        var matches = await _context.PennantMatches
+            .Where(m => m.Year == year && m.Pool == pool && !m.IsFinals
+                     && (m.HomeClub == club || m.AwayClub == club))
+            .ToListAsync();
+
+        var rounds = matches
+            .GroupBy(m => new { m.Round, m.HomeClub, m.AwayClub })
+            .Select(g =>
+            {
+                var deduped = g.OrderBy(m => m.Id)
+                               .Where((m, i) => i % 2 == 0)
+                               .ToList();
+
+                var homePoints = deduped.Sum(m => m.PlayerWon == true ? 1.0 : m.PlayerWon == null ? 0.5 : 0.0);
+                var awayPoints = deduped.Sum(m => m.PlayerWon == false ? 1.0 : m.PlayerWon == null ? 0.5 : 0.0);
+                var isHome = g.Key.HomeClub == club;
+
+                return new
+                {
+                    g.Key.Round,
+                    Opponent = isHome ? g.Key.AwayClub : g.Key.HomeClub,
+                    IsHome = isHome,
+                    ClubPoints = isHome ? homePoints : awayPoints,
+                    OpponentPoints = isHome ? awayPoints : homePoints,
+                };
+            })
+            .OrderBy(r => {
+                var m = System.Text.RegularExpressions.Regex.Match(r.Round, @"\d+");
+                return m.Success ? int.Parse(m.Value) : 0;
+            })
+            .ToList();
+
+        return Ok(rounds);
+    }
 }

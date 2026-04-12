@@ -283,6 +283,55 @@
   &.open { transform: rotate(90deg); }
 }
 
+// ── Score Area & Arrows (Team Match Cards) ──────────────
+.score-area {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 320px;
+  filter: drop-shadow(0 4px 6px rgba(0,0,0,0.25));
+}
+
+.arrow-spacer {
+  width: 120px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+
+  &:first-child { justify-content: flex-end; }
+  &:last-child { justify-content: flex-start; }
+}
+
+.arrow-left-wrap, .arrow-right-wrap {
+  display: flex;
+  align-items: center;
+}
+
+.arrow-bar {
+  height: 34px;
+  background: #dbeafe;
+  flex-shrink: 0;
+}
+
+.arrow-tip-left {
+  width: 0;
+  height: 0;
+  border-top: 17px solid transparent;
+  border-bottom: 17px solid transparent;
+  border-right: 20px solid #dbeafe;
+  flex-shrink: 0;
+}
+
+.arrow-tip-right {
+  width: 0;
+  height: 0;
+  border-top: 17px solid transparent;
+  border-bottom: 17px solid transparent;
+  border-left: 20px solid #dbeafe;
+  flex-shrink: 0;
+}
+
 // ── Expanded Match Detail ───────────────────────────────
 .match-detail {
   border-top: 0.5px solid var(--color-border-tertiary);
@@ -409,6 +458,7 @@
   }
 }
 
+// ── Rank Colours ────────────────────────────────────────
 .rank-1 {
   font-weight: 500;
   background: linear-gradient(90deg, #7a5a00 0%, #FFD700 100%);
@@ -436,51 +486,91 @@
   filter: drop-shadow(0 1px 2px rgba(122,58,0,0.3));
 }
 
-.score-area {
+// ── Club Rounds Expansion ───────────────────────────────
+.club-rounds-cell {
+  padding: 0 !important;
+  background: #e8ecf2;
+  border-left: 4px solid #1a2f5a;
+  box-shadow: inset 0 4px 8px rgba(0,0,0,0.08);
+}
+
+.club-rounds-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+
+  tr {
+    border-bottom: 1px solid rgba(0,0,0,0.06);
+    background: #f4f6f9;
+    &:last-child { border-bottom: none; }
+  }
+
+  td { padding: 7px 12px; color: #1a1a1a; }
+}
+
+.club-round-round { font-size: 11px; color: #888; white-space: nowrap; }
+.club-round-venue { font-size: 11px; color: #aaa; text-align: center; }
+.club-round-opponent { font-weight: 500; font-size: 12px; }
+
+.club-score-area {
   display: flex;
   align-items: center;
   justify-content: center;
-  flex-shrink: 0;
-  width: 320px;
-  filter: drop-shadow(0 4px 6px rgba(0,0,0,0.25));
+  filter: drop-shadow(0 2px 3px rgba(0,0,0,0.2));
 }
 
-.arrow-spacer {
-  width: 120px;
-  flex-shrink: 0;
+.club-arrow-spacer {
+  width: 80px;
   display: flex;
   align-items: center;
-
-  &:first-child { justify-content: flex-end; }
-  &:last-child { justify-content: flex-start; }
+  &.left { justify-content: flex-end; }
+  &.right { justify-content: flex-start; }
 }
 
-
-.arrow-left-wrap, .arrow-right-wrap {
+.club-score {
+  width: 70px;
+  height: 24px;
   display: flex;
   align-items: center;
-}
-
-.arrow-bar {
-  height: 34px;
-  background: #dbeafe;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 500;
   flex-shrink: 0;
 }
 
-.arrow-tip-left {
-  width: 0;
-  height: 0;
-  border-top: 17px solid transparent;
-  border-bottom: 17px solid transparent;
-  border-right: 20px solid #dbeafe;
+.club-score-win { background: #5aad1e; color: #fff; }
+.club-score-loss { background: #d94444; color: #fff; }
+.club-score-tied { background: #b07320; color: #fff; }
+
+.club-win-color {
+  &.club-arrow-bar { background: #5aad1e; }
+  &.club-arrow-tip-left { border-right: 14px solid #5aad1e; }
+  &.club-arrow-tip-right { border-left: 14px solid #5aad1e; }
+}
+
+.club-loss-color {
+  &.club-arrow-bar { background: #d94444; }
+  &.club-arrow-tip-left { border-right: 14px solid #d94444; }
+  &.club-arrow-tip-right { border-left: 14px solid #d94444; }
+}
+
+.club-arrow-bar {
+  height: 24px;
   flex-shrink: 0;
 }
 
-.arrow-tip-right {
+.club-arrow-tip-left {
   width: 0;
   height: 0;
-  border-top: 17px solid transparent;
-  border-bottom: 17px solid transparent;
-  border-left: 20px solid #dbeafe;
+  border-top: 12px solid transparent;
+  border-bottom: 12px solid transparent;
+  flex-shrink: 0;
+}
+
+.club-arrow-tip-right {
+  width: 0;
+  height: 0;
+  border-top: 12px solid transparent;
+  border-bottom: 12px solid transparent;
   flex-shrink: 0;
 }

@@ -26,6 +26,10 @@ export class TeamPennantComponent implements OnInit {
   selectedPool = '';
   selectedRound = '';
 
+  expandedClub = signal<string | null>(null);
+  expandedClubRounds = signal<any[]>([]);
+  isLoadingClubRounds = signal(false);
+
   constructor(private pennant: PennantService) {}
 
   ngOnInit(): void {
@@ -147,5 +151,55 @@ export class TeamPennantComponent implements OnInit {
     if (playerWon === true) return `won ${formatted}`;
     if (playerWon === false) return `lost ${formatted}`;
     return 'halved';
+  }
+
+  toggleClub(club: string): void {
+    if (this.expandedClub() === club) {
+      this.expandedClub.set(null);
+      this.expandedClubRounds.set([]);
+      return;
+    }
+    this.expandedClub.set(club);
+    this.expandedClubRounds.set([]);
+    this.isLoadingClubRounds.set(true);
+    this.pennant.getClubRounds(this.selectedYear, this.selectedPool, club).subscribe({
+      next: (data) => {
+        this.expandedClubRounds.set(data);
+        this.isLoadingClubRounds.set(false);
+      },
+      error: () => this.isLoadingClubRounds.set(false)
+    });
+  }
+
+  isClubExpanded(club: string): boolean {
+    return this.expandedClub() === club;
+  }
+
+  getClubArrowWidth(clubPoints: number, opponentPoints: number): number {
+    const margin = Math.abs(clubPoints - opponentPoints);
+    const maxMargin = 7;
+    const maxWidth = 60;
+    return Math.max(Math.round((margin / maxMargin) * maxWidth), 12);
+  }
+
+  navigateToRound(round: string, opponent: string, isHome: boolean): void {
+    this.selectedRound = round;
+    this.pennant.getTeamRound(this.selectedYear, this.selectedPool, round).subscribe({
+      next: (data) => {
+        this.roundMatches.set(data);
+        this.isLoadingRound.set(false);
+        // find and expand the relevant match
+        const match = data.find((m: any) => 
+          isHome ? m.awayClub === opponent : m.homeClub === opponent
+        );
+        if (match) {
+          this.toggleMatch(match);
+        }
+      },
+      error: () => this.isLoadingRound.set(false)
+    });
+    this.isLoadingRound.set(true);
+    this.expandedMatch.set(null);
+    this.expandedMatchPlayers.set([]);
   }
 }

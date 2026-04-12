@@ -66,29 +66,70 @@
               </tr>
             </thead>
             <tbody>
-              <tr *ngFor="let row of leaderboard()">
-                <td class="rank">
-                  <span class="rank-badge"
-                    [class.gold]="row.position === 1"
-                    [class.silver]="row.position === 2"
-                    [class.bronze]="row.position === 3">
-                    {{ row.position }}
-                  </span>
-                </td>
-                <td class="club-name">
-                  <span [class.rank-1]="row.position === 1"
-                        [class.rank-2]="row.position === 2"
-                        [class.rank-3]="row.position === 3">
-                    {{ row.club }}
-                  </span>
-                </td>
-                <td class="num">{{ row.played }}</td>
-                <td class="num win">{{ row.won }}</td>
-                <td class="num loss">{{ row.lost }}</td>
-                <td class="num halved">{{ row.tied }}</td>
-                <td class="num score">{{ row.scoreFor % 1 === 0 ? row.scoreFor : row.scoreFor.toFixed(1) }} - {{ row.scoreAgainst % 1 === 0 ? row.scoreAgainst : row.scoreAgainst.toFixed(1) }}</td>
-                <td class="num pts">{{ row.pts }}</td>
-              </tr>
+              <ng-container *ngFor="let row of leaderboard()">
+                <tr (click)="toggleClub(row.club)" style="cursor: pointer;">
+                  <td class="rank">
+                    <span class="rank-badge"
+                      [class.gold]="row.position === 1"
+                      [class.silver]="row.position === 2"
+                      [class.bronze]="row.position === 3">
+                      {{ row.position }}
+                    </span>
+                  </td>
+                  <td class="club-name">
+                    <span [class.rank-1]="row.position === 1"
+                          [class.rank-2]="row.position === 2"
+                          [class.rank-3]="row.position === 3">
+                      {{ row.club }}
+                    </span>
+                  </td>
+                  <td class="num">{{ row.played }}</td>
+                  <td class="num win">{{ row.won }}</td>
+                  <td class="num loss">{{ row.lost }}</td>
+                  <td class="num halved">{{ row.tied }}</td>
+                  <td class="num score">{{ row.scoreFor % 1 === 0 ? row.scoreFor : row.scoreFor.toFixed(1) }} - {{ row.scoreAgainst % 1 === 0 ? row.scoreAgainst : row.scoreAgainst.toFixed(1) }}</td>
+                  <td class="num pts">{{ row.pts }}</td>
+                </tr>
+                <tr *ngIf="isClubExpanded(row.club)">
+                  <td colspan="8" class="club-rounds-cell">
+                    <div class="status loading" *ngIf="isLoadingClubRounds()">
+                      <span class="spinner"></span> Loading rounds…
+                    </div>
+                    <table class="club-rounds-table" *ngIf="!isLoadingClubRounds()">
+                      <tbody>
+                        <tr *ngFor="let r of expandedClubRounds()" (click)="navigateToRound(r.round, r.opponent, r.isHome)" style="cursor: pointer;">
+                          <td class="club-round-round">{{ r.round }}</td>
+                          <td class="club-round-score-cell">
+                          <td class="club-round-score-cell">
+                            <div class="club-score-area">
+                              <div class="club-arrow-spacer left">
+                                <ng-container *ngIf="r.clubPoints > r.opponentPoints">
+                                  <div class="club-arrow-tip-left club-win-color"></div>
+                                  <div class="club-arrow-bar club-win-color" [style.width.px]="getClubArrowWidth(r.clubPoints, r.opponentPoints)"></div>
+                                </ng-container>
+                              </div>
+                              <div class="club-score"
+                                  [class.club-score-win]="r.clubPoints > r.opponentPoints"
+                                  [class.club-score-loss]="r.clubPoints < r.opponentPoints"
+                                  [class.club-score-tied]="r.clubPoints === r.opponentPoints">
+                                {{ r.clubPoints % 1 === 0 ? r.clubPoints : r.clubPoints.toFixed(1) }} - {{ r.opponentPoints % 1 === 0 ? r.opponentPoints : r.opponentPoints.toFixed(1) }}
+                              </div>
+                              <div class="club-arrow-spacer right">
+                                <ng-container *ngIf="r.clubPoints < r.opponentPoints">
+                                  <div class="club-arrow-bar club-loss-color" [style.width.px]="getClubArrowWidth(r.clubPoints, r.opponentPoints)"></div>
+                                  <div class="club-arrow-tip-right club-loss-color"></div>
+                                </ng-container>
+                              </div>
+                            </div>
+                          </td>
+                          <td class="club-round-venue">{{ r.isHome ? 'vs' : '@' }}</td>
+                          <td class="club-round-opponent">{{ r.opponent }}</td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </td>
+                </tr>
+              </ng-container>
             </tbody>
           </table>
         </div>
