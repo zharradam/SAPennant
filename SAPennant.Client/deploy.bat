@@ -1,6 +1,6 @@
 @echo off
 echo Building...
-cmd /c ng build --configuration production --base-href "https://sapennantgolf.com/"
+cmd /c npm run build
 echo Build step complete.
 if exist "dist\SAPennant\browser\index.html" (
   echo sapennantgolf.com> dist\SAPennant\browser\CNAME

@@ -5,7 +5,7 @@
     "prebuild": "node scripts/generate-build-info.js",
     "ng": "ng",
     "start": "ng serve",
-    "build": "ng build",
+    "build": "ng build --configuration production --base-href \"https://sapennantgolf.com/\"",
     "watch": "ng build --watch --configuration development",
     "test": "ng test"
   },
