@@ -6,6 +6,8 @@ interface SyncStatus {
   year: number;
   regularId: number;
   finalsId: number | null;
+  seniorRegularId: number | null;
+  seniorFinalsId: number | null;
   isSyncing: boolean;
   message: string;
   messageType: 'success' | 'error' | 'info' | '';
@@ -21,11 +23,14 @@ export class AdminComponent implements OnInit {
   seasons = signal<SyncStatus[]>([]);
   isSyncingAll = signal(false);
   newFinalsId: { [year: number]: number | null } = {};
+  newSeniorRegularId: { [year: number]: number | null } = {};
+  newSeniorFinalsId: { [year: number]: number | null } = {};
   usernameInput = '';
   passwordInput = '';
   authError = '';
   isSyncingUnsettled = signal(false);
   isSyncEnabled = signal(false);
+  isMaintenanceMode = signal(false);
 
   constructor(public pennant: PennantService, public auth: AuthService) {}
 
@@ -35,6 +40,11 @@ export class AdminComponent implements OnInit {
       this.pennant.refreshLastUpdated();
       this.pennant.getSyncStatus().subscribe(s => this.isSyncEnabled.set(s.enabled));
     }
+
+    this.pennant.getMaintenance().subscribe({
+      next: (data) => this.isMaintenanceMode.set(data.enabled),
+      error: () => {}
+    });
   }
 
   login(): void {
@@ -60,12 +70,16 @@ export class AdminComponent implements OnInit {
         year: s.year,
         regularId: s.regularId,
         finalsId: s.finalsId,
+        seniorRegularId: s.seniorRegularId ?? null,
+        seniorFinalsId: s.seniorFinalsId ?? null,
         isSyncing: false,
         message: '',
         messageType: ''
       })));
       data.forEach((s: any) => {
         this.newFinalsId[s.year] = s.finalsId;
+        this.newSeniorRegularId[s.year] = s.seniorRegularId;
+        this.newSeniorFinalsId[s.year] = s.seniorFinalsId;
       });
     });
   }
@@ -112,6 +126,42 @@ export class AdminComponent implements OnInit {
     });
   }
 
+  updateSeniorRegularId(season: SyncStatus): void {
+    const newId = this.newSeniorRegularId[season.year];
+    if (!newId) return;
+    this.pennant.updateSeniorRegularId(season.year, newId).subscribe({
+      next: () => {
+        season.seniorRegularId = newId;
+        season.message = `Senior Regular ID updated to ${newId}`;
+        season.messageType = 'success';
+        this.seasons.set([...this.seasons()]);
+      },
+      error: () => {
+        season.message = 'Failed to update Senior Regular ID';
+        season.messageType = 'error';
+        this.seasons.set([...this.seasons()]);
+      }
+    });
+  }
+
+  updateSeniorFinalsId(season: SyncStatus): void {
+    const newId = this.newSeniorFinalsId[season.year];
+    if (!newId) return;
+    this.pennant.updateSeniorFinalsId(season.year, newId).subscribe({
+      next: () => {
+        season.seniorFinalsId = newId;
+        season.message = `Senior Finals ID updated to ${newId}`;
+        season.messageType = 'success';
+        this.seasons.set([...this.seasons()]);
+      },
+      error: () => {
+        season.message = 'Failed to update Senior Finals ID';
+        season.messageType = 'error';
+        this.seasons.set([...this.seasons()]);
+      }
+    });
+  }
+
   syncAll(): void {
     this.isSyncingAll.set(true);
     this.pennant.syncAll().subscribe({
@@ -141,5 +191,13 @@ export class AdminComponent implements OnInit {
   toggleSync(): void {
     const newValue = !this.isSyncEnabled();
     this.pennant.toggleSync(newValue).subscribe(s => this.isSyncEnabled.set(s.enabled));
+  }
+
+  toggleMaintenance(): void {
+    const newValue = !this.isMaintenanceMode();
+    this.pennant.setMaintenance(newValue).subscribe({
+      next: (data) => this.isMaintenanceMode.set(data.enabled),
+      error: () => {}
+    });
   }
 }

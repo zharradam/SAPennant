@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using SAPennant.API.Data;
 
@@ -11,9 +12,11 @@ using SAPennant.API.Data;
 namespace SAPennant.API.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260412110239_AddSeniorPennantIds")]
+    partial class AddSeniorPennantIds
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -103,9 +106,6 @@ namespace SAPennant.API.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<bool>("IsFinals")
-                        .HasColumnType("bit");
-
-                    b.Property<bool>("IsSenior")
                         .HasColumnType("bit");
 
                     b.Property<string>("OpponentClub")

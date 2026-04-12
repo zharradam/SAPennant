@@ -1,9 +1,9 @@
 .nav {
   background: #0a1219;
   padding: 0 1.5rem;
-  position: sticky;
+  position: relative;
+  z-index: 10000;
   top: 0;
-  z-index: 200;
   border-bottom: 1px solid rgba(255,255,255,0.06);
 }
 
@@ -401,5 +401,45 @@
   to {
     opacity: 1;
     transform: translateY(0);
+  }
+}
+
+.maintenance-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(240, 242, 245, 0.4);
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  .maintenance-box {
+    background: #fff;
+    border-radius: 14px;
+    padding: 2rem 2.5rem;
+    text-align: center;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.12);
+    border: 1px solid #e8edf5;
+    max-width: 420px;
+
+    .maintenance-icon {
+      font-size: 48px;
+      margin-bottom: 12px;
+    }
+
+    h2 {
+      font-size: 16px;
+      font-weight: 700;
+      color: #1a1a1a;
+      margin-bottom: 6px;
+    }
+
+    p {
+      font-size: 13px;
+      color: #888;
+      line-height: 1.6;
+    }
   }
 }

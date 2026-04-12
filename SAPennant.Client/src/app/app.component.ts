@@ -4,6 +4,7 @@ import { InsightsService } from './insights.service';
 import { retry, switchMap } from 'rxjs/operators';
 import { interval } from 'rxjs';
 import { buildInfo } from '../environments/build-info';
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'sa-pennant-root',
@@ -18,10 +19,14 @@ export class App implements OnInit {
   menuOpen = signal(false);
   aboutOpen = signal(false);
   buildInfo = buildInfo;
-  
-  constructor(private pennant: PennantService, private insights: InsightsService) {}
+  maintenanceMode = signal(false);
+
+  constructor(private pennant: PennantService, private router: Router, private insights: InsightsService) {}
 
   ngOnInit(): void {
+    this.checkMaintenance();
+    setInterval(() => this.checkMaintenance(), 60000);
+      
     this.pennant.refreshLastUpdated().pipe(
       retry({ count: 10, delay: 3000 })
     ).subscribe({
@@ -52,6 +57,7 @@ export class App implements OnInit {
     this.activeTab.set(tab);
     this.menuOpen.set(false);
     this.insights.trackTabView(tab);
+    this.checkMaintenance();
   }
 
   openAbout(e: Event): void {
@@ -61,5 +67,16 @@ export class App implements OnInit {
 
   closeAbout(): void {
     this.aboutOpen.set(false);
+  }
+
+  checkMaintenance(): void {
+    this.pennant.getMaintenance().subscribe({
+      next: (data) => this.maintenanceMode.set(data.enabled),
+      error: () => {} // silently fail
+    });
+  }
+
+  isAdminRoute(): boolean {
+    return this.router.url.includes('/admin');
   }
 }

@@ -30,9 +30,17 @@ public class GolfboxSyncService
 
             foreach (var season in seasons)
             {
-                await SyncSeasonIfNeededAsync(season.Year, season.RegularId, false);
+                await SyncSeasonIfNeededAsync(season.Year, season.RegularId, false, isSenior: false);
                 if (season.FinalsId.HasValue)
-                    await SyncSeasonIfNeededAsync(season.Year, season.FinalsId.Value, true);
+                    await SyncSeasonIfNeededAsync(season.Year, season.FinalsId.Value, true, isSenior: false);
+
+                // Senior Pennant
+                if (season.SeniorRegularId.HasValue)
+                {
+                    await SyncSeasonAsync(season.Year, season.SeniorRegularId.Value, false, isSenior: true);
+                    var seniorFinalsId = season.SeniorFinalsId ?? season.SeniorRegularId.Value;
+                    await SyncSeasonAsync(season.Year, seniorFinalsId, true, isSenior: true);
+                }
             }
 
             _db.SyncLogs.Add(new SyncLog { SyncedAt = DateTime.UtcNow, Type = "Full" });
@@ -69,15 +77,19 @@ public class GolfboxSyncService
 
             await _db.SaveChangesAsync();
 
-            await SyncSeasonAsync(year, season.RegularId, false);
+            await SyncSeasonAsync(year, season.RegularId, false, isSenior: false);
 
             if (season.FinalsId.HasValue)
-            {
-                await SyncSeasonAsync(year, season.FinalsId.Value, true);
-            }
+                await SyncSeasonAsync(year, season.FinalsId.Value, true, isSenior: false);
             else
-            {
                 _logger.LogInformation("No finals ID for {Year} — finals may not be available yet", year);
+
+            // Senior Pennant
+            if (season.SeniorRegularId.HasValue)
+            {
+                await SyncSeasonAsync(year, season.SeniorRegularId.Value, false, isSenior: true);
+                var seniorFinalsId = season.SeniorFinalsId ?? season.SeniorRegularId.Value;
+                await SyncSeasonAsync(year, seniorFinalsId, true, isSenior: true);
             }
 
             // backfill RoundStatuses for all synced rounds
@@ -135,7 +147,15 @@ public class GolfboxSyncService
                 return;
             }
 
-            await SyncUnsettledPoolsAsync(currentYear, season.RegularId, false);
+            await SyncUnsettledPoolsAsync(currentYear, season.RegularId, false, isSenior: false);
+
+            // Senior Pennant
+            if (season.SeniorRegularId.HasValue)
+            {
+                await SyncUnsettledPoolsAsync(currentYear, season.SeniorRegularId.Value, false, isSenior: true);
+                var seniorFinalsId = season.SeniorFinalsId ?? season.SeniorRegularId.Value;
+                await SyncUnsettledPoolsAsync(currentYear, seniorFinalsId, true, isSenior: true);
+            }
 
             _db.SyncLogs.Add(new SyncLog { SyncedAt = DateTime.UtcNow, Type = $"UnsettledSync {currentYear}" });
             await _db.SaveChangesAsync();
@@ -197,21 +217,23 @@ public class GolfboxSyncService
         return pools;
     }
 
-    private async Task SyncSeasonIfNeededAsync(int year, int interclubId, bool isFinals)
+    private async Task SyncSeasonIfNeededAsync(int year, int interclubId, bool isFinals, bool isSenior = false)
     {
-        var exists = _db.PennantMatches.Any(m => m.Year == year && m.IsFinals == isFinals);
+        var exists = _db.PennantMatches.Any(m => m.Year == year && m.IsFinals == isFinals && m.IsSenior == isSenior);
         if (exists)
         {
-            _logger.LogInformation("Skipping {Year} {Type} — already loaded", year, isFinals ? "Finals" : "Regular");
+            _logger.LogInformation("Skipping {Year} {Type} {Senior}— already loaded",
+                year, isFinals ? "Finals" : "Regular", isSenior ? "Senior " : "");
             return;
         }
 
-        await SyncSeasonAsync(year, interclubId, isFinals);
+        await SyncSeasonAsync(year, interclubId, isFinals, isSenior);
     }
 
-    private async Task SyncSeasonAsync(int year, int interclubId, bool isFinals)
+    private async Task SyncSeasonAsync(int year, int interclubId, bool isFinals, bool isSenior = false)
     {
-        _logger.LogInformation("Syncing {Year} {Type} (id={Id})", year, isFinals ? "Finals" : "Regular", interclubId);
+        _logger.LogInformation("Syncing {Year} {Type} {Senior}(id={Id})",
+            year, isFinals ? "Finals" : "Regular", isSenior ? "Senior " : "", interclubId);
 
         var overview = await GetJsonpAsync(
             $"{BASE_URL}/InterclubHandler/GetInterclubData/interclubID/{interclubId}/language/2057/");
@@ -229,13 +251,13 @@ public class GolfboxSyncService
             {
                 var poolName = pool.GetProperty("Name").GetString() ?? "";
                 var competitionId = pool.GetProperty("CompetitionID").GetInt64();
-                await SyncPoolAsync(year, isFinals, divisionName, poolName, competitionId);
+                await SyncPoolAsync(year, isFinals, isSenior, divisionName, poolName, competitionId);
                 await Task.Delay(200);
             }
         }
     }
 
-    private async Task SyncPoolAsync(int year, bool isFinals, string division, string poolName, long competitionId)
+    private async Task SyncPoolAsync(int year, bool isFinals, bool isSenior, string division, string poolName, long competitionId)
     {
         var url = isFinals
             ? $"{BASE_URL}/TeamMatchplayBracketHandler/GetTeamMatchplayScores/CompetitionId/{competitionId}/language/2057/"
@@ -244,20 +266,23 @@ public class GolfboxSyncService
         var data = await GetJsonpAsync(url);
         if (data == null)
         {
-            _logger.LogWarning("Skipping {Year} {Type} {Division} {Pool} — no data returned", year, isFinals ? "Finals" : "Regular", division, poolName);
+            _logger.LogWarning("Skipping {Year} {Type} {Senior}{Division} {Pool} — no data returned",
+                year, isFinals ? "Finals" : "Regular", isSenior ? "Senior " : "", division, poolName);
             return;
         }
 
         if (!data.Value.TryGetProperty("Matchplay", out var matchplay))
         {
-            _logger.LogWarning("Skipping {Year} {Type} {Division} {Pool} — no Matchplay key", year, isFinals ? "Finals" : "Regular", division, poolName);
+            _logger.LogWarning("Skipping {Year} {Type} {Senior}{Division} {Pool} — no Matchplay key",
+                year, isFinals ? "Finals" : "Regular", isSenior ? "Senior " : "", division, poolName);
             return;
         }
 
         var firstClassProp = matchplay.EnumerateObject().FirstOrDefault();
         if (firstClassProp.Value.ValueKind == JsonValueKind.Undefined)
         {
-            _logger.LogWarning("Skipping {Year} {Type} {Division} {Pool} — Matchplay is empty", year, isFinals ? "Finals" : "Regular", division, poolName);
+            _logger.LogWarning("Skipping {Year} {Type} {Senior}{Division} {Pool} — Matchplay is empty",
+                year, isFinals ? "Finals" : "Regular", isSenior ? "Senior " : "", division, poolName);
             return;
         }
 
@@ -266,7 +291,7 @@ public class GolfboxSyncService
 
         if (firstClass.TryGetProperty("TeamMatches", out var teamMatchesProp))
         {
-            await ProcessTeamMatches(teamMatchesProp, competitionId, year, isFinals, division, poolName, matches, 1);
+            await ProcessTeamMatches(teamMatchesProp, competitionId, year, isFinals, isSenior, division, poolName, matches, 1);
         }
         else if (firstClass.TryGetProperty("Rounds", out var roundsProp))
         {
@@ -277,17 +302,19 @@ public class GolfboxSyncService
                 var round = roundProp.Value;
                 if (round.TryGetProperty("TeamMatches", out var roundTeamMatches))
                 {
-                    await ProcessTeamMatches(roundTeamMatches, competitionId, year, isFinals, division, poolName, matches, totalRounds);
+                    await ProcessTeamMatches(roundTeamMatches, competitionId, year, isFinals, isSenior, division, poolName, matches, totalRounds);
                 }
             }
         }
         else
         {
-            _logger.LogWarning("Skipping {Year} {Type} {Division} {Pool} — no TeamMatches or Rounds found", year, isFinals ? "Finals" : "Regular", division, poolName);
+            _logger.LogWarning("Skipping {Year} {Type} {Senior}{Division} {Pool} — no TeamMatches or Rounds found",
+                year, isFinals ? "Finals" : "Regular", isSenior ? "Senior " : "", division, poolName);
             return;
         }
 
-        _logger.LogInformation("Saved {Count} matches for {Year} {Type} {Division} {Pool}", matches.Count, year, isFinals ? "Finals" : "Regular", division, poolName);
+        _logger.LogInformation("Saved {Count} matches for {Year} {Type} {Senior}{Division} {Pool}",
+            matches.Count, year, isFinals ? "Finals" : "Regular", isSenior ? "Senior " : "", division, poolName);
         _db.PennantMatches.AddRange(matches);
         await _db.SaveChangesAsync();
     }
@@ -297,6 +324,7 @@ public class GolfboxSyncService
         long competitionId,
         int year,
         bool isFinals,
+        bool isSenior,
         string division,
         string poolName,
         List<PennantMatch> matches,
@@ -312,7 +340,7 @@ public class GolfboxSyncService
             var roundNumber = tmVal.TryGetProperty("InterclubRoundNumber", out var rn) ? rn.GetInt32() : 1;
             var startTime = tmVal.GetProperty("StartTime").GetString() ?? "";
 
-            var tmMatches = await GetTeamMatchAsync(competitionId, teamMatchId, year, isFinals, division, poolName, roundNumber, startTime, totalRounds);
+            var tmMatches = await GetTeamMatchAsync(competitionId, teamMatchId, year, isFinals, isSenior, division, poolName, roundNumber, startTime, totalRounds);
             matches.AddRange(tmMatches);
 
             await Task.Delay(100);
@@ -320,7 +348,7 @@ public class GolfboxSyncService
     }
 
     private async Task<List<PennantMatch>> GetTeamMatchAsync(
-        long competitionId, long teamMatchId, int year, bool isFinals,
+        long competitionId, long teamMatchId, int year, bool isFinals, bool isSenior,
         string division, string poolName, int roundNumber, string startTime, int totalRounds = 1)
     {
         var results = new List<PennantMatch>();
@@ -362,6 +390,7 @@ public class GolfboxSyncService
                 {
                     Year = year,
                     IsFinals = isFinals,
+                    IsSenior = isSenior,
                     Division = division,
                     Pool = poolName,
                     Round = round,
@@ -387,6 +416,7 @@ public class GolfboxSyncService
                 {
                     Year = year,
                     IsFinals = isFinals,
+                    IsSenior = isSenior,
                     Division = division,
                     Pool = poolName,
                     Round = round,
@@ -492,7 +522,7 @@ public class GolfboxSyncService
         }
     }
 
-    private async Task SyncUnsettledPoolsAsync(int year, int interclubId, bool isFinals)
+    private async Task SyncUnsettledPoolsAsync(int year, int interclubId, bool isFinals, bool isSenior = false)
     {
         var overview = await GetJsonpAsync(
             $"{BASE_URL}/InterclubHandler/GetInterclubData/interclubID/{interclubId}/language/2057/");
@@ -510,13 +540,13 @@ public class GolfboxSyncService
             {
                 var poolName = pool.GetProperty("Name").GetString() ?? "";
                 var competitionId = pool.GetProperty("CompetitionID").GetInt64();
-                await SyncUnsettledRoundsForPoolAsync(year, isFinals, divisionName, poolName, competitionId);
+                await SyncUnsettledRoundsForPoolAsync(year, isFinals, isSenior, divisionName, poolName, competitionId);
                 await Task.Delay(200);
             }
         }
     }
 
-    private async Task SyncUnsettledRoundsForPoolAsync(int year, bool isFinals, string division, string poolName, long competitionId)
+    private async Task SyncUnsettledRoundsForPoolAsync(int year, bool isFinals, bool isSenior, string division, string poolName, long competitionId)
     {
         var url = $"{BASE_URL}/RoundRobinHandler/GetRoundRobin/CompetitionId/{competitionId}/language/2057/";
         var data = await GetJsonpAsync(url);
@@ -540,7 +570,7 @@ public class GolfboxSyncService
                 if (!roundProp.Value.TryGetProperty("TeamMatches", out var teamMatches)) continue;
                 var roundNumber = int.TryParse(roundProp.Name, out var rn) ? rn : 1;
                 var roundName = GetRoundName(roundNumber, isFinals, totalRounds);
-                await ProcessUnsettledRoundAsync(year, isFinals, division, poolName, competitionId, roundName, roundNumber, teamMatches, totalRounds);
+                await ProcessUnsettledRoundAsync(year, isFinals, isSenior, division, poolName, competitionId, roundName, roundNumber, teamMatches, totalRounds);
             }
         }
         else if (firstClass.TryGetProperty("TeamMatches", out var teamMatchesDirect))
@@ -557,7 +587,7 @@ public class GolfboxSyncService
             {
                 var roundNumber = roundGroup.Key;
                 var roundName = GetRoundName(roundNumber, isFinals, totalRounds);
-                await ProcessUnsettledRoundFromListAsync(year, isFinals, division, poolName, competitionId,
+                await ProcessUnsettledRoundFromListAsync(year, isFinals, isSenior, division, poolName, competitionId,
                     roundName, roundNumber, roundGroup.ToList(), totalRounds);
             }
         }
@@ -568,7 +598,7 @@ public class GolfboxSyncService
     }
 
     private async Task ProcessUnsettledRoundAsync(
-        int year, bool isFinals, string division, string poolName,
+        int year, bool isFinals, bool isSenior, string division, string poolName,
         long competitionId, string roundName, int roundNumber,
         JsonElement teamMatches, int totalRounds)
     {
@@ -577,7 +607,7 @@ public class GolfboxSyncService
 
         if (roundStatus?.IsSettled == true)
         {
-            var hasData = _db.PennantMatches.Any(m => m.Year == year && m.Pool == poolName && m.Round == roundName);
+            var hasData = _db.PennantMatches.Any(m => m.Year == year && m.Pool == poolName && m.Round == roundName && m.IsSenior == isSenior);
             if (hasData)
             {
                 _logger.LogInformation("Skipping {Pool} {Round} — already settled", poolName, roundName);
@@ -600,7 +630,7 @@ public class GolfboxSyncService
         _logger.LogInformation("Syncing {Pool} {Round} — allSettled={AllSettled}", poolName, roundName, allSettled);
 
         var existing = _db.PennantMatches
-            .Where(m => m.Year == year && m.Pool == poolName && m.Round == roundName);
+            .Where(m => m.Year == year && m.Pool == poolName && m.Round == roundName && m.IsSenior == isSenior);
         _db.PennantMatches.RemoveRange(existing);
         await _db.SaveChangesAsync();
 
@@ -614,7 +644,7 @@ public class GolfboxSyncService
             var teamMatchId = tmVal.GetProperty("TeamMatchID").GetInt64();
             var startTime = tmVal.GetProperty("StartTime").GetString() ?? "";
 
-            var tmMatches = await GetTeamMatchAsync(competitionId, teamMatchId, year, isFinals, division, poolName, roundNumber, startTime, totalRounds);
+            var tmMatches = await GetTeamMatchAsync(competitionId, teamMatchId, year, isFinals, isSenior, division, poolName, roundNumber, startTime, totalRounds);
             tmMatches = tmMatches.Where(m => !(m.Result == "" && m.PlayerWon == null)).ToList();
             matches.AddRange(tmMatches);
             await Task.Delay(100);
@@ -641,7 +671,7 @@ public class GolfboxSyncService
     }
 
     private async Task ProcessUnsettledRoundFromListAsync(
-        int year, bool isFinals, string division, string poolName,
+        int year, bool isFinals, bool isSenior, string division, string poolName,
         long competitionId, string roundName, int roundNumber,
         List<System.Text.Json.JsonProperty> teamMatchList, int totalRounds)
     {
@@ -650,7 +680,7 @@ public class GolfboxSyncService
 
         if (roundStatus?.IsSettled == true)
         {
-            var hasData = _db.PennantMatches.Any(m => m.Year == year && m.Pool == poolName && m.Round == roundName);
+            var hasData = _db.PennantMatches.Any(m => m.Year == year && m.Pool == poolName && m.Round == roundName && m.IsSenior == isSenior);
             if (hasData)
             {
                 _logger.LogInformation("Skipping {Pool} {Round} — already settled", poolName, roundName);
@@ -672,7 +702,7 @@ public class GolfboxSyncService
         _logger.LogInformation("Syncing {Pool} {Round} — allSettled={AllSettled}", poolName, roundName, allSettled);
 
         var existing = _db.PennantMatches
-            .Where(m => m.Year == year && m.Pool == poolName && m.Round == roundName);
+            .Where(m => m.Year == year && m.Pool == poolName && m.Round == roundName && m.IsSenior == isSenior);
         _db.PennantMatches.RemoveRange(existing);
         await _db.SaveChangesAsync();
 
@@ -686,7 +716,7 @@ public class GolfboxSyncService
             var teamMatchId = tmVal.GetProperty("TeamMatchID").GetInt64();
             var startTime = tmVal.GetProperty("StartTime").GetString() ?? "";
 
-            var tmMatches = await GetTeamMatchAsync(competitionId, teamMatchId, year, isFinals, division, poolName, roundNumber, startTime, totalRounds);
+            var tmMatches = await GetTeamMatchAsync(competitionId, teamMatchId, year, isFinals, isSenior, division, poolName, roundNumber, startTime, totalRounds);
             tmMatches = tmMatches.Where(m => !(m.Result == "" && m.PlayerWon == null)).ToList();
             matches.AddRange(tmMatches);
             await Task.Delay(100);

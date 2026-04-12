@@ -23,6 +23,7 @@ public class PennantMatch
     public string? PlayerHandicap { get; set; }
     public string? OpponentHandicap { get; set; }
     public string? Venue { get; set; }
+    public bool IsSenior { get; set; }
 
     [NotMapped]
     public DateTime? SortDate => DateTime.TryParseExact(

@@ -76,7 +76,22 @@
             </button>
           </div>
         </div>
-</div>
+      </div>
+
+      <div class="section-card">
+        <div class="section-header">
+          <div>
+            <h2>Maintenance Mode</h2>
+            <p>Show a maintenance overlay to all users across the site</p>
+          </div>
+          <div class="header-right">
+            <label class="toggle-label">
+              <input type="checkbox" [checked]="isMaintenanceMode()" (change)="toggleMaintenance()">
+              Maintenance {{ isMaintenanceMode() ? 'enabled' : 'disabled' }}
+            </label>
+          </div>
+        </div>
+      </div>
 
       <div class="section-card">
         <h2>Seasons</h2>
@@ -90,19 +105,26 @@
                 <span class="id-badge">Regular: {{ s.regularId }}</span>
                 <span class="id-badge finals" *ngIf="s.finalsId">Finals: {{ s.finalsId }}</span>
                 <span class="id-badge missing" *ngIf="!s.finalsId">No finals ID</span>
+                <span class="id-badge senior" *ngIf="s.seniorRegularId">Senior: {{ s.seniorRegularId }}</span>
+                <span class="id-badge missing" *ngIf="!s.seniorRegularId">No senior ID</span>
+                <span class="id-badge senior-finals" *ngIf="s.seniorFinalsId">Senior Finals: {{ s.seniorFinalsId }}</span>
               </div>
             </div>
 
-            <div class="season-finals-id" *ngIf="!s.finalsId">
-              <input
-                type="number"
-                [(ngModel)]="newFinalsId[s.year]"
-                placeholder="Enter finals ID..."
-              />
-              <button class="btn-secondary" (click)="updateFinalsId(s)" [disabled]="!newFinalsId[s.year]">
-                Save
-              </button>
+            <!--div class="season-finals-id" *ngIf="!s.finalsId">
+              <input type="number" [(ngModel)]="newFinalsId[s.year]" placeholder="Enter finals ID..." />
+              <button class="btn-secondary" (click)="updateFinalsId(s)" [disabled]="!newFinalsId[s.year]">Save</button>
             </div>
+
+            <div class="season-finals-id" *ngIf="!s.seniorRegularId">
+              <input type="number" [(ngModel)]="newSeniorRegularId[s.year]" placeholder="Enter senior regular ID..." />
+              <button class="btn-secondary" (click)="updateSeniorRegularId(s)" [disabled]="!newSeniorRegularId[s.year]">Save Senior</button>
+            </div>
+
+            <div class="season-finals-id" *ngIf="s.seniorRegularId && !s.seniorFinalsId">
+              <input type="number" [(ngModel)]="newSeniorFinalsId[s.year]" placeholder="Enter senior finals ID..." />
+              <button class="btn-secondary" (click)="updateSeniorFinalsId(s)" [disabled]="!newSeniorFinalsId[s.year]">Save Senior Finals</button>
+            </div-->
 
             <div class="season-actions">
               <span class="message"

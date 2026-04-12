@@ -60,6 +60,14 @@ export class PennantService {
     return this.http.put<any>(`${this.API_URL}/sync/seasons/${year}/finals-id`, { finalsId });
   }
 
+  updateSeniorRegularId(year: number, id: number): Observable<any> {
+    return this.http.put<any>(`${this.API_URL}/sync/seasons/${year}/senior-regular-id`, { finalsId: id });
+  }
+
+  updateSeniorFinalsId(year: number, id: number): Observable<any> {
+    return this.http.put<any>(`${this.API_URL}/sync/seasons/${year}/senior-finals-id`, { finalsId: id });
+  }
+
   syncAll(): Observable<any> {
     return this.http.post<any>(`${this.API_URL}/sync/run`, {});
   }
@@ -173,5 +181,13 @@ export class PennantService {
 
   getActiveRound(year: number, pool: string): Observable<{ activeRound: string | null }> {
     return this.http.get<{ activeRound: string | null }>(`${this.API_URL}/teampennant/active-round?year=${year}&pool=${pool}`);
+  }
+
+  getMaintenance(): Observable<{ enabled: boolean }> {
+    return this.http.get<{ enabled: boolean }>(`${this.API_URL}/sync/maintenance`);
+  }
+
+  setMaintenance(enabled: boolean): Observable<{ enabled: boolean }> {
+    return this.http.post<{ enabled: boolean }>(`${this.API_URL}/sync/maintenance`, enabled);
   }
 }

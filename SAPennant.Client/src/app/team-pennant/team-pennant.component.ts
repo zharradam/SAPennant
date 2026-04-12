@@ -26,6 +26,11 @@ export class TeamPennantComponent implements OnInit {
   selectedPool = '';
   selectedRound = '';
 
+  divisions: string[] = [];
+  divisionPools: Record<string, string[]> = {};
+  selectedDivision = '';
+  filteredPools: string[] = [];
+
   expandedClub = signal<string | null>(null);
   expandedClubRounds = signal<any[]>([]);
   isLoadingClubRounds = signal(false);
@@ -38,14 +43,16 @@ export class TeamPennantComponent implements OnInit {
       next: filters => {
         this.years = filters.years;
         this.pools = filters.pools;
+        this.divisions = filters.divisions;
+        this.divisionPools = filters.divisionPools;
+        this.filteredPools = filters.pools;
 
-        if (this.pools.length > 0) {
-          this.selectedPool = this.pools.includes('Simpson Cup') ? 'Simpson Cup' : this.pools[0];
+        if (this.filteredPools.length > 0) {
+          this.selectedPool = this.filteredPools.includes('Simpson Cup') ? 'Simpson Cup' : this.filteredPools[0];
           this.loadRoundsList();
         }
       },
       error: () => {
-        // retry after 3 seconds if API not ready
         setTimeout(() => this.ngOnInit(), 3000);
       }
     });
@@ -57,8 +64,19 @@ export class TeamPennantComponent implements OnInit {
     this.expandedMatchPlayers.set([]);
     this.pennant.getFilters(this.selectedYear).subscribe(filters => {
       this.pools = filters.pools;
-      if (!this.pools.includes(this.selectedPool)) {
-        this.selectedPool = this.pools.includes('Simpson Cup') ? 'Simpson Cup' : this.pools[0];
+      this.divisionPools = filters.divisionPools;
+      this.divisions = filters.divisions;
+
+      // Reset division if it no longer exists for the selected year
+      if (this.selectedDivision && !this.divisions.includes(this.selectedDivision)) {
+        this.selectedDivision = '';
+      }
+
+      this.filteredPools = this.selectedDivision
+        ? (this.divisionPools[this.selectedDivision] ?? filters.pools)
+        : filters.pools;
+      if (!this.filteredPools.includes(this.selectedPool)) {
+        this.selectedPool = this.filteredPools.includes('Simpson Cup') ? 'Simpson Cup' : this.filteredPools[0];
       }
       this.loadRoundsList();
     });
@@ -207,5 +225,13 @@ export class TeamPennantComponent implements OnInit {
     this.isLoadingRound.set(true);
     this.expandedMatch.set(null);
     this.expandedMatchPlayers.set([]);
+  }
+
+  onDivisionChange(): void {
+    this.filteredPools = this.selectedDivision
+      ? (this.divisionPools[this.selectedDivision] ?? this.pools)
+      : this.pools;
+    this.selectedPool = this.filteredPools.includes('Simpson Cup') ? 'Simpson Cup' : this.filteredPools[0];
+    this.load();
   }
 }

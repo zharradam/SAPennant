@@ -66,6 +66,14 @@
   <sa-pennant-handicap    *ngIf="activeTab() === 'handicap'"></sa-pennant-handicap>
   <sa-pennant-admin       *ngIf="activeTab() === 'admin'"></sa-pennant-admin>
 
+  <div class="maintenance-overlay" *ngIf="maintenanceMode() && activeTab() !== 'admin'">
+    <div class="maintenance-box">
+      <div class="maintenance-icon">🔧</div>
+      <h2>System Maintenance</h2>
+      <p>We're currently performing maintenance. Please check back soon.</p>
+    </div>
+  </div>
+
   <footer class="footer">
     <div class="footer-inner">
       <div class="footer-links">

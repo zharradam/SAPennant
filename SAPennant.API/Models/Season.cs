@@ -8,4 +8,6 @@ public class Season
     public int Year { get; set; }
     public int RegularId { get; set; }
     public int? FinalsId { get; set; }
+    public int? SeniorRegularId { get; set; }
+    public int? SeniorFinalsId { get; set; }
 }

@@ -58,7 +58,7 @@ public class SyncController : ControllerBase
     {
         var seasons = _db.Seasons
             .OrderByDescending(s => s.Year)
-            .Select(s => new { s.Year, s.RegularId, s.FinalsId })
+            .Select(s => new { s.Year, s.RegularId, s.FinalsId, s.SeniorRegularId, s.SeniorFinalsId })
             .ToList();
         return Ok(seasons);
     }
@@ -71,6 +71,26 @@ public class SyncController : ControllerBase
         season.FinalsId = request.FinalsId;
         await _db.SaveChangesAsync();
         return Ok(new { message = $"Finals ID updated for {year}" });
+    }
+
+    [HttpPut("seasons/{year}/senior-regular-id")]
+    public async Task<IActionResult> UpdateSeniorRegularId(int year, [FromBody] UpdateFinalsIdRequest request)
+    {
+        var season = _db.Seasons.FirstOrDefault(s => s.Year == year);
+        if (season == null) return NotFound();
+        season.SeniorRegularId = request.FinalsId;
+        await _db.SaveChangesAsync();
+        return Ok(new { message = $"Senior Regular ID updated for {year}" });
+    }
+
+    [HttpPut("seasons/{year}/senior-finals-id")]
+    public async Task<IActionResult> UpdateSeniorFinalsId(int year, [FromBody] UpdateFinalsIdRequest request)
+    {
+        var season = _db.Seasons.FirstOrDefault(s => s.Year == year);
+        if (season == null) return NotFound();
+        season.SeniorFinalsId = request.FinalsId;
+        await _db.SaveChangesAsync();
+        return Ok(new { message = $"Senior Finals ID updated for {year}" });
     }
 
     [HttpPost("sync-unsettled")]
@@ -94,6 +114,31 @@ public class SyncController : ControllerBase
     public async Task<IActionResult> ToggleSync([FromBody] bool enabled)
     {
         await _settings.SetBoolAsync("AutoSyncEnabled", enabled);
+        return Ok(new { enabled });
+    }
+
+    [HttpGet("maintenance")]
+    [AllowAnonymous]
+    public async Task<IActionResult> GetMaintenance()
+    {
+        var setting = await _db.AppSettings.FindAsync("MaintenanceMode");
+        return Ok(new { enabled = setting?.Value == "true" });
+    }
+
+    [HttpPost("maintenance")]
+    [Authorize]
+    public async Task<IActionResult> SetMaintenance([FromBody] bool enabled)
+    {
+        var setting = await _db.AppSettings.FindAsync("MaintenanceMode");
+        if (setting == null)
+        {
+            _db.AppSettings.Add(new AppSetting { Key = "MaintenanceMode", Value = enabled ? "true" : "false" });
+        }
+        else
+        {
+            setting.Value = enabled ? "true" : "false";
+        }
+        await _db.SaveChangesAsync();
         return Ok(new { enabled });
     }
 }

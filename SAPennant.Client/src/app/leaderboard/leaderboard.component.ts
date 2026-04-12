@@ -24,7 +24,7 @@ export class LeaderboardComponent implements OnInit {
   sortColumn = 'winRate';
   sortDirection: 'asc' | 'desc' = 'desc';
   playerSelected = output<string>();
-
+  divisionPools: Record<string, string[]> = {};
   filteredPools: string[] = [];
 
   constructor(private pennant: PennantService) {}
@@ -34,21 +34,17 @@ export class LeaderboardComponent implements OnInit {
       this.years = filters.years;
       this.divisions = filters.divisions;
       this.pools = filters.pools;
+      this.divisionPools = filters.divisionPools;
       this.filteredPools = filters.pools;
     });
-
     this.loadLeaderboard();
   }
 
   onDivisionChange(): void {
     this.selectedPool = '';
-    if (this.selectedDivision) {
-      // filter pools based on what's relevant — we'll just show all for now
-      // a smarter filter would require division->pool mapping from API
-      this.filteredPools = this.pools;
-    } else {
-      this.filteredPools = this.pools;
-    }
+    this.filteredPools = this.selectedDivision
+      ? (this.divisionPools[this.selectedDivision] ?? this.pools)
+      : this.pools;
     this.loadLeaderboard();
   }
 

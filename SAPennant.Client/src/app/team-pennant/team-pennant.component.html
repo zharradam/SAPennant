@@ -15,9 +15,16 @@
         </select>
       </div>
       <div class="filter-group">
+        <label>Division</label>
+        <select [(ngModel)]="selectedDivision" (ngModelChange)="onDivisionChange()">
+          <option value="">All divisions</option>
+          <option *ngFor="let d of divisions" [ngValue]="d">{{ d }}</option>
+        </select>
+      </div>
+      <div class="filter-group">
         <label>Pool</label>
         <select [(ngModel)]="selectedPool" (ngModelChange)="load()">
-          <option *ngFor="let p of pools" [ngValue]="p">{{ p }}</option>
+          <option *ngFor="let p of filteredPools" [ngValue]="p">{{ p }}</option>
         </select>
       </div>
       <div class="filter-group">

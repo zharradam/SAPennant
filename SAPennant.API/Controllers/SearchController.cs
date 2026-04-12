@@ -201,21 +201,52 @@ public class SearchController : ControllerBase
             .OrderByDescending(y => y)
             .ToListAsync();
 
-        var poolsQuery = _db.PennantMatches.AsQueryable();
+        var matchesQuery = _db.PennantMatches.AsQueryable();
         if (year.HasValue)
-            poolsQuery = poolsQuery.Where(m => m.Year == year.Value);
+            matchesQuery = matchesQuery.Where(m => m.Year == year.Value);
 
-        var pools = await poolsQuery
-            .Select(m => m.Pool)
+        var poolDivisions = await matchesQuery
+            .Select(m => new { m.Pool, m.IsSenior })
+            .Distinct()
+            .ToListAsync();
+
+        var hasSenior = poolDivisions.Any(p => p.IsSenior);
+
+        var divisionPools = new Dictionary<string, List<string>>
+        {
+            ["Men's"] = poolDivisions.Where(p => !p.IsSenior && (
+                p.Pool.Contains("Simpson") || p.Pool.Contains("Bonnar") ||
+                p.Pool.Contains("Men's")))
+                .Select(p => p.Pool).Distinct().OrderBy(p => p).ToList(),
+
+            ["Women's"] = poolDivisions.Where(p => !p.IsSenior && (
+                p.Pool.Contains("Women") || p.Pool.Contains("Pike") ||
+                p.Pool.Contains("Sanderson") || p.Pool.Contains("Cleek")))
+                .Select(p => p.Pool).Distinct().OrderBy(p => p).ToList(),
+
+            ["Junior"] = poolDivisions.Where(p => !p.IsSenior && (
+                p.Pool.Contains("Junior") || p.Pool.Contains("Sharp")))
+                .Select(p => p.Pool).Distinct().OrderBy(p => p).ToList(),
+        };
+
+        if (hasSenior)
+        {
+            divisionPools["Senior"] = poolDivisions.Where(p => p.IsSenior)
+                .Select(p => p.Pool).Distinct().OrderBy(p => p).ToList();
+        }
+
+        var allPools = poolDivisions
+            .Select(p => p.Pool)
             .Distinct()
             .OrderBy(p => p)
-            .ToListAsync();
+            .ToList();
 
         return Ok(new
         {
             years,
-            pools,
-            divisions = new[] { "Men's", "Women's", "Junior" }
+            pools = allPools,
+            divisions = divisionPools.Keys.ToList(),
+            divisionPools
         });
     }
 
