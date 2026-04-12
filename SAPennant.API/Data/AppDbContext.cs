@@ -14,6 +14,8 @@ public class AppDbContext : DbContext
     public DbSet<SyncLog> SyncLogs { get; set; }
     public DbSet<RoundStatus> RoundStatuses { get; set; }
     public DbSet<AppSetting> AppSettings { get; set; }
+    public DbSet<HonourRoll> HonourRoll { get; set; }
+    public DbSet<HonourRollNarrative> HonourRollNarratives { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

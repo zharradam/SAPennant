@@ -190,4 +190,27 @@ export class PennantService {
   setMaintenance(enabled: boolean): Observable<{ enabled: boolean }> {
     return this.http.post<{ enabled: boolean }>(`${this.API_URL}/sync/maintenance`, enabled);
   }
+
+  getHonourRoll(params: {
+    competition?: string;
+    pool?: string;
+    year?: number;
+    club?: string;
+  } = {}): Observable<any[]> {
+    const query = new URLSearchParams();
+    if (params.competition) query.set('competition', params.competition);
+    if (params.pool) query.set('pool', params.pool);
+    if (params.year) query.set('year', params.year.toString());
+    if (params.club) query.set('club', params.club);
+    return this.http.get<any[]>(`${this.API_URL}/honourroll?${query.toString()}`);
+  }
+
+  getHonourRollFilters(competition?: string): Observable<any> {
+    const query = competition ? `?competition=${encodeURIComponent(competition)}` : '';
+    return this.http.get<any>(`${this.API_URL}/honourroll/filters${query}`);
+  }
+
+  getHonourRollNarratives(): Observable<any[]> {
+    return this.http.get<any[]>(`${this.API_URL}/honourroll/narratives`);
+  }
 }

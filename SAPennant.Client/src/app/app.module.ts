@@ -13,6 +13,7 @@ import { authInterceptor } from './auth.interceptor';
 import { ClubSearchComponent } from './club-search/club-search.component';
 import { HandicapComponent } from './handicap/handicap.component';
 import { TeamPennantComponent } from './team-pennant/team-pennant.component';
+import { HonourRollComponent } from './honour-roll/honour-roll.component';
 
 @NgModule({
   declarations: [
@@ -25,6 +26,7 @@ import { TeamPennantComponent } from './team-pennant/team-pennant.component';
     ClubSearchComponent,
     HandicapComponent,
     TeamPennantComponent,
+    HonourRollComponent,
   ],
   imports: [BrowserModule, FormsModule, HttpClientModule],
   providers: [

@@ -1,0 +1,96 @@
+<div class="page">
+  <div class="hero" style="background-image: url('assets/hero-bg.jpg')">
+    <div class="hero-inner">
+      <h1>Honour Roll</h1>
+      <p>SA Pennant champions across all competitions</p>
+    </div>
+  </div>
+
+  <div class="content">
+    <div class="filters">
+      <div class="filter-group">
+        <label>Competition</label>
+        <select [(ngModel)]="selectedCompetition" (ngModelChange)="onCompetitionChange()">
+          <option *ngFor="let c of competitions" [ngValue]="c">{{ c }}'s Pennant</option>
+        </select>
+      </div>
+      <div class="filter-group">
+        <label>Pool</label>
+        <select [(ngModel)]="selectedPool" (ngModelChange)="load()">
+          <option value="">All pools</option>
+          <option *ngFor="let p of pools" [ngValue]="p">{{ p }}</option>
+        </select>
+      </div>
+      <div class="filter-group">
+        <label>Club</label>
+        <select [(ngModel)]="selectedClub" (ngModelChange)="load()">
+          <option value="">All clubs</option>
+          <option *ngFor="let c of clubs" [ngValue]="c">{{ c }}</option>
+        </select>
+      </div>
+      <div class="filter-group">
+        <label>Group by</label>
+        <select [(ngModel)]="groupBy">
+          <option value="year">Year</option>
+          <option value="pool">Pool</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="narrative-panel" *ngIf="currentNarrative">
+      <button class="narrative-toggle" (click)="toggleNarrative()">
+        <span>About {{ selectedCompetition }}'s Pennant</span>
+        <span class="narrative-chevron" [class.open]="narrativeExpanded">›</span>
+      </button>
+      <div class="narrative-body" [class.expanded]="narrativeExpanded">
+        <p>{{ currentNarrative }}</p>
+      </div>
+    </div>
+
+    <div class="status loading" *ngIf="isLoading()">
+      <span class="spinner"></span> Loading honour roll…
+    </div>
+
+    <ng-container *ngIf="!isLoading()">
+      <div class="results-count">{{ results().length }} records</div>
+
+      <!-- Group by year -->
+      <ng-container *ngIf="groupBy === 'year'">
+        <ng-container *ngFor="let group of groupedResults">
+          <div class="year-group">
+            <div class="year-heading">{{ group.year }}</div>
+            <div class="honour-row" *ngFor="let entry of group.entries">
+              <div class="honour-pool">{{ entry.pool }}</div>
+              <div class="honour-winner">
+                <span *ngIf="entry.winner" class="trophy">🏆</span>
+                <span *ngIf="!entry.winner" class="not-played">Not played</span>
+                {{ entry.winner }}
+              </div>
+            </div>
+          </div>
+        </ng-container>
+      </ng-container>
+
+      <!-- Group by pool -->
+      <ng-container *ngIf="groupBy === 'pool'">
+        <ng-container *ngFor="let group of groupedByPool">
+          <div class="year-group">
+            <div class="year-heading">{{ group.pool }}</div>
+            <div class="honour-row" *ngFor="let entry of group.entries">
+              <div class="honour-pool">{{ entry.year }}</div>
+              <div class="honour-winner">
+                <span *ngIf="entry.winner" class="trophy">🏆</span>
+                <span *ngIf="!entry.winner" class="not-played">Not played</span>
+                {{ entry.winner }}
+              </div>
+            </div>
+          </div>
+        </ng-container>
+      </ng-container>
+
+      <div class="empty" *ngIf="results().length === 0">
+        No records found.
+      </div>
+    </ng-container>
+  </div>
+</div>

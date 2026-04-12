@@ -13,7 +13,7 @@ import { Router } from '@angular/router';
   styleUrl: './app.component.scss'
 })
 export class App implements OnInit {
-  activeTab = signal<'team' | 'search' | 'club' | 'leaderboard' | 'handicap' | 'admin'>('team');
+  activeTab = signal<'team' | 'search' | 'club' | 'leaderboard' | 'handicap' | 'honour-roll' | 'admin'>('team');
   selectedPlayer = signal('');
   isLoadingApi = signal(true);
   menuOpen = signal(false);
@@ -53,7 +53,7 @@ export class App implements OnInit {
     this.menuOpen.set(!this.menuOpen());
   }
 
-  selectTab(tab: 'team' | 'club' | 'leaderboard' | 'handicap' | 'search' | 'admin'): void {
+  selectTab(tab: 'team' | 'club' | 'leaderboard' | 'handicap' | 'search' | 'honour-roll' | 'admin'): void {
     this.activeTab.set(tab);
     this.menuOpen.set(false);
     this.insights.trackTabView(tab);
