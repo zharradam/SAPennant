@@ -199,7 +199,7 @@ public class TeamPennantController : ControllerBase
     public async Task<IActionResult> GetClubRounds([FromQuery] int year, [FromQuery] string pool, [FromQuery] string club)
     {
         var matches = await _context.PennantMatches
-            .Where(m => m.Year == year && m.Pool == pool && !m.IsFinals
+            .Where(m => m.Year == year && m.Pool == pool
                      && (m.HomeClub == club || m.AwayClub == club))
             .ToListAsync();
 
@@ -225,6 +225,8 @@ public class TeamPennantController : ControllerBase
                 };
             })
             .OrderBy(r => {
+                if (r.Round == "Final") return 999;
+                if (r.Round == "Semi Final") return 998;
                 var m = System.Text.RegularExpressions.Regex.Match(r.Round, @"\d+");
                 return m.Success ? int.Parse(m.Value) : 0;
             })
