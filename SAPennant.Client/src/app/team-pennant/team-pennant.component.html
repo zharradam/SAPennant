@@ -45,8 +45,10 @@
 
       <!-- LEFT: Season Leaderboard -->
       <div class="panel panel-leaderboard">
-        <div class="panel-title">Season Standings</div>
-
+        <div class="panel-title">
+          Season Standings
+          <span class="active-round-badge" *ngIf="activeRound()">{{ activeRound() }} in progress</span>
+        </div>
         <div class="status loading" *ngIf="isLoadingLeaderboard()">
           <span class="spinner"></span> Loading standings…
         </div>

@@ -9,10 +9,12 @@ namespace SAPennant.API.Controllers;
 public class TeamPennantController : ControllerBase
 {
     private readonly AppDbContext _context;
+    private readonly ILogger<TeamPennantController> _logger;
 
-    public TeamPennantController(AppDbContext context)
+    public TeamPennantController(AppDbContext context, ILogger<TeamPennantController> logger)
     {
         _context = context;
+        _logger = logger;
     }
 
     [HttpGet("leaderboard")]
@@ -233,5 +235,21 @@ public class TeamPennantController : ControllerBase
             .ToList();
 
         return Ok(rounds);
+    }
+
+    [HttpGet("active-round")]
+    public async Task<IActionResult> GetActiveRound([FromQuery] int year, [FromQuery] string pool)
+    {
+        var all = await _context.RoundStatuses
+            .Where(r => r.Year == year && r.Pool == pool)
+            .ToListAsync();
+
+        _logger.LogInformation("Found {Count} round statuses for {Year} {Pool}", all.Count, year, pool);
+        foreach (var r in all)
+            _logger.LogInformation("Round={Round} IsSettled={IsSettled}", r.Round, r.IsSettled);
+
+        var activeRound = all.FirstOrDefault(r => r.IsSettled == false)?.Round;
+
+        return Ok(new { activeRound });
     }
 }

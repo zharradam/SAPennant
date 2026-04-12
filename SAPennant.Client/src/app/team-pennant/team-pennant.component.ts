@@ -29,6 +29,7 @@ export class TeamPennantComponent implements OnInit {
   expandedClub = signal<string | null>(null);
   expandedClubRounds = signal<any[]>([]);
   isLoadingClubRounds = signal(false);
+  activeRound = signal<string | null>(null);
 
   constructor(private pennant: PennantService) {}
 
@@ -76,6 +77,11 @@ export class TeamPennantComponent implements OnInit {
         });
       },
       error: () => {}
+    });
+
+    this.pennant.getActiveRound(this.selectedYear, this.selectedPool).subscribe({
+      next: (data) => this.activeRound.set(data.activeRound),
+      error: () => this.activeRound.set(null)
     });
   }
 

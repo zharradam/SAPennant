@@ -170,4 +170,8 @@ export class PennantService {
   toggleSync(enabled: boolean): Observable<{ enabled: boolean }> {
     return this.http.post<{ enabled: boolean }>(`${this.API_URL}/sync/sync-toggle`, enabled);
   }
+
+  getActiveRound(year: number, pool: string): Observable<{ activeRound: string | null }> {
+    return this.http.get<{ activeRound: string | null }>(`${this.API_URL}/teampennant/active-round?year=${year}&pool=${pool}`);
+  }
 }
