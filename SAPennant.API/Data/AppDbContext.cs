@@ -12,6 +12,8 @@ public class AppDbContext : DbContext
     public DbSet<PennantMatch> PennantMatches { get; set; }
     public DbSet<Season> Seasons { get; set; }
     public DbSet<SyncLog> SyncLogs { get; set; }
+    public DbSet<RoundStatus> RoundStatuses { get; set; }
+    public DbSet<AppSetting> AppSettings { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -24,6 +26,16 @@ public class AppDbContext : DbContext
         modelBuilder.Entity<Season>(entity =>
         {
             entity.Property(e => e.Year).ValueGeneratedNever();
+        });
+
+        modelBuilder.Entity<RoundStatus>(entity =>
+        {
+            entity.HasIndex(e => new { e.Year, e.Pool, e.Round }).IsUnique();
+        });
+
+        modelBuilder.Entity<AppSetting>(entity =>
+        {
+            entity.HasKey(e => e.Key);
         });
     }
 }

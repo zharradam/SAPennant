@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using SAPennant.API.Data;
 
@@ -11,9 +12,11 @@ using SAPennant.API.Data;
 namespace SAPennant.API.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260412073143_AddRoundStatus")]
+    partial class AddRoundStatus
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -21,58 +24,6 @@ namespace SAPennant.API.Migrations
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
-
-            modelBuilder.Entity("RoundStatus", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<bool>("IsSettled")
-                        .HasColumnType("bit");
-
-                    b.Property<DateTime?>("LastChecked")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("Pool")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.Property<string>("Round")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
-                    b.Property<DateTime?>("SettledAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int>("Year")
-                        .HasColumnType("int");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("Year", "Pool", "Round")
-                        .IsUnique();
-
-                    b.ToTable("RoundStatuses");
-                });
-
-            modelBuilder.Entity("SAPennant.API.Models.AppSetting", b =>
-                {
-                    b.Property<string>("Key")
-                        .HasColumnType("nvarchar(450)");
-
-                    b.Property<string>("Value")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.HasKey("Key");
-
-                    b.ToTable("AppSettings");
-                });
 
             modelBuilder.Entity("SAPennant.API.Models.PennantMatch", b =>
                 {
@@ -155,6 +106,42 @@ namespace SAPennant.API.Migrations
                     b.HasIndex("Year", "IsFinals");
 
                     b.ToTable("PennantMatches");
+                });
+
+            modelBuilder.Entity("SAPennant.API.Models.RoundStatus", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<bool>("IsSettled")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime?>("LastChecked")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Pool")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("Round")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<DateTime?>("SettledAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("Year")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Year", "Pool", "Round")
+                        .IsUnique();
+
+                    b.ToTable("RoundStatuses");
                 });
 
             modelBuilder.Entity("SAPennant.API.Models.Season", b =>

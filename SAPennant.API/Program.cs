@@ -37,6 +37,8 @@ builder.Services.AddHttpClient<GolfboxSyncService>(client =>
     client.DefaultRequestHeaders.Add("Referer", "https://golf.com.au/");
 });
 builder.Services.AddScoped<GolfboxSyncService>();
+builder.Services.AddHostedService<PennantSyncBackgroundService>();
+builder.Services.AddScoped<SettingsService>();
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>

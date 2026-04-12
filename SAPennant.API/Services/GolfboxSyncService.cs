@@ -10,6 +10,7 @@ public class GolfboxSyncService
     private readonly HttpClient _http;
     private readonly ILogger<GolfboxSyncService> _logger;
     private const string BASE_URL = "https://scores.golfbox.dk/Handlers";
+    private static readonly SemaphoreSlim _syncLock = new SemaphoreSlim(1, 1);
 
     public GolfboxSyncService(AppDbContext db, HttpClient http, ILogger<GolfboxSyncService> logger)
     {
@@ -20,53 +21,129 @@ public class GolfboxSyncService
 
     public async Task SyncAllAsync()
     {
-        _logger.LogInformation("Starting Golfbox sync...");
-
-        var seasons = _db.Seasons.OrderByDescending(s => s.Year).ToList();
-
-        foreach (var season in seasons)
+        await _syncLock.WaitAsync();
+        try
         {
-            await SyncSeasonIfNeededAsync(season.Year, season.RegularId, false);
-            if (season.FinalsId.HasValue)
-                await SyncSeasonIfNeededAsync(season.Year, season.FinalsId.Value, true);
+            _logger.LogInformation("Starting Golfbox sync...");
+
+            var seasons = _db.Seasons.OrderByDescending(s => s.Year).ToList();
+
+            foreach (var season in seasons)
+            {
+                await SyncSeasonIfNeededAsync(season.Year, season.RegularId, false);
+                if (season.FinalsId.HasValue)
+                    await SyncSeasonIfNeededAsync(season.Year, season.FinalsId.Value, true);
+            }
+
+            _db.SyncLogs.Add(new SyncLog { SyncedAt = DateTime.UtcNow, Type = "Full" });
+            await _db.SaveChangesAsync();
+
+            _logger.LogInformation("Golfbox sync complete.");
         }
-
-        _db.SyncLogs.Add(new SyncLog { SyncedAt = DateTime.UtcNow, Type = "Full" });
-        await _db.SaveChangesAsync();
-
-        _logger.LogInformation("Golfbox sync complete.");
+        finally
+        {
+            _syncLock.Release();
+        }
     }
 
     public async Task RefreshYearAsync(int year)
     {
-        _logger.LogInformation("Refreshing {Year}...", year);
-
-        var season = _db.Seasons.FirstOrDefault(s => s.Year == year);
-        if (season == null)
+        await _syncLock.WaitAsync();
+        try
         {
-            _logger.LogWarning("No season found for year {Year}", year);
+            _logger.LogInformation("Refreshing {Year}...", year);
+
+            var season = _db.Seasons.FirstOrDefault(s => s.Year == year);
+            if (season == null)
+            {
+                _logger.LogWarning("No season found for year {Year}", year);
+                return;
+            }
+
+            var existing = _db.PennantMatches.Where(m => m.Year == year);
+            _db.PennantMatches.RemoveRange(existing);
+
+            // also clear round statuses for this year so they get re-evaluated
+            var roundStatuses = _db.RoundStatuses.Where(r => r.Year == year);
+            _db.RoundStatuses.RemoveRange(roundStatuses);
+
+            await _db.SaveChangesAsync();
+
+            await SyncSeasonAsync(year, season.RegularId, false);
+
+            if (season.FinalsId.HasValue)
+            {
+                await SyncSeasonAsync(year, season.FinalsId.Value, true);
+            }
+            else
+            {
+                _logger.LogInformation("No finals ID for {Year} — finals may not be available yet", year);
+            }
+
+            // backfill RoundStatuses for all synced rounds
+            var syncedRounds = _db.PennantMatches
+                .Where(m => m.Year == year && !m.IsFinals)
+                .Select(m => new { m.Pool, m.Round })
+                .Distinct()
+                .ToList();
+
+            foreach (var r in syncedRounds)
+            {
+                var exists = _db.RoundStatuses.Any(rs => rs.Year == year && rs.Pool == r.Pool && rs.Round == r.Round);
+                if (!exists)
+                {
+                    _db.RoundStatuses.Add(new RoundStatus
+                    {
+                        Year = year,
+                        Pool = r.Pool,
+                        Round = r.Round,
+                        IsSettled = false,
+                        LastChecked = DateTime.UtcNow,
+                        SettledAt = null
+                    });
+                }
+            }
+            await _db.SaveChangesAsync();
+
+            _db.SyncLogs.Add(new SyncLog { SyncedAt = DateTime.UtcNow, Type = $"Refresh {year}" });
+            await _db.SaveChangesAsync();
+
+            _logger.LogInformation("Refresh complete for {Year}", year);
+        }
+        finally
+        {
+            _syncLock.Release();
+        }
+    }
+
+    public async Task SyncCurrentYearUnsettledAsync()
+    {
+        if (!await _syncLock.WaitAsync(0))
+        {
+            _logger.LogInformation("Sync already in progress, skipping unsettled sync.");
             return;
         }
-
-        var existing = _db.PennantMatches.Where(m => m.Year == year);
-        _db.PennantMatches.RemoveRange(existing);
-        await _db.SaveChangesAsync();
-
-        await SyncSeasonAsync(year, season.RegularId, false);
-
-        if (season.FinalsId.HasValue)
+        try
         {
-            await SyncSeasonAsync(year, season.FinalsId.Value, true);
+            var currentYear = DateTime.UtcNow.Year;
+            _logger.LogInformation("Checking unsettled rounds for {Year}...", currentYear);
+
+            var season = _db.Seasons.FirstOrDefault(s => s.Year == currentYear);
+            if (season == null)
+            {
+                _logger.LogWarning("No season found for {Year}", currentYear);
+                return;
+            }
+
+            await SyncUnsettledPoolsAsync(currentYear, season.RegularId, false);
+
+            _db.SyncLogs.Add(new SyncLog { SyncedAt = DateTime.UtcNow, Type = $"UnsettledSync {currentYear}" });
+            await _db.SaveChangesAsync();
         }
-        else
+        finally
         {
-            _logger.LogInformation("No finals ID for {Year} — finals may not be available yet", year);
+            _syncLock.Release();
         }
-
-        _db.SyncLogs.Add(new SyncLog { SyncedAt = DateTime.UtcNow, Type = $"Refresh {year}" });
-        await _db.SaveChangesAsync();
-
-        _logger.LogInformation("Refresh complete for {Year}", year);
     }
 
     public async Task<object> GetSeasonIdsAsync(int year)
@@ -413,5 +490,225 @@ public class GolfboxSyncService
             _logger.LogError(ex, "Failed to fetch {Url}", url);
             return null;
         }
+    }
+
+    private async Task SyncUnsettledPoolsAsync(int year, int interclubId, bool isFinals)
+    {
+        var overview = await GetJsonpAsync(
+            $"{BASE_URL}/InterclubHandler/GetInterclubData/interclubID/{interclubId}/language/2057/");
+        if (overview == null) return;
+
+        var divisions = overview.Value
+            .GetProperty("Tournament")
+            .GetProperty("Divisions")
+            .EnumerateArray();
+
+        foreach (var div in divisions)
+        {
+            var divisionName = div.GetProperty("Name").GetString() ?? "";
+            foreach (var pool in div.GetProperty("Pools").EnumerateArray())
+            {
+                var poolName = pool.GetProperty("Name").GetString() ?? "";
+                var competitionId = pool.GetProperty("CompetitionID").GetInt64();
+                await SyncUnsettledRoundsForPoolAsync(year, isFinals, divisionName, poolName, competitionId);
+                await Task.Delay(200);
+            }
+        }
+    }
+
+    private async Task SyncUnsettledRoundsForPoolAsync(int year, bool isFinals, string division, string poolName, long competitionId)
+    {
+        var url = $"{BASE_URL}/RoundRobinHandler/GetRoundRobin/CompetitionId/{competitionId}/language/2057/";
+        var data = await GetJsonpAsync(url);
+        if (data == null) { _logger.LogWarning("No data returned for {Pool}", poolName); return; }
+
+        if (!data.Value.TryGetProperty("Matchplay", out var matchplay)) { _logger.LogWarning("No Matchplay for {Pool}", poolName); return; }
+
+        var firstClassProp = matchplay.EnumerateObject().FirstOrDefault();
+        if (firstClassProp.Value.ValueKind == JsonValueKind.Undefined) { _logger.LogWarning("Matchplay empty for {Pool}", poolName); return; }
+
+        var firstClass = firstClassProp.Value;
+
+        if (firstClass.TryGetProperty("Rounds", out var roundsProp))
+        {
+            _logger.LogInformation("Pool {Pool} has Rounds structure", poolName);
+            var allRounds = roundsProp.EnumerateObject().ToList();
+            int totalRounds = allRounds.Count;
+
+            foreach (var roundProp in allRounds)
+            {
+                if (!roundProp.Value.TryGetProperty("TeamMatches", out var teamMatches)) continue;
+                var roundNumber = int.TryParse(roundProp.Name, out var rn) ? rn : 1;
+                var roundName = GetRoundName(roundNumber, isFinals, totalRounds);
+                await ProcessUnsettledRoundAsync(year, isFinals, division, poolName, competitionId, roundName, roundNumber, teamMatches, totalRounds);
+            }
+        }
+        else if (firstClass.TryGetProperty("TeamMatches", out var teamMatchesDirect))
+        {
+            _logger.LogInformation("Pool {Pool} has direct TeamMatches structure", poolName);
+
+            var matchesByRound = teamMatchesDirect.EnumerateObject()
+                .GroupBy(tm => tm.Value.TryGetProperty("InterclubRoundNumber", out var rn) ? rn.GetInt32() : 1)
+                .OrderBy(g => g.Key);
+
+            int totalRounds = matchesByRound.Max(g => g.Key);
+
+            foreach (var roundGroup in matchesByRound)
+            {
+                var roundNumber = roundGroup.Key;
+                var roundName = GetRoundName(roundNumber, isFinals, totalRounds);
+                await ProcessUnsettledRoundFromListAsync(year, isFinals, division, poolName, competitionId,
+                    roundName, roundNumber, roundGroup.ToList(), totalRounds);
+            }
+        }
+        else
+        {
+            _logger.LogWarning("No Rounds or TeamMatches found for {Pool}", poolName);
+        }
+    }
+
+    private async Task ProcessUnsettledRoundAsync(
+        int year, bool isFinals, string division, string poolName,
+        long competitionId, string roundName, int roundNumber,
+        JsonElement teamMatches, int totalRounds)
+    {
+        var roundStatus = _db.RoundStatuses.FirstOrDefault(r =>
+            r.Year == year && r.Pool == poolName && r.Round == roundName);
+
+        if (roundStatus?.IsSettled == true)
+        {
+            var hasData = _db.PennantMatches.Any(m => m.Year == year && m.Pool == poolName && m.Round == roundName);
+            if (hasData)
+            {
+                _logger.LogInformation("Skipping {Pool} {Round} — already settled", poolName, roundName);
+                return;
+            }
+            _logger.LogInformation("Re-syncing {Pool} {Round} — marked settled but no data found", poolName, roundName);
+        }
+
+        var teamMatchList = teamMatches.EnumerateObject().ToList();
+        if (!teamMatchList.Any()) return;
+
+        var allSettled = teamMatchList.All(tm => tm.Value.GetProperty("IsSettled").GetBoolean());
+        var anySettled = teamMatchList.Any(tm => tm.Value.GetProperty("IsSettled").GetBoolean());
+
+        _logger.LogInformation("Pool={Pool} Round={Round} TeamMatches={Count} AnySettled={AnySettled} AllSettled={AllSettled}",
+            poolName, roundName, teamMatchList.Count, anySettled, allSettled);
+
+        if (!anySettled) return;
+
+        _logger.LogInformation("Syncing {Pool} {Round} — allSettled={AllSettled}", poolName, roundName, allSettled);
+
+        var existing = _db.PennantMatches
+            .Where(m => m.Year == year && m.Pool == poolName && m.Round == roundName);
+        _db.PennantMatches.RemoveRange(existing);
+        await _db.SaveChangesAsync();
+
+        var matches = new List<PennantMatch>();
+        foreach (var tm in teamMatchList)
+        {
+            var tmVal = tm.Value;
+            if (tmVal.GetProperty("IsBye").GetBoolean()) continue;
+            if (!tmVal.GetProperty("IsSettled").GetBoolean()) continue;
+
+            var teamMatchId = tmVal.GetProperty("TeamMatchID").GetInt64();
+            var startTime = tmVal.GetProperty("StartTime").GetString() ?? "";
+
+            var tmMatches = await GetTeamMatchAsync(competitionId, teamMatchId, year, isFinals, division, poolName, roundNumber, startTime, totalRounds);
+            tmMatches = tmMatches.Where(m => !(m.Result == "" && m.PlayerWon == null)).ToList();
+            matches.AddRange(tmMatches);
+            await Task.Delay(100);
+        }
+
+        _db.PennantMatches.AddRange(matches);
+
+        if (roundStatus == null)
+        {
+            roundStatus = new RoundStatus { Year = year, Pool = poolName, Round = roundName };
+            _db.RoundStatuses.Add(roundStatus);
+        }
+
+        roundStatus.LastChecked = DateTime.UtcNow;
+        if (allSettled)
+        {
+            roundStatus.IsSettled = true;
+            roundStatus.SettledAt = DateTime.UtcNow;
+            _logger.LogInformation("{Pool} {Round} is now fully settled.", poolName, roundName);
+        }
+
+        await _db.SaveChangesAsync();
+        _logger.LogInformation("Synced {Count} matches for {Pool} {Round}", matches.Count, poolName, roundName);
+    }
+
+    private async Task ProcessUnsettledRoundFromListAsync(
+        int year, bool isFinals, string division, string poolName,
+        long competitionId, string roundName, int roundNumber,
+        List<System.Text.Json.JsonProperty> teamMatchList, int totalRounds)
+    {
+        var roundStatus = _db.RoundStatuses.FirstOrDefault(r =>
+            r.Year == year && r.Pool == poolName && r.Round == roundName);
+
+        if (roundStatus?.IsSettled == true)
+        {
+            var hasData = _db.PennantMatches.Any(m => m.Year == year && m.Pool == poolName && m.Round == roundName);
+            if (hasData)
+            {
+                _logger.LogInformation("Skipping {Pool} {Round} — already settled", poolName, roundName);
+                return;
+            }
+            _logger.LogInformation("Re-syncing {Pool} {Round} — marked settled but no data found", poolName, roundName);
+        }
+
+        if (!teamMatchList.Any()) return;
+
+        var allSettled = teamMatchList.All(tm => tm.Value.GetProperty("IsSettled").GetBoolean());
+        var anySettled = teamMatchList.Any(tm => tm.Value.GetProperty("IsSettled").GetBoolean());
+
+        _logger.LogInformation("Pool={Pool} Round={Round} TeamMatches={Count} AnySettled={AnySettled} AllSettled={AllSettled}",
+            poolName, roundName, teamMatchList.Count, anySettled, allSettled);
+
+        if (!anySettled) return;
+
+        _logger.LogInformation("Syncing {Pool} {Round} — allSettled={AllSettled}", poolName, roundName, allSettled);
+
+        var existing = _db.PennantMatches
+            .Where(m => m.Year == year && m.Pool == poolName && m.Round == roundName);
+        _db.PennantMatches.RemoveRange(existing);
+        await _db.SaveChangesAsync();
+
+        var matches = new List<PennantMatch>();
+        foreach (var tm in teamMatchList)
+        {
+            var tmVal = tm.Value;
+            if (tmVal.GetProperty("IsBye").GetBoolean()) continue;
+            if (!tmVal.GetProperty("IsSettled").GetBoolean()) continue;
+
+            var teamMatchId = tmVal.GetProperty("TeamMatchID").GetInt64();
+            var startTime = tmVal.GetProperty("StartTime").GetString() ?? "";
+
+            var tmMatches = await GetTeamMatchAsync(competitionId, teamMatchId, year, isFinals, division, poolName, roundNumber, startTime, totalRounds);
+            tmMatches = tmMatches.Where(m => !(m.Result == "" && m.PlayerWon == null)).ToList();
+            matches.AddRange(tmMatches);
+            await Task.Delay(100);
+        }
+
+        _db.PennantMatches.AddRange(matches);
+
+        if (roundStatus == null)
+        {
+            roundStatus = new RoundStatus { Year = year, Pool = poolName, Round = roundName };
+            _db.RoundStatuses.Add(roundStatus);
+        }
+
+        roundStatus.LastChecked = DateTime.UtcNow;
+        if (allSettled)
+        {
+            roundStatus.IsSettled = true;
+            roundStatus.SettledAt = DateTime.UtcNow;
+            _logger.LogInformation("{Pool} {Round} is now fully settled.", poolName, roundName);
+        }
+
+        await _db.SaveChangesAsync();
+        _logger.LogInformation("Synced {Count} matches for {Pool} {Round}", matches.Count, poolName, roundName);
     }
 }

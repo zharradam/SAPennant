@@ -158,4 +158,16 @@ export class PennantService {
     if (r === 'A/S') return 'Halved';
     return r;
   }
+
+  syncUnsettled(): Observable<any> {
+    return this.http.post<any>(`${this.API_URL}/sync/sync-unsettled`, {});
+  }
+
+  getSyncStatus(): Observable<{ enabled: boolean }> {
+    return this.http.get<{ enabled: boolean }>(`${this.API_URL}/sync/sync-status`);
+  }
+
+  toggleSync(enabled: boolean): Observable<{ enabled: boolean }> {
+    return this.http.post<{ enabled: boolean }>(`${this.API_URL}/sync/sync-toggle`, enabled);
+  }
 }

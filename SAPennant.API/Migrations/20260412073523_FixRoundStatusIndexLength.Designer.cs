@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using SAPennant.API.Data;
 
@@ -11,9 +12,11 @@ using SAPennant.API.Data;
 namespace SAPennant.API.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260412073523_FixRoundStatusIndexLength")]
+    partial class FixRoundStatusIndexLength
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -58,20 +61,6 @@ namespace SAPennant.API.Migrations
                         .IsUnique();
 
                     b.ToTable("RoundStatuses");
-                });
-
-            modelBuilder.Entity("SAPennant.API.Models.AppSetting", b =>
-                {
-                    b.Property<string>("Key")
-                        .HasColumnType("nvarchar(450)");
-
-                    b.Property<string>("Value")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.HasKey("Key");
-
-                    b.ToTable("AppSettings");
                 });
 
             modelBuilder.Entity("SAPennant.API.Models.PennantMatch", b =>

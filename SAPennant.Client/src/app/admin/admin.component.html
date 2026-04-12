@@ -60,6 +60,25 @@
       </div>
 
       <div class="section-card">
+        <div class="section-header">
+          <div>
+            <h2>Sync Unsettled Rounds</h2>
+            <p>Check Golf SA for any unsettled rounds in the current year and update them</p>
+          </div>
+          <div class="header-right">
+            <label class="toggle-label">
+              <input type="checkbox" [checked]="isSyncEnabled()" (change)="toggleSync()">
+              Auto sync {{ isSyncEnabled() ? 'enabled' : 'disabled' }}
+            </label>
+            <button class="btn-primary" (click)="syncUnsettled()" [disabled]="isSyncingUnsettled()">
+              <span *ngIf="isSyncingUnsettled()">⏳ Syncing...</span>
+              <span *ngIf="!isSyncingUnsettled()">Sync unsettled</span>
+            </button>
+          </div>
+        </div>
+</div>
+
+      <div class="section-card">
         <h2>Seasons</h2>
         <p class="section-desc">Refresh a specific year or update the finals ID when available</p>
 

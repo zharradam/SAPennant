@@ -24,6 +24,8 @@ export class AdminComponent implements OnInit {
   usernameInput = '';
   passwordInput = '';
   authError = '';
+  isSyncingUnsettled = signal(false);
+  isSyncEnabled = signal(false);
 
   constructor(public pennant: PennantService, public auth: AuthService) {}
 
@@ -31,6 +33,7 @@ export class AdminComponent implements OnInit {
     if (this.auth.isAuthenticated()) {
       this.loadSeasons();
       this.pennant.refreshLastUpdated();
+      this.pennant.getSyncStatus().subscribe(s => this.isSyncEnabled.set(s.enabled));
     }
   }
 
@@ -69,8 +72,8 @@ export class AdminComponent implements OnInit {
 
   refreshYear(season: SyncStatus): void {
     season.isSyncing = true;
-    season.message = 'Syncing...';
-    season.messageType = 'info';
+    season.message = '';
+    season.messageType = '';
     this.seasons.set([...this.seasons()]);
 
     this.pennant.refreshYear(season.year).subscribe({
@@ -79,7 +82,6 @@ export class AdminComponent implements OnInit {
         season.message = res.message ?? 'Sync complete';
         season.messageType = 'success';
         this.seasons.set([...this.seasons()]);
-        // Reload last updated
         this.pennant.refreshLastUpdated();
       },
       error: () => {
@@ -121,5 +123,23 @@ export class AdminComponent implements OnInit {
         this.isSyncingAll.set(false);
       }
     });
+  }
+
+  syncUnsettled(): void {
+    this.isSyncingUnsettled.set(true);
+    this.pennant.syncUnsettled().subscribe({
+      next: () => {
+        this.isSyncingUnsettled.set(false);
+        this.pennant.refreshLastUpdated();
+      },
+      error: () => {
+        this.isSyncingUnsettled.set(false);
+      }
+    });
+  }
+
+  toggleSync(): void {
+    const newValue = !this.isSyncEnabled();
+    this.pennant.toggleSync(newValue).subscribe(s => this.isSyncEnabled.set(s.enabled));
   }
 }
