@@ -11,20 +11,33 @@ namespace SAPennant.API.Controllers;
 public class AuthController : ControllerBase
 {
     private readonly IConfiguration _config;
+    private readonly ILogger<AuthController> _logger;
 
-    public AuthController(IConfiguration config)
+    public AuthController(IConfiguration config, ILogger<AuthController> logger)
     {
         _config = config;
+        _logger = logger;
     }
 
     [HttpPost("login")]
     public IActionResult Login([FromBody] LoginRequest request)
     {
+        var ip = HttpContext.Connection.RemoteIpAddress?.ToString()
+            ?? HttpContext.Request.Headers["X-Forwarded-For"].FirstOrDefault()
+            ?? "unknown";
+
         var validUsername = _config["Admin:Username"];
         var validPassword = _config["Admin:Password"];
 
         if (request.Username != validUsername || request.Password != validPassword)
+        {
+            _logger.LogWarning("Failed admin login attempt. Username: {Username} IP: {IP}",
+                request.Username, ip);
             return Unauthorized(new { message = "Invalid credentials" });
+        }
+
+        _logger.LogInformation("Successful admin login. Username: {Username} IP: {IP}",
+            request.Username, ip);
 
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_config["Jwt:Key"]!));
         var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);

@@ -27,7 +27,7 @@ export class AdminComponent implements OnInit {
   newSeniorFinalsId: { [year: number]: number | null } = {};
   usernameInput = '';
   passwordInput = '';
-  authError = '';
+  authError = signal<string | null>(null);
   isSyncingUnsettled = signal(false);
   isSyncEnabled = signal(false);
   isMaintenanceMode = signal(false);
@@ -48,14 +48,20 @@ export class AdminComponent implements OnInit {
   }
 
   login(): void {
-    this.authError = '';
+    this.authError.set(null);
     this.auth.login(this.usernameInput, this.passwordInput).subscribe({
       next: () => {
         this.loadSeasons();
         this.pennant.refreshLastUpdated();
       },
-      error: () => {
-        this.authError = 'Invalid username or password';
+      error: (err) => {
+        if (err.status === 429) {
+          this.authError.set('Too many login attempts. Please wait before trying again.');
+        } else if (err.status === 401) {
+          this.authError.set('Invalid username or password.');
+        } else {
+          this.authError.set('An error occurred. Please try again.');
+        }
       }
     });
   }

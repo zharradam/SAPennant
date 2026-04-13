@@ -1,3 +1,4 @@
+using AspNetCoreRateLimit;
 using Microsoft.ApplicationInsights.Extensibility;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
@@ -39,6 +40,15 @@ builder.Services.AddHttpClient<GolfboxSyncService>(client =>
 builder.Services.AddScoped<GolfboxSyncService>();
 builder.Services.AddHostedService<PennantSyncBackgroundService>();
 builder.Services.AddScoped<SettingsService>();
+
+builder.Services.AddMemoryCache();
+builder.Services.Configure<IpRateLimitOptions>(
+    builder.Configuration.GetSection("IpRateLimiting"));
+builder.Services.AddSingleton<IIpPolicyStore, MemoryCacheIpPolicyStore>();
+builder.Services.AddSingleton<IRateLimitCounterStore, MemoryCacheRateLimitCounterStore>();
+builder.Services.AddSingleton<IRateLimitConfiguration, RateLimitConfiguration>();
+builder.Services.AddSingleton<IProcessingStrategy, AsyncKeyLockProcessingStrategy>();
+builder.Services.AddInMemoryRateLimiting();
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
@@ -82,6 +92,7 @@ app.UseSwaggerUI(c =>
 });
 
 app.UseCors("AllowAngular");
+app.UseIpRateLimiting();
 app.UseHttpsRedirection();
 app.UseAuthentication();
 app.UseAuthorization();
