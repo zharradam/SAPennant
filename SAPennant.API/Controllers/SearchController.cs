@@ -1,8 +1,6 @@
 ﻿using Microsoft.ApplicationInsights;
-using Microsoft.ApplicationInsights.Channel;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using SAPennant.API.Data;
+using SAPennant.API.Repositories.Interfaces;
 
 namespace SAPennant.API.Controllers;
 
@@ -10,17 +8,24 @@ namespace SAPennant.API.Controllers;
 [Route("api/[controller]")]
 public class SearchController : ControllerBase
 {
-    private readonly AppDbContext _db;
+    private readonly IPennantMatchRepository _matches;
+    private readonly ISyncLogRepository _syncLogs;
     private readonly TelemetryClient _telemetry;
 
-    public SearchController(AppDbContext db, TelemetryClient telemetry)
+    public SearchController(
+        IPennantMatchRepository matches,
+        ISyncLogRepository syncLogs,
+        TelemetryClient telemetry)
     {
-        _db = db;
+        _matches = matches;
+        _syncLogs = syncLogs;
         _telemetry = telemetry;
     }
 
     [HttpGet]
-    public async Task<IActionResult> Search([FromQuery] string q, [FromQuery] string? source = "search")
+    public async Task<IActionResult> Search(
+        [FromQuery] string q,
+        [FromQuery] string? source = "search")
     {
         if (string.IsNullOrWhiteSpace(q) || q.Length < 2)
             return BadRequest(new { error = "Query must be at least 2 characters" });
@@ -33,14 +38,7 @@ public class SearchController : ControllerBase
             { "source", source ?? "search" }
         });
 
-        var results = await _db.PennantMatches
-            .Where(m =>
-                (EF.Functions.Like(m.PlayerName.ToLower(), $"{searchTerm}%") ||
-                EF.Functions.Like(m.PlayerName.ToLower(), $"% {searchTerm}%")) &&
-                !m.PlayerName.StartsWith("-") &&
-                m.PlayerName.Length > 3)
-            .ToListAsync();
-
+        var results = await _matches.SearchByPlayerNameAsync(searchTerm);
         return Ok(results.OrderByDescending(m => m.SortDate));
     }
 
@@ -50,38 +48,16 @@ public class SearchController : ControllerBase
         if (string.IsNullOrWhiteSpace(q) || q.Length < 2)
             return Ok(new List<string>());
 
-        var searchTerm = q.Trim().ToLower();
-        var parts = searchTerm.Split(' ', StringSplitOptions.RemoveEmptyEntries);
-        var firstPart = parts[0];
-
-        // Pull candidates matching the first word from DB
-        var names = await _db.PennantMatches
-            .Where(m =>
-                (EF.Functions.Like(m.PlayerName.ToLower(), $"{firstPart}%") ||
-                EF.Functions.Like(m.PlayerName.ToLower(), $"% {firstPart}%")) &&
-                !m.PlayerName.StartsWith("-") &&
-                m.PlayerName.Length > 3)
-            .Select(m => m.PlayerName)
-            .Distinct()
-            .ToListAsync();
-
-        // Then filter in memory — all parts must match some word in the name
-        var filtered = names
-            .Where(n => parts.All(part =>
-                n.Split(' ').Any(word => word.StartsWith(part, StringComparison.OrdinalIgnoreCase))))
-            .OrderBy(n => n)
-            .Take(10)
-            .ToList();
-
-        return Ok(filtered);
+        var suggestions = await _matches.GetPlayerSuggestionsAsync(q);
+        return Ok(suggestions);
     }
 
     [HttpGet("leaderboard")]
     public async Task<IActionResult> Leaderboard(
-    [FromQuery] int? year,
-    [FromQuery] string? division,
-    [FromQuery] string? pool,
-    [FromQuery] int minGames = 5)
+        [FromQuery] int? year,
+        [FromQuery] string? division,
+        [FromQuery] string? pool,
+        [FromQuery] int minGames = 5)
     {
         _telemetry.TrackEvent("LeaderboardView", new Dictionary<string, string>
         {
@@ -90,26 +66,25 @@ public class SearchController : ControllerBase
             { "pool", pool ?? "all" }
         });
 
-        var query = _db.PennantMatches.AsQueryable();
+        bool? isSenior = division?.ToLower() == "senior" ? true : null;
 
-        if (year.HasValue)
-            query = query.Where(m => m.Year == year.Value);
+        var matches = await _matches.GetLeaderboardDataAsync(year, division, pool, isSenior);
 
+        // Division filtering in memory
         if (!string.IsNullOrWhiteSpace(division))
         {
             var d = division.ToLower();
             if (d == "men's")
-                query = query.Where(m => m.Division.ToLower().Contains("men's") && !m.Division.ToLower().Contains("women's"));
+                matches = matches.Where(m =>
+                    m.Division.ToLower().Contains("men's") &&
+                    !m.Division.ToLower().Contains("women's"));
             else if (d == "women's")
-                query = query.Where(m => m.Division.ToLower().Contains("women's"));
+                matches = matches.Where(m => m.Division.ToLower().Contains("women's"));
             else if (d == "junior")
-                query = query.Where(m => m.Division.ToLower().Contains("junior"));
+                matches = matches.Where(m => m.Division.ToLower().Contains("junior"));
+            else if (d == "senior")
+                matches = matches.Where(m => m.IsSenior);
         }
-
-        if (!string.IsNullOrWhiteSpace(pool))
-            query = query.Where(m => m.Pool == pool);
-
-        var matches = await query.ToListAsync();
 
         var leaderboard = matches
             .GroupBy(m => m.PlayerName)
@@ -178,7 +153,6 @@ public class SearchController : ControllerBase
             .Where(p => p.played >= minGames)
             .OrderByDescending(p => p.winRate)
             .ThenByDescending(p => p.played)
-            //.Take(100)
             .ToList();
 
         return Ok(leaderboard);
@@ -187,10 +161,8 @@ public class SearchController : ControllerBase
     private static int ExtractMargin(string? result)
     {
         if (string.IsNullOrEmpty(result)) return 0;
-        // Handle X&Y format
         var match = System.Text.RegularExpressions.Regex.Match(result, @"^(\d+)&");
         if (match.Success) return int.Parse(match.Groups[1].Value);
-        // Handle X Hole format
         match = System.Text.RegularExpressions.Regex.Match(result, @"^(\d+) Hole");
         if (match.Success) return int.Parse(match.Groups[1].Value);
         return 0;
@@ -199,20 +171,9 @@ public class SearchController : ControllerBase
     [HttpGet("filters")]
     public async Task<IActionResult> Filters([FromQuery] int? year = null)
     {
-        var years = await _db.PennantMatches
-            .Select(m => m.Year)
-            .Distinct()
-            .OrderByDescending(y => y)
-            .ToListAsync();
+        var years = await _matches.GetDistinctYearsAsync();
 
-        var matchesQuery = _db.PennantMatches.AsQueryable();
-        if (year.HasValue)
-            matchesQuery = matchesQuery.Where(m => m.Year == year.Value);
-
-        var poolDivisions = await matchesQuery
-            .Select(m => new { m.Pool, m.IsSenior })
-            .Distinct()
-            .ToListAsync();
+        var poolDivisions = await _matches.GetPoolDivisionsAsync(year);
 
         var hasSenior = poolDivisions.Any(p => p.IsSenior);
 
@@ -257,10 +218,7 @@ public class SearchController : ControllerBase
     [HttpGet("last-updated")]
     public async Task<IActionResult> LastUpdated()
     {
-        var last = await _db.SyncLogs
-            .OrderByDescending(s => s.SyncedAt)
-            .FirstOrDefaultAsync();
-
+        var last = await _syncLogs.GetLatestAsync();
         var localTime = last?.SyncedAt.ToLocalTime();
 
         return Ok(new
@@ -278,34 +236,21 @@ public class SearchController : ControllerBase
         if (string.IsNullOrWhiteSpace(q) || q.Length < 2)
             return Ok(new List<string>());
 
-        var clubs = await _db.PennantMatches
-            .Where(m =>
-                m.PlayerClub != null &&
-                m.PlayerClub.Length > 0 &&
-                EF.Functions.Like(m.PlayerClub.ToLower(), $"%{q.Trim().ToLower()}%"))
-            .Select(m => m.PlayerClub!)
-            .Distinct()
-            .OrderBy(c => c)
-            .Take(15)
-            .ToListAsync();
-
+        var clubs = await _matches.GetClubSuggestionsAsync(q);
         return Ok(clubs);
     }
 
     [HttpGet("clubs/players")]
-    public async Task<IActionResult> ClubPlayers([FromQuery] string clubName, [FromQuery] int minGames = 1)
-    { 
+    public async Task<IActionResult> ClubPlayers(
+        [FromQuery] string clubName,
+        [FromQuery] int minGames = 1)
+    {
         _telemetry.TrackEvent("ClubSearch", new Dictionary<string, string>
         {
             { "club", clubName }
         });
 
-        var matches = await _db.PennantMatches
-            .Where(m => m.PlayerClub == clubName &&
-                   !string.IsNullOrWhiteSpace(m.PlayerName) &&
-                   !m.PlayerName.StartsWith("-") &&
-                   m.PlayerName.Length > 3)
-            .ToListAsync();
+        var matches = await _matches.GetByClubAsync(clubName);
 
         var players = matches
             .GroupBy(m => new { m.PlayerName, m.Year, m.Pool })
@@ -342,12 +287,7 @@ public class SearchController : ControllerBase
     [HttpGet("handicap-leaderboard")]
     public async Task<IActionResult> HandicapLeaderboard()
     {
-        var matches = await _db.PennantMatches
-            .Where(m =>
-                m.Format == "single" &&
-                m.PlayerHandicap != null &&
-                m.PlayerHandicap != "")
-            .ToListAsync();
+        var matches = await _matches.GetHandicapDataAsync();
 
         var players = matches
             .Where(m => decimal.TryParse(m.PlayerHandicap, out var h) && h >= -10 && h <= 54)
@@ -390,13 +330,7 @@ public class SearchController : ControllerBase
     [HttpGet("handicap-history/{playerName}")]
     public async Task<IActionResult> HandicapHistory(string playerName)
     {
-        var matches = await _db.PennantMatches
-            .Where(m =>
-                m.PlayerName == playerName &&
-                m.Format == "single" &&
-                m.PlayerHandicap != null &&
-                m.PlayerHandicap != "")
-            .ToListAsync(); // load into memory first
+        var matches = await _matches.GetHandicapHistoryAsync(playerName);
 
         var history = matches
             .Where(m => decimal.TryParse(m.PlayerHandicap, out var h) && h >= -10 && h <= 54)
@@ -410,7 +344,7 @@ public class SearchController : ControllerBase
                 pool = m.Pool,
                 year = m.Year
             })
-            .OrderBy(m => m.sortDate) // sort in memory after projection
+            .OrderBy(m => m.sortDate)
             .ToList();
 
         return Ok(history);

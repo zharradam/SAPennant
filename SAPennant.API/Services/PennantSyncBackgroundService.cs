@@ -1,6 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
-using SAPennant.API.Data;
-using SAPennant.API.Services;
+﻿using SAPennant.API.Services;
 
 namespace SAPennant.API.Services;
 
@@ -10,7 +8,9 @@ public class PennantSyncBackgroundService : BackgroundService
     private readonly ILogger<PennantSyncBackgroundService> _logger;
     private static readonly TimeSpan Interval = TimeSpan.FromHours(1);
 
-    public PennantSyncBackgroundService(IServiceScopeFactory scopeFactory, ILogger<PennantSyncBackgroundService> logger)
+    public PennantSyncBackgroundService(
+        IServiceScopeFactory scopeFactory,
+        ILogger<PennantSyncBackgroundService> logger)
     {
         _scopeFactory = scopeFactory;
         _logger = logger;
@@ -25,7 +25,7 @@ public class PennantSyncBackgroundService : BackgroundService
         {
             using var scope = _scopeFactory.CreateScope();
             var settings = scope.ServiceProvider.GetRequiredService<SettingsService>();
-            var isEnabled = settings.GetBool("AutoSyncEnabled", true);
+            var isEnabled = await settings.GetBoolAsync("AutoSyncEnabled", true);
 
             if (isEnabled)
             {

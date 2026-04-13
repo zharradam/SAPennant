@@ -39,16 +39,24 @@ export class TeamPennantComponent implements OnInit {
   constructor(private pennant: PennantService) {}
 
   ngOnInit(): void {
-    this.pennant.getFilters(this.selectedYear).subscribe({
+    this.pennant.getFilters(new Date().getFullYear()).subscribe({
       next: filters => {
         this.years = filters.years;
-        this.pools = filters.pools;
         this.divisions = filters.divisions;
         this.divisionPools = filters.divisionPools;
+
+        // Set selected year to the first (latest) year returned
+        if (this.years.length > 0) {
+          this.selectedYear = this.years[0];
+        }
+
+        this.pools = filters.pools;
         this.filteredPools = filters.pools;
 
         if (this.filteredPools.length > 0) {
-          this.selectedPool = this.filteredPools.includes('Simpson Cup') ? 'Simpson Cup' : this.filteredPools[0];
+          this.selectedPool = this.filteredPools.includes('Simpson Cup') 
+            ? 'Simpson Cup' 
+            : this.filteredPools[0];
           this.loadRoundsList();
         }
       },

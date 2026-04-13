@@ -1,28 +1,32 @@
 ﻿using Microsoft.ApplicationInsights;
-using Microsoft.ApplicationInsights.Channel;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using SAPennant.API.Data;
 using SAPennant.API.Models;
+using SAPennant.API.Repositories.Interfaces;
 using SAPennant.API.Services;
-using System.Runtime;
 
 namespace SAPennant.API.Controllers;
 
-//[Authorize]
 [ApiController]
 [Route("api/[controller]")]
 public class SyncController : ControllerBase
 {
     private readonly GolfboxSyncService _sync;
-    private readonly AppDbContext _db;
+    private readonly ISeasonRepository _seasons;
+    private readonly IAppSettingRepository _appSettings;
     private readonly TelemetryClient _telemetry;
     private readonly SettingsService _settings;
 
-    public SyncController(GolfboxSyncService sync, AppDbContext db, TelemetryClient telemetry, SettingsService settings)
+    public SyncController(
+        GolfboxSyncService sync,
+        ISeasonRepository seasons,
+        IAppSettingRepository appSettings,
+        TelemetryClient telemetry,
+        SettingsService settings)
     {
         _sync = sync;
-        _db = db;
+        _seasons = seasons;
+        _appSettings = appSettings;
         _telemetry = telemetry;
         _settings = settings;
     }
@@ -31,13 +35,11 @@ public class SyncController : ControllerBase
     public async Task<IActionResult> Run()
     {
         await _sync.SyncAllAsync();
-
         _telemetry.TrackEvent("SyncCompleted", new Dictionary<string, string>
         {
             { "year", "all" },
             { "type", "full" }
         });
-
         return Ok(new { message = "Sync complete" });
     }
 
@@ -54,42 +56,49 @@ public class SyncController : ControllerBase
     }
 
     [HttpGet("seasons")]
-    public IActionResult GetSeasons()
+    public async Task<IActionResult> GetSeasons()
     {
-        var seasons = _db.Seasons
-            .OrderByDescending(s => s.Year)
-            .Select(s => new { s.Year, s.RegularId, s.FinalsId, s.SeniorRegularId, s.SeniorFinalsId })
-            .ToList();
-        return Ok(seasons);
+        var seasons = await _seasons.GetAllOrderedAsync();
+        return Ok(seasons.Select(s => new
+        {
+            s.Year,
+            s.RegularId,
+            s.FinalsId,
+            s.SeniorRegularId,
+            s.SeniorFinalsId
+        }));
     }
 
     [HttpPut("seasons/{year}/finals-id")]
     public async Task<IActionResult> UpdateFinalsId(int year, [FromBody] UpdateFinalsIdRequest request)
     {
-        var season = _db.Seasons.FirstOrDefault(s => s.Year == year);
+        var season = await _seasons.GetByYearAsync(year);
         if (season == null) return NotFound();
         season.FinalsId = request.FinalsId;
-        await _db.SaveChangesAsync();
+        _seasons.Update(season);
+        await _seasons.SaveChangesAsync();
         return Ok(new { message = $"Finals ID updated for {year}" });
     }
 
     [HttpPut("seasons/{year}/senior-regular-id")]
     public async Task<IActionResult> UpdateSeniorRegularId(int year, [FromBody] UpdateFinalsIdRequest request)
     {
-        var season = _db.Seasons.FirstOrDefault(s => s.Year == year);
+        var season = await _seasons.GetByYearAsync(year);
         if (season == null) return NotFound();
         season.SeniorRegularId = request.FinalsId;
-        await _db.SaveChangesAsync();
+        _seasons.Update(season);
+        await _seasons.SaveChangesAsync();
         return Ok(new { message = $"Senior Regular ID updated for {year}" });
     }
 
     [HttpPut("seasons/{year}/senior-finals-id")]
     public async Task<IActionResult> UpdateSeniorFinalsId(int year, [FromBody] UpdateFinalsIdRequest request)
     {
-        var season = _db.Seasons.FirstOrDefault(s => s.Year == year);
+        var season = await _seasons.GetByYearAsync(year);
         if (season == null) return NotFound();
         season.SeniorFinalsId = request.FinalsId;
-        await _db.SaveChangesAsync();
+        _seasons.Update(season);
+        await _seasons.SaveChangesAsync();
         return Ok(new { message = $"Senior Finals ID updated for {year}" });
     }
 
@@ -103,9 +112,9 @@ public class SyncController : ControllerBase
 
     [HttpGet("sync-status")]
     [Authorize]
-    public IActionResult GetSyncStatus()
+    public async Task<IActionResult> GetSyncStatus()
     {
-        var enabled = _settings.GetBool("AutoSyncEnabled", true);
+        var enabled = await _settings.GetBoolAsync("AutoSyncEnabled", true);
         return Ok(new { enabled });
     }
 
@@ -121,7 +130,7 @@ public class SyncController : ControllerBase
     [AllowAnonymous]
     public async Task<IActionResult> GetMaintenance()
     {
-        var setting = await _db.AppSettings.FindAsync("MaintenanceMode");
+        var setting = await _appSettings.GetAsync("MaintenanceMode");
         return Ok(new { enabled = setting?.Value == "true" });
     }
 
@@ -129,16 +138,7 @@ public class SyncController : ControllerBase
     [Authorize]
     public async Task<IActionResult> SetMaintenance([FromBody] bool enabled)
     {
-        var setting = await _db.AppSettings.FindAsync("MaintenanceMode");
-        if (setting == null)
-        {
-            _db.AppSettings.Add(new AppSetting { Key = "MaintenanceMode", Value = enabled ? "true" : "false" });
-        }
-        else
-        {
-            setting.Value = enabled ? "true" : "false";
-        }
-        await _db.SaveChangesAsync();
+        await _appSettings.SetAsync("MaintenanceMode", enabled ? "true" : "false");
         return Ok(new { enabled });
     }
 }

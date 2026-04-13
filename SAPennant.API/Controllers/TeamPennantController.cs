@@ -1,6 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using SAPennant.API.Data;
+using SAPennant.API.Repositories.Interfaces;
 
 namespace SAPennant.API.Controllers;
 
@@ -8,21 +7,24 @@ namespace SAPennant.API.Controllers;
 [Route("api/[controller]")]
 public class TeamPennantController : ControllerBase
 {
-    private readonly AppDbContext _context;
+    private readonly IPennantMatchRepository _matches;
+    private readonly IRoundStatusRepository _roundStatuses;
     private readonly ILogger<TeamPennantController> _logger;
 
-    public TeamPennantController(AppDbContext context, ILogger<TeamPennantController> logger)
+    public TeamPennantController(
+        IPennantMatchRepository matches,
+        IRoundStatusRepository roundStatuses,
+        ILogger<TeamPennantController> logger)
     {
-        _context = context;
+        _matches = matches;
+        _roundStatuses = roundStatuses;
         _logger = logger;
     }
 
     [HttpGet("leaderboard")]
     public async Task<IActionResult> GetLeaderboard([FromQuery] int year, [FromQuery] string pool)
     {
-        var matches = await _context.PennantMatches
-            .Where(m => m.Year == year && m.Pool == pool && !m.IsFinals)
-            .ToListAsync();
+        var matches = await _matches.GetTeamMatchesAsync(year, pool);
 
         var teamScores = matches
             .GroupBy(m => new { m.Round, m.HomeClub, m.AwayClub })
@@ -31,7 +33,6 @@ public class TeamPennantController : ControllerBase
                 var deduped = g.OrderBy(m => m.Id)
                                .Where((m, i) => i % 2 == 0)
                                .ToList();
-
                 return new
                 {
                     g.Key.Round,
@@ -96,11 +97,10 @@ public class TeamPennantController : ControllerBase
     }
 
     [HttpGet("rounds")]
-    public async Task<IActionResult> GetRound([FromQuery] int year, [FromQuery] string pool, [FromQuery] string round)
+    public async Task<IActionResult> GetRound(
+        [FromQuery] int year, [FromQuery] string pool, [FromQuery] string round)
     {
-        var matches = await _context.PennantMatches
-            .Where(m => m.Year == year && m.Pool == pool && m.Round == round)
-            .ToListAsync();
+        var matches = await _matches.GetByYearAndPoolAndRoundAsync(year, pool, round);
 
         var teamMatches = matches
             .GroupBy(m => new { m.HomeClub, m.AwayClub })
@@ -109,7 +109,6 @@ public class TeamPennantController : ControllerBase
                 var deduped = g.OrderBy(m => m.Id)
                                .Where((m, i) => i % 2 == 0)
                                .ToList();
-
                 return new
                 {
                     g.Key.HomeClub,
@@ -124,12 +123,11 @@ public class TeamPennantController : ControllerBase
     }
 
     [HttpGet("match")]
-    public async Task<IActionResult> GetMatch([FromQuery] int year, [FromQuery] string pool, [FromQuery] string round, [FromQuery] string home, [FromQuery] string away)
+    public async Task<IActionResult> GetMatch(
+        [FromQuery] int year, [FromQuery] string pool,
+        [FromQuery] string round, [FromQuery] string home, [FromQuery] string away)
     {
-        var matches = await _context.PennantMatches
-            .Where(m => m.Year == year && m.Pool == pool && m.Round == round
-                     && m.HomeClub == home && m.AwayClub == away)
-            .ToListAsync();
+        var matches = await _matches.GetMatchAsync(year, pool, round, home, away);
 
         var deduped = matches
             .OrderBy(m => m.Id)
@@ -151,13 +149,10 @@ public class TeamPennantController : ControllerBase
     [HttpGet("rounds-list")]
     public async Task<IActionResult> GetRoundsList([FromQuery] int year, [FromQuery] string pool)
     {
-        var rounds = await _context.PennantMatches
-            .Where(m => m.Year == year && m.Pool == pool)
-            .Select(m => m.Round)
-            .Distinct()
-            .ToListAsync();
+        var rounds = await _matches.GetRoundsListAsync(year, pool);
 
-        var ordered = rounds.OrderBy(r => {
+        var ordered = rounds.OrderBy(r =>
+        {
             if (r == "Final") return 999;
             if (r == "Semi Final") return 998;
             var match = System.Text.RegularExpressions.Regex.Match(r, @"\d+");
@@ -170,17 +165,14 @@ public class TeamPennantController : ControllerBase
     [HttpGet("champion")]
     public async Task<IActionResult> GetChampion([FromQuery] int year, [FromQuery] string pool)
     {
-        var final = await _context.PennantMatches
-            .Where(m => m.Year == year && m.Pool == pool && m.Round == "Final")
-            .FirstOrDefaultAsync();
+        var matches = await _matches.GetByYearAndPoolAndRoundAsync(year, pool, "Final");
+        var matchList = matches.ToList();
 
-        if (final == null) return Ok(null);
+        if (!matchList.Any()) return Ok(null);
 
-        var matches = await _context.PennantMatches
-            .Where(m => m.Year == year && m.Pool == pool && m.Round == "Final")
-            .ToListAsync();
+        var final = matchList.First();
 
-        var deduped = matches
+        var deduped = matchList
             .OrderBy(m => m.Id)
             .Where((m, i) => i % 2 == 0)
             .ToList();
@@ -199,12 +191,10 @@ public class TeamPennantController : ControllerBase
     }
 
     [HttpGet("club-rounds")]
-    public async Task<IActionResult> GetClubRounds([FromQuery] int year, [FromQuery] string pool, [FromQuery] string club)
+    public async Task<IActionResult> GetClubRounds(
+        [FromQuery] int year, [FromQuery] string pool, [FromQuery] string club)
     {
-        var matches = await _context.PennantMatches
-            .Where(m => m.Year == year && m.Pool == pool
-                     && (m.HomeClub == club || m.AwayClub == club))
-            .ToListAsync();
+        var matches = await _matches.GetClubMatchesAsync(year, pool, club);
 
         var rounds = matches
             .GroupBy(m => new { m.Round, m.HomeClub, m.AwayClub })
@@ -227,7 +217,8 @@ public class TeamPennantController : ControllerBase
                     OpponentPoints = isHome ? awayPoints : homePoints,
                 };
             })
-            .OrderBy(r => {
+            .OrderBy(r =>
+            {
                 if (r.Round == "Final") return 999;
                 if (r.Round == "Semi Final") return 998;
                 var m = System.Text.RegularExpressions.Regex.Match(r.Round, @"\d+");
@@ -241,15 +232,15 @@ public class TeamPennantController : ControllerBase
     [HttpGet("active-round")]
     public async Task<IActionResult> GetActiveRound([FromQuery] int year, [FromQuery] string pool)
     {
-        var all = await _context.RoundStatuses
-            .Where(r => r.Year == year && r.Pool == pool)
-            .ToListAsync();
+        var all = await _roundStatuses.GetByYearAsync(year);
+        var poolStatuses = all.Where(r => r.Pool == pool).ToList();
 
-        _logger.LogInformation("Found {Count} round statuses for {Year} {Pool}", all.Count, year, pool);
-        foreach (var r in all)
+        _logger.LogInformation("Found {Count} round statuses for {Year} {Pool}",
+            poolStatuses.Count, year, pool);
+        foreach (var r in poolStatuses)
             _logger.LogInformation("Round={Round} IsSettled={IsSettled}", r.Round, r.IsSettled);
 
-        var activeRound = all.FirstOrDefault(r => r.IsSettled == false)?.Round;
+        var activeRound = poolStatuses.FirstOrDefault(r => !r.IsSettled)?.Round;
 
         return Ok(new { activeRound });
     }

@@ -4,12 +4,14 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using SAPennant.API.Data;
+using SAPennant.API.Infrastructure;
 using SAPennant.API.Services;
 using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
+builder.Services.AddRepositories();
 builder.Services.AddOpenApi();
 
 builder.Services.AddApplicationInsightsTelemetry();
