@@ -2,7 +2,7 @@
 
 #nullable disable
 
-namespace SAPennant.API.Migrations
+namespace SAPennant.API.Migrations.SqlServer
 {
     public partial class AddHonourRoll : Migration
     {

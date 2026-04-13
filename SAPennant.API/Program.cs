@@ -11,7 +11,6 @@ using System.Text;
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
-builder.Services.AddRepositories();
 builder.Services.AddOpenApi();
 
 builder.Services.AddApplicationInsightsTelemetry();
@@ -31,8 +30,8 @@ builder.Services.AddSwaggerGen(c =>
     c.SwaggerDoc("v1", new() { Title = "SAPennant API", Version = "v1" });
 });
 
-builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+builder.Services.AddDatabase(builder.Configuration);
+builder.Services.AddRepositories();
 
 builder.Services.AddHttpClient<GolfboxSyncService>(client =>
 {
@@ -86,6 +85,11 @@ builder.Services.AddCors(options =>
 });
 
 var app = builder.Build();
+
+var logger = app.Services.GetRequiredService<ILogger<Program>>();
+var provider = builder.Configuration["DatabaseProvider"] ?? "sqlserver";
+logger.LogInformation(">>> Database provider: {Provider}", provider.ToUpper());
+logger.LogInformation(">>> Environment: {Environment}", builder.Environment.EnvironmentName);
 
 app.MapOpenApi();
 app.UseSwaggerUI(c =>

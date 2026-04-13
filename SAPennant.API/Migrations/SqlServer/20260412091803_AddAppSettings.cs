@@ -2,25 +2,24 @@
 
 #nullable disable
 
-namespace SAPennant.API.Migrations
+namespace SAPennant.API.Migrations.SqlServer
 {
     /// <inheritdoc />
-    public partial class AddSeasonsTable : Migration
+    public partial class AddAppSettings : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.CreateTable(
-                name: "Seasons",
+                name: "AppSettings",
                 columns: table => new
                 {
-                    Year = table.Column<int>(type: "int", nullable: false),
-                    RegularId = table.Column<int>(type: "int", nullable: false),
-                    FinalsId = table.Column<int>(type: "int", nullable: true)
+                    Key = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    Value = table.Column<string>(type: "nvarchar(max)", nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_Seasons", x => x.Year);
+                    table.PrimaryKey("PK_AppSettings", x => x.Key);
                 });
         }
 
@@ -28,7 +27,7 @@ namespace SAPennant.API.Migrations
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropTable(
-                name: "Seasons");
+                name: "AppSettings");
         }
     }
 }

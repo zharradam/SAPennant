@@ -3,7 +3,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
-namespace SAPennant.API.Migrations
+namespace SAPennant.API.Migrations.SqlServer
 {
     /// <inheritdoc />
     public partial class AddRoundStatus : Migration

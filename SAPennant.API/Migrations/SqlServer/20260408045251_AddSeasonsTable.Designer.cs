@@ -8,11 +8,11 @@ using SAPennant.API.Data;
 
 #nullable disable
 
-namespace SAPennant.API.Migrations
+namespace SAPennant.API.Migrations.SqlServer
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20260408032452_InitialCreate")]
-    partial class InitialCreate
+    [Migration("20260408045251_AddSeasonsTable")]
+    partial class AddSeasonsTable
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -59,12 +59,18 @@ namespace SAPennant.API.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<string>("OpponentHandicap")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<string>("OpponentName")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("PlayerClub")
                         .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("PlayerHandicap")
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("PlayerName")
@@ -86,6 +92,9 @@ namespace SAPennant.API.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<string>("Venue")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<int>("Year")
                         .HasColumnType("int");
 
@@ -96,6 +105,22 @@ namespace SAPennant.API.Migrations
                     b.HasIndex("Year", "IsFinals");
 
                     b.ToTable("PennantMatches");
+                });
+
+            modelBuilder.Entity("SAPennant.API.Models.Season", b =>
+                {
+                    b.Property<int>("Year")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("FinalsId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("RegularId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Year");
+
+                    b.ToTable("Seasons");
                 });
 #pragma warning restore 612, 618
         }

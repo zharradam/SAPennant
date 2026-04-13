@@ -9,11 +9,11 @@ using SAPennant.API.Data;
 
 #nullable disable
 
-namespace SAPennant.API.Migrations
+namespace SAPennant.API.Migrations.SqlServer
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20260412073143_AddRoundStatus")]
-    partial class AddRoundStatus
+    [Migration("20260412232518_AddHonourRoll")]
+    partial class AddHonourRoll
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -24,6 +24,99 @@ namespace SAPennant.API.Migrations
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
+
+            modelBuilder.Entity("RoundStatus", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<bool>("IsSettled")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime?>("LastChecked")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Pool")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("Round")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<DateTime?>("SettledAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("Year")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Year", "Pool", "Round")
+                        .IsUnique();
+
+                    b.ToTable("RoundStatuses");
+                });
+
+            modelBuilder.Entity("SAPennant.API.Models.AppSetting", b =>
+                {
+                    b.Property<string>("Key")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("Value")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Key");
+
+                    b.ToTable("AppSettings");
+                });
+
+            modelBuilder.Entity("SAPennant.API.Models.HonourRoll", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Competition")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Pool")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Winner")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("Year")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("HonourRoll");
+                });
+
+            modelBuilder.Entity("SAPennant.API.Models.HonourRollNarrative", b =>
+                {
+                    b.Property<string>("Competition")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("Narrative")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Competition");
+
+                    b.ToTable("HonourRollNarratives");
+                });
 
             modelBuilder.Entity("SAPennant.API.Models.PennantMatch", b =>
                 {
@@ -54,6 +147,9 @@ namespace SAPennant.API.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<bool>("IsFinals")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsSenior")
                         .HasColumnType("bit");
 
                     b.Property<string>("OpponentClub")
@@ -108,42 +204,6 @@ namespace SAPennant.API.Migrations
                     b.ToTable("PennantMatches");
                 });
 
-            modelBuilder.Entity("SAPennant.API.Models.RoundStatus", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<bool>("IsSettled")
-                        .HasColumnType("bit");
-
-                    b.Property<DateTime?>("LastChecked")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("Pool")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(450)");
-
-                    b.Property<string>("Round")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(450)");
-
-                    b.Property<DateTime?>("SettledAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int>("Year")
-                        .HasColumnType("int");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("Year", "Pool", "Round")
-                        .IsUnique();
-
-                    b.ToTable("RoundStatuses");
-                });
-
             modelBuilder.Entity("SAPennant.API.Models.Season", b =>
                 {
                     b.Property<int>("Year")
@@ -153,6 +213,12 @@ namespace SAPennant.API.Migrations
                         .HasColumnType("int");
 
                     b.Property<int>("RegularId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("SeniorFinalsId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("SeniorRegularId")
                         .HasColumnType("int");
 
                     b.HasKey("Year");

@@ -8,11 +8,11 @@ using SAPennant.API.Data;
 
 #nullable disable
 
-namespace SAPennant.API.Migrations
+namespace SAPennant.API.Migrations.SqlServer
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20260408045251_AddSeasonsTable")]
-    partial class AddSeasonsTable
+    [Migration("20260408040504_AddHandicapAndVenue")]
+    partial class AddHandicapAndVenue
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -105,22 +105,6 @@ namespace SAPennant.API.Migrations
                     b.HasIndex("Year", "IsFinals");
 
                     b.ToTable("PennantMatches");
-                });
-
-            modelBuilder.Entity("SAPennant.API.Models.Season", b =>
-                {
-                    b.Property<int>("Year")
-                        .HasColumnType("int");
-
-                    b.Property<int?>("FinalsId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("RegularId")
-                        .HasColumnType("int");
-
-                    b.HasKey("Year");
-
-                    b.ToTable("Seasons");
                 });
 #pragma warning restore 612, 618
         }

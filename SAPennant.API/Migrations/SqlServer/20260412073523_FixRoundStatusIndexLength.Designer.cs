@@ -9,11 +9,11 @@ using SAPennant.API.Data;
 
 #nullable disable
 
-namespace SAPennant.API.Migrations
+namespace SAPennant.API.Migrations.SqlServer
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20260412091803_AddAppSettings")]
-    partial class AddAppSettings
+    [Migration("20260412073523_FixRoundStatusIndexLength")]
+    partial class FixRoundStatusIndexLength
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -61,20 +61,6 @@ namespace SAPennant.API.Migrations
                         .IsUnique();
 
                     b.ToTable("RoundStatuses");
-                });
-
-            modelBuilder.Entity("SAPennant.API.Models.AppSetting", b =>
-                {
-                    b.Property<string>("Key")
-                        .HasColumnType("nvarchar(450)");
-
-                    b.Property<string>("Value")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.HasKey("Key");
-
-                    b.ToTable("AppSettings");
                 });
 
             modelBuilder.Entity("SAPennant.API.Models.PennantMatch", b =>
