@@ -2,6 +2,7 @@ import { NgModule, provideBrowserGlobalErrorListeners } from '@angular/core';
 import { BrowserModule } from '@angular/platform-browser';
 import { FormsModule } from '@angular/forms';
 import { HttpClientModule, provideHttpClient, withInterceptors } from '@angular/common/http';
+import { environment } from '../environments/environment';
 
 import { App } from './app.component';
 import { SearchComponent } from './search/search.component';
@@ -14,6 +15,7 @@ import { ClubSearchComponent } from './club-search/club-search.component';
 import { HandicapComponent } from './handicap/handicap.component';
 import { TeamPennantComponent } from './team-pennant/team-pennant.component';
 import { HonourRollComponent } from './honour-roll/honour-roll.component';
+import { ServiceWorkerModule } from '@angular/service-worker';
 
 @NgModule({
   declarations: [
@@ -28,7 +30,15 @@ import { HonourRollComponent } from './honour-roll/honour-roll.component';
     TeamPennantComponent,
     HonourRollComponent,
   ],
-  imports: [BrowserModule, FormsModule, HttpClientModule],
+  imports: [
+    BrowserModule,
+    FormsModule,
+    HttpClientModule,
+    ServiceWorkerModule.register('ngsw-worker.js', {
+      enabled: environment.production,
+      registrationStrategy: 'registerWhenStable:30000',
+    }),
+  ],
   providers: [
     provideBrowserGlobalErrorListeners(),
     provideHttpClient(withInterceptors([authInterceptor])),
