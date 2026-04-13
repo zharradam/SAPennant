@@ -11,7 +11,7 @@
       <div class="filter-group">
         <label>Competition</label>
         <select [(ngModel)]="selectedCompetition" (ngModelChange)="onCompetitionChange()">
-          <option *ngFor="let c of competitions" [ngValue]="c">{{ c }}'s Pennant</option>
+          <option *ngFor="let c of competitions" [ngValue]="c">{{ c }} Pennant</option>
         </select>
       </div>
       <div class="filter-group">
@@ -39,7 +39,7 @@
 
     <div class="narrative-panel" *ngIf="currentNarrative">
       <button class="narrative-toggle" (click)="toggleNarrative()">
-        <span>About {{ selectedCompetition }}'s Pennant</span>
+        <span>About {{ selectedCompetition }} Pennant</span>
         <span class="narrative-chevron" [class.open]="narrativeExpanded">›</span>
       </button>
       <div class="narrative-body" [class.expanded]="narrativeExpanded">
