@@ -114,6 +114,7 @@ public class TeamPennantController : ControllerBase
                 {
                     g.Key.HomeClub,
                     g.Key.AwayClub,
+                    Venue = deduped.FirstOrDefault()?.Venue,
                     HomePoints = deduped.Sum(m => m.PlayerWon == true ? 1.0 : m.PlayerWon == null ? 0.5 : 0.0),
                     AwayPoints = deduped.Sum(m => m.PlayerWon == false ? 1.0 : m.PlayerWon == null ? 0.5 : 0.0),
                 };

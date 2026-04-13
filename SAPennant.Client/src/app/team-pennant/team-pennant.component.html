@@ -146,7 +146,12 @@
 
       <!-- RIGHT: Round Results -->
       <div class="panel panel-rounds">
-        <div class="panel-title">{{ selectedRound }} Results</div>
+          <div class="panel-title">
+            {{ selectedRound }} Results
+            <span class="round-venue" *ngIf="roundMatches().length > 0 && roundMatches()[0].venue">
+              @ {{ roundMatches()[0].venue }}
+            </span>
+          </div>
 
         <div class="status loading" *ngIf="isLoadingRound()">
           <span class="spinner"></span> Loading round…
