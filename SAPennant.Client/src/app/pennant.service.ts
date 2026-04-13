@@ -17,12 +17,12 @@ export class PennantService {
 
   search(query: string, source: string = 'search'): Observable<PlayerMatch[]> {
     return this.http.get<PlayerMatch[]>(
-      `${this.API_URL}/search?q=${query}&source=${source}`
+      `${this.API_URL}/search?q=${encodeURIComponent(query)}&source=${source}`
     );
-}
+  }
 
   getSuggestions(query: string): Observable<string[]> {
-    return this.http.get<string[]>(`${this.API_URL}/search/suggestions?q=${query}`);
+    return this.http.get<string[]>(`${this.API_URL}/search/suggestions?q=${encodeURIComponent(query)}`);
   }
 
   getFilters(year?: number): Observable<any> {

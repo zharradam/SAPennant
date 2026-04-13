@@ -51,20 +51,24 @@ public class SearchController : ControllerBase
             return Ok(new List<string>());
 
         var searchTerm = q.Trim().ToLower();
+        var parts = searchTerm.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        var firstPart = parts[0];
 
+        // Pull candidates matching the first word from DB
         var names = await _db.PennantMatches
             .Where(m =>
-                (EF.Functions.Like(m.PlayerName.ToLower(), $"{searchTerm}%") ||
-                EF.Functions.Like(m.PlayerName.ToLower(), $"% {searchTerm}%")) &&
+                (EF.Functions.Like(m.PlayerName.ToLower(), $"{firstPart}%") ||
+                EF.Functions.Like(m.PlayerName.ToLower(), $"% {firstPart}%")) &&
                 !m.PlayerName.StartsWith("-") &&
                 m.PlayerName.Length > 3)
             .Select(m => m.PlayerName)
             .Distinct()
             .ToListAsync();
 
+        // Then filter in memory — all parts must match some word in the name
         var filtered = names
-            .Where(n => n.Split(' ')
-                .Any(word => word.StartsWith(searchTerm, StringComparison.OrdinalIgnoreCase)))
+            .Where(n => parts.All(part =>
+                n.Split(' ').Any(word => word.StartsWith(part, StringComparison.OrdinalIgnoreCase))))
             .OrderBy(n => n)
             .Take(10)
             .ToList();
