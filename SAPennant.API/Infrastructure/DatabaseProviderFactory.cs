@@ -43,6 +43,7 @@ public static class DatabaseProviderFactory
         services.AddScoped<IRoundStatusRepository, RoundStatusRepository>();
         services.AddScoped<IAppSettingRepository, AppSettingRepository>();
         services.AddScoped<IHonourRollRepository, HonourRollRepository>();
+        services.AddScoped<IPoolFinalistConfigRepository, PoolFinalistConfigRepository>();
 
         return services;
     }

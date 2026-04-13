@@ -75,8 +75,9 @@
               </tr>
             </thead>
             <tbody>
-              <ng-container *ngFor="let row of leaderboard()">
-                <tr (click)="toggleClub(row.club)" style="cursor: pointer;">
+              <ng-container *ngFor="let row of leaderboard(); let i = index">
+                <tr (click)="toggleClub(row.club)" 
+                    style="cursor: pointer;">
                   <td class="rank">
                     <span class="rank-badge"
                       [class.gold]="row.position === 1"
@@ -99,6 +100,17 @@
                   <td class="num score">{{ row.scoreFor % 1 === 0 ? row.scoreFor : row.scoreFor.toFixed(1) }} - {{ row.scoreAgainst % 1 === 0 ? row.scoreAgainst : row.scoreAgainst.toFixed(1) }}</td>
                   <td class="num pts">{{ row.pts }}</td>
                 </tr>
+
+                <tr *ngIf="isLastFinalist(row.club, i)">
+                  <td colspan="8" style="padding:0;border-bottom:none">
+                    <div style="display:flex;align-items:center;gap:8px;padding:4px 16px">
+                      <div style="flex:1;height:2px;background:#3b82f6"></div>
+                      <span style="font-size:10px;font-weight:600;color:#185fa5;white-space:nowrap;padding:2px 8px;background:#e6f1fb;border-radius:99px">Finals cutoff</span>
+                      <div style="flex:1;height:2px;background:#3b82f6"></div>
+                    </div>
+                  </td>
+                </tr>
+
                 <tr *ngIf="isClubExpanded(row.club)">
                   <td colspan="8" class="club-rounds-cell">
                     <div class="status loading" *ngIf="isLoadingClubRounds()">

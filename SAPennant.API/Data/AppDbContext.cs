@@ -16,6 +16,7 @@ public class AppDbContext : DbContext
     public DbSet<AppSetting> AppSettings { get; set; }
     public DbSet<HonourRoll> HonourRoll { get; set; }
     public DbSet<HonourRollNarrative> HonourRollNarratives { get; set; }
+    public DbSet<PoolFinalistConfig> PoolFinalistConfigs { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

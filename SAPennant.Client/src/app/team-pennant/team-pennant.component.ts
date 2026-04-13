@@ -35,6 +35,7 @@ export class TeamPennantComponent implements OnInit {
   expandedClubRounds = signal<any[]>([]);
   isLoadingClubRounds = signal(false);
   activeRound = signal<string | null>(null);
+  finalists = signal<string[]>([]);
 
   constructor(private pennant: PennantService) {}
 
@@ -119,6 +120,12 @@ export class TeamPennantComponent implements OnInit {
         this.isLoadingLeaderboard.set(false);
       },
       error: () => this.isLoadingLeaderboard.set(false)
+    });
+
+    // Load finalists
+    this.pennant.getFinalists(this.selectedYear, this.selectedPool).subscribe({
+      next: (data) => this.finalists.set(data.finalists),
+      error: () => this.finalists.set([])
     });
   }
 
@@ -241,5 +248,15 @@ export class TeamPennantComponent implements OnInit {
       : this.pools;
     this.selectedPool = this.filteredPools.includes('Simpson Cup') ? 'Simpson Cup' : this.filteredPools[0];
     this.load();
+  }
+
+  isFinalist(club: string): boolean {
+    return this.finalists().includes(club);
+  }
+
+  isLastFinalist(club: string, index: number): boolean {
+    if (!this.isFinalist(club)) return false;
+    const nextRow = this.leaderboard()[index + 1];
+    return nextRow ? !this.isFinalist(nextRow.club) : false;
   }
 }

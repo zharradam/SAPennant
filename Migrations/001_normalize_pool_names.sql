@@ -5,3 +5,4 @@ UPDATE [SAPennantDb].[dbo].[PennantMatches] SET Pool = 'Div 3' WHERE Pool = 'Div
 UPDATE [SAPennantDb].[dbo].[PennantMatches] SET Pool = 'Women''s Cleek 1' WHERE Pool = 'Cleek 1'
 UPDATE [SAPennantDb].[dbo].[PennantMatches] SET Pool = 'Women''s Cleek 2' WHERE Pool = 'Cleek 2'
 UPDATE [SAPennantDb].[dbo].[PennantMatches] SET Pool = 'Sharp Cup' WHERE Pool = 'Junior Sharp Cup'
+UPDATE [SAPennantDb].[dbo].[PennantMatches] SET Awayclub = 'Country Districts' WHERE Awayclub = 'Country District'

@@ -10,14 +10,17 @@ public class TeamPennantController : ControllerBase
     private readonly IPennantMatchRepository _matches;
     private readonly IRoundStatusRepository _roundStatuses;
     private readonly ILogger<TeamPennantController> _logger;
+    private readonly IPoolFinalistConfigRepository _poolFinalistConfigs;
 
     public TeamPennantController(
         IPennantMatchRepository matches,
         IRoundStatusRepository roundStatuses,
+        IPoolFinalistConfigRepository poolFinalistConfigs,
         ILogger<TeamPennantController> logger)
     {
         _matches = matches;
         _roundStatuses = roundStatuses;
+        _poolFinalistConfigs = poolFinalistConfigs;
         _logger = logger;
     }
 
@@ -243,5 +246,69 @@ public class TeamPennantController : ControllerBase
         var activeRound = poolStatuses.FirstOrDefault(r => !r.IsSettled)?.Round;
 
         return Ok(new { activeRound });
+    }
+
+    [HttpGet("finalists")]
+    public async Task<IActionResult> GetFinalists([FromQuery] int year, [FromQuery] string pool)
+    {
+        // For completed seasons — derive from actual finals data
+        var finalsMatches = await _matches.GetByYearAndPoolAsync(year, pool);
+        var actualFinalists = finalsMatches
+            .Where(m => m.IsFinals && (m.Round == "Semi Final" || m.Round == "Final"))
+            .SelectMany(m => new[] { m.HomeClub, m.AwayClub })
+            .Distinct()
+            .ToList();
+
+        if (actualFinalists.Any())
+            return Ok(new { finalists = actualFinalists, source = "actual" });
+
+        // For current/future seasons — use config to get top N from standings
+        var config = await _poolFinalistConfigs.GetAsync(pool);
+        if (config == null)
+            return Ok(new { finalists = new List<string>(), source = "none" });
+
+        var allMatches = await _matches.GetTeamMatchesAsync(year, pool);
+        var teamScores = allMatches
+            .GroupBy(m => new { m.Round, m.HomeClub, m.AwayClub })
+            .Select(g =>
+            {
+                var deduped = g.OrderBy(m => m.Id).Where((m, i) => i % 2 == 0).ToList();
+                return new
+                {
+                    g.Key.HomeClub,
+                    g.Key.AwayClub,
+                    HomePoints = deduped.Sum(m => m.PlayerWon == true ? 1.0 : m.PlayerWon == null ? 0.5 : 0.0),
+                    AwayPoints = deduped.Sum(m => m.PlayerWon == false ? 1.0 : m.PlayerWon == null ? 0.5 : 0.0),
+                };
+            }).ToList();
+
+        var clubs = teamScores
+            .SelectMany(m => new[] { m.HomeClub, m.AwayClub })
+            .Distinct();
+
+        var projectedFinalists = clubs.Select(club =>
+        {
+            var points = teamScores
+                .Where(m => m.HomeClub == club)
+                .Select(m => (mine: m.HomePoints, theirs: m.AwayPoints))
+                .Concat(teamScores
+                    .Where(m => m.AwayClub == club)
+                    .Select(m => (mine: m.AwayPoints, theirs: m.HomePoints)))
+                .ToList();
+
+            return new
+            {
+                Club = club,
+                Pts = points.Sum(p => p.mine > p.theirs ? 1.0 : p.mine == p.theirs ? 0.5 : 0.0),
+                ScoreFor = points.Sum(p => p.mine)
+            };
+        })
+        .OrderByDescending(c => c.Pts)
+        .ThenByDescending(c => c.ScoreFor)
+        .Take(config.FinalistCount)
+        .Select(c => c.Club)
+        .ToList();
+
+        return Ok(new { finalists = projectedFinalists, source = "projected" });
     }
 }

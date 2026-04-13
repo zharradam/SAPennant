@@ -213,4 +213,10 @@ export class PennantService {
   getHonourRollNarratives(): Observable<any[]> {
     return this.http.get<any[]>(`${this.API_URL}/honourroll/narratives`);
   }
+
+  getFinalists(year: number, pool: string): Observable<{ finalists: string[], source: string }> {
+    return this.http.get<{ finalists: string[], source: string }>(
+      `${this.API_URL}/teampennant/finalists?year=${year}&pool=${encodeURIComponent(pool)}`
+    );
+  }
 }
