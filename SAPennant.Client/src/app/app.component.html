@@ -102,4 +102,14 @@
       </div>
     </div>
   </div>
+
+  <div class="ios-banner" *ngIf="showIosBanner()">
+    <div class="ios-banner-content">
+      <div class="ios-banner-text">
+        <strong>Install this app</strong>
+        <span>Tap <span class="ios-share-icon">⬆</span> then <em>Add to Home Screen</em></span>
+      </div>
+      <button class="ios-banner-close" (click)="dismissIosBanner()">✕</button>
+    </div>
+  </div>
 </div>

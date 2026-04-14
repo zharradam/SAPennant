@@ -20,6 +20,7 @@ export class App implements OnInit {
   aboutOpen = signal(false);
   buildInfo = buildInfo;
   maintenanceMode = signal(false);
+  showIosBanner = signal(false);
 
   constructor(private pennant: PennantService, private router: Router, private insights: InsightsService) {}
 
@@ -27,6 +28,8 @@ export class App implements OnInit {
     this.checkMaintenance();
     setInterval(() => this.checkMaintenance(), 60000);
       
+    this.checkIosBanner();
+
     this.pennant.refreshLastUpdated().pipe(
       retry({ count: 10, delay: 3000 })
     ).subscribe({
@@ -78,5 +81,20 @@ export class App implements OnInit {
 
   isAdminRoute(): boolean {
     return this.router.url.includes('/admin');
+  }
+
+  checkIosBanner(): void {
+    const isIos = /iPhone|iPad|iPod/.test(navigator.userAgent);
+    const isInStandaloneMode = (window.navigator as any).standalone === true;
+    const isDismissed = localStorage.getItem('sapennant_ios_banner_dismissed') === 'true';
+    
+    if (isIos && !isInStandaloneMode && !isDismissed) {
+      this.showIosBanner.set(true);
+    }
+  }
+
+  dismissIosBanner(): void {
+    localStorage.setItem('sapennant_ios_banner_dismissed', 'true')
+    this.showIosBanner.set(false);
   }
 }
