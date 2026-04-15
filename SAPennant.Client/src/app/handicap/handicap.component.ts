@@ -2,6 +2,7 @@ import { Component, OnInit, signal } from '@angular/core';
 import { PennantService } from '../pennant.service';
 import { HandicapPlayer, HandicapDataPoint } from '../models/pennant.models';
 import { getClubLogo } from '../data/club-logos';
+import { InsightsService } from '../insights.service';
 
 @Component({
   selector: 'sa-pennant-handicap',
@@ -21,7 +22,7 @@ export class HandicapComponent implements OnInit {
   sortCol: 'playerName' | 'lowestHandicap' | 'currentHandicap' | 'club' = 'lowestHandicap';
   sortDir: 'asc' | 'desc' = 'asc';
 
-  constructor(private pennant: PennantService) {}
+  constructor(private pennant: PennantService, private insights: InsightsService) {}
 
   ngOnInit(): void {
     this.pennant.getHandicapLeaderboard().subscribe({
@@ -57,6 +58,7 @@ export class HandicapComponent implements OnInit {
 
   openModal(player: HandicapPlayer): void {
     this.selectedPlayer = player;
+    this.insights.trackEvent('HandicapSearch', { player: this.selectedPlayer.playerName });
     this.historyLoading.set(true);
     this.pennant.getHandicapHistory(player.playerName).subscribe({
       next: history => {

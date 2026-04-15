@@ -32,12 +32,6 @@ public class SearchController : ControllerBase
 
         var searchTerm = q.Trim().ToLower();
 
-        _telemetry.TrackEvent("PlayerSearch", new Dictionary<string, string>
-        {
-            { "query", searchTerm },
-            { "source", source ?? "search" }
-        });
-
         var results = await _matches.SearchByPlayerNameAsync(searchTerm);
         return Ok(results.OrderByDescending(m => m.SortDate));
     }
@@ -59,13 +53,6 @@ public class SearchController : ControllerBase
         [FromQuery] string? pool,
         [FromQuery] int minGames = 5)
     {
-        _telemetry.TrackEvent("LeaderboardView", new Dictionary<string, string>
-        {
-            { "year", year?.ToString() ?? "all" },
-            { "division", division ?? "all" },
-            { "pool", pool ?? "all" }
-        });
-
         bool? isSenior = division?.ToLower() == "senior" ? true : null;
 
         var matches = await _matches.GetLeaderboardDataAsync(year, division, pool, isSenior);
@@ -245,11 +232,6 @@ public class SearchController : ControllerBase
         [FromQuery] string clubName,
         [FromQuery] int minGames = 1)
     {
-        _telemetry.TrackEvent("ClubSearch", new Dictionary<string, string>
-        {
-            { "club", clubName }
-        });
-
         var matches = await _matches.GetByClubAsync(clubName);
 
         var players = matches

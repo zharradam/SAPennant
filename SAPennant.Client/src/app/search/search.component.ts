@@ -3,6 +3,7 @@ import { PennantService } from '../pennant.service';
 import { PlayerMatch } from '../models/pennant.models';
 import { Subject } from 'rxjs';
 import { debounceTime, distinctUntilChanged, switchMap } from 'rxjs/operators';
+import { InsightsService } from '../insights.service';
 
 @Component({
   selector: 'sa-pennant-search',
@@ -29,7 +30,7 @@ export class SearchComponent implements OnInit {
   private searchSubject = new Subject<string>();
   private searchSource = 'search';
 
-  constructor(private pennant: PennantService) {
+  constructor(private pennant: PennantService, private insights: InsightsService) {
     this.searchSubject.pipe(
       debounceTime(0),
       distinctUntilChanged(),
@@ -243,6 +244,10 @@ export class SearchComponent implements OnInit {
   }
 
   private handleSearchResults(data: PlayerMatch[]): void {
+    this.insights.trackEvent('PlayerSearch', { 
+      query: this.query,
+      source: this.searchSource 
+    });
     this.allResults = data;
     this.availableYears = [...new Set(data.map(m => m.year))].sort((a, b) => b - a);
     this.selectedYears = new Set(this.availableYears);

@@ -4,6 +4,7 @@ import { debounceTime, distinctUntilChanged, switchMap } from 'rxjs/operators';
 import { PennantService } from '../pennant.service';
 import { ClubPlayer } from '../models/pennant.models';
 import { CLUB_LOGOS } from '../data/club-logos';
+import { InsightsService } from '../insights.service';
 
 @Component({
   selector: 'sa-pennant-club',
@@ -36,7 +37,7 @@ export class ClubSearchComponent {
 
   private suggestSubject = new Subject<string>();
 
-  constructor(private pennant: PennantService) {
+  constructor(private pennant: PennantService, private insights: InsightsService) {
     this.suggestSubject.pipe(
       debounceTime(300),
       distinctUntilChanged(),
@@ -74,6 +75,7 @@ export class ClubSearchComponent {
     if (!this.query || this.query.trim().length < 2) return;
     this.showSuggestions.set(false);
     this.selectedClub = this.query.trim();
+    this.insights.trackEvent('ClubSearch', { club: this.selectedClub });
     this.isLoading.set(true);
     this.isSlowResponse.set(false);
     clearTimeout(this.slowTimeout);

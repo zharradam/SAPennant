@@ -1,5 +1,6 @@
 import { Component, OnInit, signal, output } from '@angular/core';
 import { PennantService } from '../pennant.service';
+import { InsightsService } from '../insights.service';
 
 @Component({
   selector: 'sa-pennant-leaderboard',
@@ -27,7 +28,7 @@ export class LeaderboardComponent implements OnInit {
   divisionPools: Record<string, string[]> = {};
   filteredPools: string[] = [];
 
-  constructor(private pennant: PennantService) {}
+  constructor(private pennant: PennantService, private insights: InsightsService) {}
 
   ngOnInit(): void {
     this.pennant.getFilters().subscribe(filters => {
@@ -95,6 +96,11 @@ export class LeaderboardComponent implements OnInit {
   }
 
   loadLeaderboard(): void {
+    this.insights.trackEvent('LeaderboardView', {
+      year: this.selectedYear?.toString() ?? 'all',
+      division: this.selectedDivision || 'all',
+      pool: this.selectedPool || 'all'
+    });
     this.isLoading.set(true);
     this.currentPage = 0; // reset to first page on filter change
     this.pennant.getLeaderboard({
