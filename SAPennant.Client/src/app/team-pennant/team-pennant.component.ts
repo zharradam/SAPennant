@@ -71,6 +71,8 @@ export class TeamPennantComponent implements OnInit {
     if (!this.selectedYear || !this.selectedPool) return;
     this.expandedMatch.set(null);
     this.expandedMatchPlayers.set([]);
+    this.expandedClub.set(null);
+    this.expandedClubRounds.set([]);
     this.pennant.getFilters(this.selectedYear).subscribe(filters => {
       this.pools = filters.pools;
       this.divisionPools = filters.divisionPools;
@@ -133,6 +135,8 @@ export class TeamPennantComponent implements OnInit {
     if (!this.selectedRound) return;
     this.isLoadingRound.set(true);
     this.expandedMatch.set(null);
+    this.expandedClub.set(null);
+    this.expandedClubRounds.set([]);
     this.pennant.getTeamRound(this.selectedYear, this.selectedPool, this.selectedRound).subscribe({
       next: (data) => {
         this.roundMatches.set(data);
@@ -243,6 +247,8 @@ export class TeamPennantComponent implements OnInit {
   }
 
   onDivisionChange(): void {
+    this.expandedClub.set(null);
+    this.expandedClubRounds.set([]);  
     this.filteredPools = this.selectedDivision
       ? (this.divisionPools[this.selectedDivision] ?? this.pools)
       : this.pools;
