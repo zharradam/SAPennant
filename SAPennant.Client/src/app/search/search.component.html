@@ -41,11 +41,22 @@
     <ng-container *ngIf="!isLoading() && allResults.length > 0">
 
       <div class="player-header">
-        <div class="player-avatar">{{ playerName | slice:0:1 }}</div>
+        <div class="player-avatar" *ngIf="!getClubLogoUrl()">{{ playerName | slice:0:1 }}</div>
+        <img class="player-avatar player-avatar-logo" *ngIf="getClubLogoUrl()" [src]="getClubLogoUrl()" [alt]="playerClub" />
         <div class="player-info">
           <h2>{{ playerName }}</h2>
           <p>{{ playerClub }}</p>
         </div>
+        <button class="share-btn" (click)="sharePlayer()" [class.copied]="shareState() === 'copied'">
+          <svg *ngIf="shareState() !== 'copied'" width="15" height="15" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="15" cy="4" r="2"/><circle cx="5" cy="10" r="2"/><circle cx="15" cy="16" r="2"/>
+            <line x1="7" y1="9" x2="13" y2="5"/><line x1="7" y1="11" x2="13" y2="15"/>
+          </svg>
+          <svg *ngIf="shareState() === 'copied'" width="15" height="15" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="4 10 8 14 16 6"/>
+          </svg>
+          {{ shareState() === 'copied' ? 'Copied!' : 'Share' }}
+        </button>
       </div>
 
       <div class="summary-bar">

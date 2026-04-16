@@ -45,6 +45,12 @@ export class App implements OnInit, AfterViewInit  {
   constructor(private pennant: PennantService, private router: Router, private insights: InsightsService) {}
 
   ngOnInit(): void {
+    // Auto-switch to Player Search tab if URL contains ?player=
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('player')) {
+      this.activeTab.set('search');
+    }
+
     this.checkMaintenance();
     setInterval(() => this.checkMaintenance(), 60000);
     this.checkIosBanner();

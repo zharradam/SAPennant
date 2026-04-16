@@ -131,3 +131,37 @@
   font-weight: 600;
   color: #555;
 }
+
+.share-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border-radius: 8px;
+  border: 1.5px solid #dde2ec;
+  background: #fff;
+  color: #1a2f5a;
+  font-size: 13px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: all 0.15s;
+
+  &:hover {
+    background: #f0f4fb;
+    border-color: #1a2f5a;
+  }
+
+  &.copied {
+    background: #e8f5e0;
+    border-color: #3a7a12;
+    color: #3a7a12;
+  }
+}
+
+.player-avatar-logo {
+  object-fit: contain;
+  background: #fff;
+  padding: 4px;
+}
