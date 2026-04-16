@@ -1,10 +1,16 @@
 <div class="app">
   <nav class="nav">
-    <div class="api-overlay" *ngIf="isLoadingApi()">
-      <div class="api-overlay-card">
-        <div class="api-overlay-title">Starting up…</div>
-        <div class="api-overlay-sub">The server goes to sleep when not in use. It's waking up now — this will only take a few seconds and won't happen again during your visit.</div>
-        <div class="api-overlay-bar"><div class="api-overlay-fill"></div></div>
+    <div class="api-overlay" [class.api-overlay-fade]="!isLoadingApi()" *ngIf="showOverlay()">
+      <canvas class="api-overlay-canvas" #overlayCanvas></canvas>
+      <div class="api-overlay-content">
+        <div class="api-overlay-ball-wrap">
+          <img src="icons/icon-192x192.png" alt="SA Pennant Golf" class="api-overlay-ball" #overlayBall />
+          <div class="api-overlay-spinner" #overlaySpinner></div>
+        </div>
+        <div class="api-overlay-title">SA Pennant Golf</div>
+        <div class="api-overlay-sub">South Australia</div>
+        <div class="api-overlay-bar"><div class="api-overlay-fill" #overlayBar></div></div>
+        <div class="api-overlay-msg">{{ overlayMessage() }}</div>
       </div>
     </div>
     <div class="nav-inner">

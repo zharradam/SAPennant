@@ -271,62 +271,155 @@
 .api-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(240, 242, 245, 0.4);
-  backdrop-filter: blur(2px);
-  -webkit-backdrop-filter: blur(2px);
+  background: rgba(10, 18, 25, 0.55);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
   z-index: 500;
   display: flex;
   align-items: center;
   justify-content: center;
+  transition: opacity 0.5s ease;
+  opacity: 1;
+  animation: bgShift 4s ease infinite alternate;
 }
 
-.api-overlay-card {
-  background: #fff;
-  border-radius: 14px;
-  padding: 2rem 2.5rem;
-  text-align: center;
-  box-shadow: 0 8px 40px rgba(0,0,0,0.12);
-  border: 1px solid #e8edf5;
+.api-overlay-fade {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.api-overlay-ball-wrap {
+  position: relative;
+  width: 80px;
+  height: 80px;
+  margin-bottom: 24px;
+  animation: ballPulse 2s ease infinite;
+}
+
+.api-overlay-ball {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  transition: filter 0.4s ease;
+}
+
+.api-overlay-ball.ready {
+  filter: drop-shadow(0 0 12px rgba(34, 197, 94, 0.8));
+}
+
+.api-overlay-spinner {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: conic-gradient(
+    from 0deg,
+    transparent 0deg,
+    transparent 270deg,
+    rgba(96, 165, 250, 0.3) 270deg,
+    #60a5fa 360deg
+  );
+  animation: spin 1.2s linear infinite;
+  mask: radial-gradient(farthest-side, transparent calc(100% - 3px), white calc(100% - 3px));
+  -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 3px), white calc(100% - 3px));
+  transition: background 0.4s ease;
+}
+
+.api-overlay-spinner.ready {
+  background: conic-gradient(
+    from 0deg,
+    transparent 0deg,
+    transparent 270deg,
+    rgba(34, 197, 94, 0.3) 270deg,
+    #22c55e 360deg
+  );
 }
 
 .api-overlay-title {
-  font-size: 16px;
-  font-weight: 700;
-  color: #1a1a1a;
-  margin-bottom: 6px;
+  font-size: 20px;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+  margin-bottom: 4px;
+  animation: fadeUp 0.5s ease both;
+  background: linear-gradient(90deg, #fff 0%, #bfdbfe 60%, #93c5fd 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  filter: drop-shadow(0 1px 3px rgba(59, 130, 246, 0.4));
 }
 
 .api-overlay-sub {
-  font-size: 13px;
-  color: #888;
-  margin-bottom: 1.25rem;
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.7);
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  margin-bottom: 28px;
+  animation: fadeUp 0.5s 0.1s ease both;
 }
 
 .api-overlay-bar {
+  width: 200px;
   height: 3px;
-  background: #e8edf5;
+  background: rgba(255, 255, 255, 0.1);
   border-radius: 99px;
   overflow: hidden;
-  width: 100%;
-  margin: 0 auto;
+  margin-bottom: 12px;
 }
 
 .api-overlay-fill {
   height: 100%;
-  background: linear-gradient(90deg,
-    #1d4ed8 0%,
-    #bfdbfe 25%,
-    #1d4ed8 50%,
-    #bfdbfe 75%,
-    #1d4ed8 100%
-  );
-  background-size: 200% 100%;
-  animation: apibar 2s linear infinite;
+  width: 0%;
+  background: linear-gradient(90deg, #1d4ed8, #60a5fa);
+  border-radius: 99px;
+  transition: width 0.5s ease, background 0.4s ease;
 }
 
-@keyframes apibar {
-  0%   { background-position: 0% 0; }
-  100% { background-position: 200% 0; }
+.api-overlay-fill.ready {
+  background: linear-gradient(90deg, #15803d, #22c55e);
+}
+
+.api-overlay-msg {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.6);
+  letter-spacing: 0.05em;
+  height: 16px;
+  transition: opacity 0.3s ease;
+}
+
+.api-overlay-canvas {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.api-overlay-content {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 1;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes ballPulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.06); }
+}
+
+@keyframes bgShift {
+  from { background: rgba(10, 18, 25, 0.55); }
+  to { background: rgba(15, 26, 48, 0.6); }
 }
 
 .about-overlay {
