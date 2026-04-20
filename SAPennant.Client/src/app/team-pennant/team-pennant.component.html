@@ -212,28 +212,30 @@
               <div class="status loading" *ngIf="isLoadingMatch()">
                 <span class="spinner"></span> Loading match…
               </div>
-              <table class="detail-table" *ngIf="!isLoadingMatch()">
-                <thead>
-                  <tr>
-                    <th>Player</th>
-                    <th class="num">Result</th>
-                    <th>Opponent</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr *ngFor="let p of expandedMatchPlayers()">
-                    <td class="player-name" [class.won]="p.playerWon === true" [class.lost]="p.playerWon === false" [class.halved]="p.playerWon === null">
-                      {{ p.playerName }}
-                    </td>
-                    <td class="num result-cell">
-                      <span class="result-badge" [class.badge-won]="p.playerWon === true" [class.badge-lost]="p.playerWon === false" [class.badge-halved]="p.playerWon === null">
-                        {{ formatResult(p.result, p.playerWon) }}
-                      </span>
-                    </td>
-                    <td class="opponent-name">{{ p.opponentName }}</td>
-                  </tr>
-                </tbody>
-              </table>
+              <div class="detail-table-wrap">
+                <table class="detail-table" *ngIf="!isLoadingMatch()">
+                  <thead>
+                    <tr>
+                      <th>Player</th>
+                      <th class="num">Result</th>
+                      <th>Opponent</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr *ngFor="let p of expandedMatchPlayers()">
+                      <td class="player-name" [class.won]="p.playerWon === true" [class.lost]="p.playerWon === false" [class.halved]="p.playerWon === null">
+                        {{ p.playerName }}
+                      </td>
+                      <td class="num result-cell">
+                        <span class="result-badge" [class.badge-won]="p.playerWon === true" [class.badge-lost]="p.playerWon === false" [class.badge-halved]="p.playerWon === null">
+                          {{ formatResult(p.result, p.playerWon) }}
+                        </span>
+                      </td>
+                      <td class="opponent-name">{{ p.opponentName }}</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
             </div>
           </div>
         </ng-container>

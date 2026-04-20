@@ -16,6 +16,7 @@ import { HandicapComponent } from './handicap/handicap.component';
 import { TeamPennantComponent } from './team-pennant/team-pennant.component';
 import { HonourRollComponent } from './honour-roll/honour-roll.component';
 import { ServiceWorkerModule } from '@angular/service-worker';
+import { ScrollHintDirective } from './directives/scroll-hint.directive';
 
 @NgModule({
   declarations: [
@@ -29,6 +30,7 @@ import { ServiceWorkerModule } from '@angular/service-worker';
     HandicapComponent,
     TeamPennantComponent,
     HonourRollComponent,
+    ScrollHintDirective,
   ],
   imports: [
     BrowserModule,
