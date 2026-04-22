@@ -181,12 +181,9 @@ export class SearchComponent implements OnInit {
 
   get playerClub(): string {
     if (this.allResults.length === 0) return '';
-    const freq = new Map<string, number>();
-    this.allResults.map(m => m.playerClub).filter(Boolean)
-      .forEach(c => freq.set(c, (freq.get(c) ?? 0) + 1));
-    let max = 0, club = '';
-    freq.forEach((count, c) => { if (count > max) { max = count; club = c; } });
-    return club;
+    const latest = [...this.allResults]
+      .sort((a, b) => b.year - a.year || (b.sortDate ?? '').localeCompare(a.sortDate ?? ''));
+    return latest[0].playerClub ?? '';
   }
 
   get playerName(): string {
