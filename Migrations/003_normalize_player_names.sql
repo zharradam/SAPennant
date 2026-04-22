@@ -123,3 +123,33 @@ UPDATE PennantMatches SET PlayerName = 'Josh Russo' WHERE PlayerName = 'Joshua R
 UPDATE PennantMatches SET PlayerName = 'Kui Liu' WHERE PlayerName = 'Kui Lisa Liu'; UPDATE PennantMatches SET OpponentName = 'Kui Liu' WHERE OpponentName = 'Kui Lisa Liu';
 UPDATE PennantMatches SET PlayerName = 'Mick Phillips' WHERE PlayerName = 'Michael Phillips'; UPDATE PennantMatches SET OpponentName = 'Mick Phillips' WHERE OpponentName = 'Michael Phillips';
 UPDATE PennantMatches SET PlayerName = 'Soo Lee' WHERE PlayerName = 'Sunjeo Lee'; UPDATE PennantMatches SET OpponentName = 'Soo Lee' WHERE OpponentName = 'Sunjeo Lee';
+
+SELECT DISTINCT "PlayerName", "PlayerClub", COUNT(*) as cnt
+FROM "PennantMatches"
+WHERE "PlayerName" LIKE 'Yung%Kim'
+GROUP BY "PlayerName", "PlayerClub"
+
+UPDATE "PennantMatches"
+SET "PlayerName" = 'Yung Bok Kim'
+WHERE "PlayerName"::bytea = '\x59756e67c3a2c2a0426f6b204b696d'::bytea
+   OR "PlayerName"::bytea = '\x59756e67c3a220426f6b204b696d'::bytea;
+
+UPDATE "PennantMatches"
+SET "OpponentName" = 'Yung Bok Kim'
+WHERE "OpponentName"::bytea = '\x59756e67c3a2c2a0426f6b204b696d'::bytea
+   OR "OpponentName"::bytea = '\x59756e67c3a220426f6b204b696d'::bytea;
+
+
+   SELECT DISTINCT "PlayerName", encode("PlayerName"::bytea, 'hex') as hex_value
+FROM "PennantMatches"
+WHERE "PlayerName" LIKE 'Se%Jung'
+
+UPDATE "PennantMatches"
+SET "PlayerName" = 'Se Young Jung'
+WHERE "PlayerName"::bytea = '\x5365c3a2c2a0596f756e67204a756e67'::bytea
+   OR "PlayerName"::bytea = '\x5365c3a220596f756e67204a756e67'::bytea;
+
+UPDATE "PennantMatches"
+SET "OpponentName" = 'Se Young Jung'
+WHERE "OpponentName"::bytea = '\x5365c3a2c2a0596f756e67204a756e67'::bytea
+   OR "OpponentName"::bytea = '\x5365c3a220596f756e67204a756e67'::bytea;
