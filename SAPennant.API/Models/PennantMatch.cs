@@ -26,11 +26,22 @@ public class PennantMatch
     public bool IsSenior { get; set; }
 
     [NotMapped]
-    public DateTime? SortDate => DateTime.TryParseExact(
-        Date,
-        new[] { "dd MMM yyyy", "dd MMMM yyyy" }, // 👈 support both
-        System.Globalization.CultureInfo.InvariantCulture,
-        System.Globalization.DateTimeStyles.None,
-        out var dt
-    ) ? dt : null;
+    public DateTime? SortDate
+    {
+        get
+        {
+            var normalised = (Date ?? "")
+                .Replace("Sept ", "Sep ")
+                .Replace("June ", "Jun ")
+                .Replace("July ", "Jul ");
+
+            return DateTime.TryParseExact(
+                normalised,
+                new[] { "dd MMM yyyy", "dd MMMM yyyy" },
+                System.Globalization.CultureInfo.InvariantCulture,
+                System.Globalization.DateTimeStyles.None,
+                out var dt
+            ) ? dt : null;
+        }
+    }
 }

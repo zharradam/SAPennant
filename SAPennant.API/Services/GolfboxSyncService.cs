@@ -218,7 +218,7 @@ public class GolfboxSyncService
 
         foreach (var div in divisions)
         {
-            var divisionName = div.GetProperty("Name").GetString() ?? "";
+            var divisionName = (div.GetProperty("Name").GetString() ?? "").Trim();
             foreach (var pool in div.GetProperty("Pools").EnumerateArray())
             {
                 pools.Add(new
@@ -266,10 +266,10 @@ public class GolfboxSyncService
 
         foreach (var div in divisions)
         {
-            var divisionName = div.GetProperty("Name").GetString() ?? "";
+            var divisionName = (div.GetProperty("Name").GetString() ?? "").Trim();
             foreach (var pool in div.GetProperty("Pools").EnumerateArray())
             {
-                var poolName = pool.GetProperty("Name").GetString() ?? "";
+                var poolName = (pool.GetProperty("Name").GetString() ?? "").Trim();
                 var competitionId = pool.GetProperty("CompetitionID").GetInt64();
                 await SyncPoolAsync(matches, year, isFinals, isSenior, divisionName, poolName, competitionId);
                 await Task.Delay(200);
@@ -378,9 +378,9 @@ public class GolfboxSyncService
         if (data == null) return results;
 
         var tm = data.Value.GetProperty("TeamMatch");
-        var homeClub = tm.GetProperty("Home").GetProperty("Name").GetString() ?? "";
-        var awayClub = tm.GetProperty("Away").GetProperty("Name").GetString() ?? "";
-        var venue = tm.TryGetProperty("InterclubHostingClub", out var v) ? v.GetString() : null;
+        var homeClub = (tm.GetProperty("Home").GetProperty("Name").GetString() ?? "").Trim();
+        var awayClub = (tm.GetProperty("Away").GetProperty("Name").GetString() ?? "").Trim();
+        var venue = tm.TryGetProperty("InterclubHostingClub", out var v) ? v.GetString()?.Trim() : null;
         var date = ParseDate(startTime);
         var round = GetRoundName(roundNumber, isFinals, totalRounds);
 
@@ -482,24 +482,24 @@ public class GolfboxSyncService
         if (!team.TryGetProperty("Entries", out var entries)) return "";
         return string.Join(" & ", entries.EnumerateArray()
             .Select(e => $"{e.GetProperty("FirstName").GetString()?.Trim()} {e.GetProperty("LastName").GetString()?.Trim()}".Trim())
-            .Where(n => !string.IsNullOrEmpty(n)));
+            .Where(n => !string.IsNullOrEmpty(n))).Trim();
     }
 
     private string? GetPlayerHandicap(JsonElement team)
     {
         if (!team.TryGetProperty("Entries", out var entries)) return null;
         var handicaps = entries.EnumerateArray()
-            .Select(e => e.TryGetProperty("HCP", out var hcp) ? hcp.GetString() : null)
+            .Select(e => e.TryGetProperty("HCP", out var hcp) ? hcp.GetString()?.Trim() : null)
             .Where(h => !string.IsNullOrEmpty(h));
         return string.Join(" & ", handicaps);
     }
 
     private string GetPlayerClub(JsonElement team, string fallback)
     {
-        if (!team.TryGetProperty("Entries", out var entries)) return fallback;
+        if (!team.TryGetProperty("Entries", out var entries)) return fallback.Trim();
         var first = entries.EnumerateArray().FirstOrDefault();
-        if (first.ValueKind == JsonValueKind.Undefined) return fallback;
-        return first.GetProperty("ClubName").GetString() ?? fallback;
+        if (first.ValueKind == JsonValueKind.Undefined) return fallback.Trim();
+        return (first.GetProperty("ClubName").GetString() ?? fallback).Trim();
     }
 
     private string ParseDate(string startTime)
@@ -558,10 +558,10 @@ public class GolfboxSyncService
 
         foreach (var div in divisions)
         {
-            var divisionName = div.GetProperty("Name").GetString() ?? "";
+            var divisionName = (div.GetProperty("Name").GetString() ?? "").Trim();
             foreach (var pool in div.GetProperty("Pools").EnumerateArray())
             {
-                var poolName = pool.GetProperty("Name").GetString() ?? "";
+                var poolName = (pool.GetProperty("Name").GetString() ?? "").Trim();
                 var competitionId = pool.GetProperty("CompetitionID").GetInt64();
                 await SyncUnsettledRoundsForPoolAsync(matches, roundStatuses, year, isFinals, isSenior, divisionName, poolName, competitionId);
                 await Task.Delay(200);

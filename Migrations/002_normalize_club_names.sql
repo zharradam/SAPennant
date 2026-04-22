@@ -42,47 +42,10 @@ update [SAPennantDb].[dbo].[PennantMatches]
 set playerclub = 'The Grange Golf Club (SA)'
 where PlayerClub in ('Grange Golf Club','The Grange Golf Club')
 
-  update [SAPennantDb].[dbo].[PennantMatches]
-  set [OpponentClub] = 'Royal Adelaide Golf Club'
-  where [OpponentClub] = 'Royal Adelaide'
-  
-  update [SAPennantDb].[dbo].[PennantMatches]
-  set [OpponentClub] = 'Westward HO Golf Club'
-  where [OpponentClub] in ('Westward Ho GC','Westward Ho')
-  
-  update [SAPennantDb].[dbo].[PennantMatches]
-  set [OpponentClub] = 'Willunga Golf Club'
-  where [OpponentClub] = 'Willunga'
-  
+UPDATE PennantMatches
+SET PlayerClub = TRIM(PlayerClub)
+WHERE PlayerClub != TRIM(PlayerClub);
 
-  update [SAPennantDb].[dbo].[PennantMatches]
-  set [OpponentClub] = 'Mount Compass Golf Club'
-  where [OpponentClub] = 'Mount Compass'
-  
-  update [SAPennantDb].[dbo].[PennantMatches]
-  set [OpponentClub] = 'McCracken Country Club'
-  where [OpponentClub] = 'McCracken CC'
-
-  update [SAPennantDb].[dbo].[PennantMatches]
-  set [OpponentClub] = 'Kooyonga Golf Club'
-  where [OpponentClub] = 'Kooyonga'
-
-  update [SAPennantDb].[dbo].[PennantMatches]
-  set [OpponentClub] = 'Clare Golf Club'
-  where [OpponentClub] = 'Clare'
-
-  update [SAPennantDb].[dbo].[PennantMatches]
-  set [OpponentClub] = 'Copperclub, The Dunes Port Hughes'
-  where [OpponentClub] = 'Copperclub, The Dunes Port Hug'
-
-  update [SAPennantDb].[dbo].[PennantMatches]
-  set [OpponentClub] = 'Flagstaff Hill Golf Club'
-  where [OpponentClub] = 'Flagstaff HIll'
-
-  update [SAPennantDb].[dbo].[PennantMatches]
-  set [OpponentClub] = 'Glenelg Golf Club'
-  where [OpponentClub] = 'GLENELG'
-
-  update [SAPennantDb].[dbo].[PennantMatches]
-  set [OpponentClub] = 'The Grange Golf Club (SA)'
-  where [OpponentClub] in ('Grange Golf Club','The Grange Golf Club')
+UPDATE PennantMatches
+SET OpponentClub = TRIM(OpponentClub)
+WHERE OpponentClub != TRIM(OpponentClub);
