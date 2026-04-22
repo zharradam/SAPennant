@@ -251,9 +251,13 @@ export class SearchComponent implements OnInit {
 
     const W = 600, H = 280;
     const canvas = document.createElement('canvas');
-    canvas.width = W;
-    canvas.height = H;
+    const scale = 2;
+    canvas.width = W * scale;
+    canvas.height = H * scale;
+
     const ctx = canvas.getContext('2d')!;
+    ctx.scale(scale, scale);
+
 
     // Background
     ctx.fillStyle = '#0f1e3d';
@@ -276,8 +280,10 @@ export class SearchComponent implements OnInit {
           ctx.beginPath();
           ctx.arc(52, 45, 26, 0, Math.PI * 2);
           ctx.clip();
-          ctx.drawImage(img, 24, 17, 56, 56);
-          ctx.restore();
+          ctx.imageSmoothingEnabled = true;
+          ctx.imageSmoothingQuality = 'high';
+          ctx.drawImage(img, 22, 15, 60, 60);
+          ctx.restore()
           resolve();
         };
         img.onerror = () => resolve(); // fall back silently
