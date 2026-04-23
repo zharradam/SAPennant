@@ -25,10 +25,13 @@ builder.Services.Configure<TelemetryConfiguration>(config =>
         config.DisableTelemetry = true;
 });
 
-builder.Services.AddSwaggerGen(c =>
+if (builder.Environment.IsDevelopment())
 {
-    c.SwaggerDoc("v1", new() { Title = "SAPennant API", Version = "v1" });
-});
+    builder.Services.AddSwaggerGen(c =>
+    {
+        c.SwaggerDoc("v1", new() { Title = "SAPennant API", Version = "v1" });
+    });
+}
 
 builder.Services.AddDatabase(builder.Configuration);
 builder.Services.AddRepositories();
@@ -91,11 +94,14 @@ var provider = builder.Configuration["DatabaseProvider"] ?? "sqlserver";
 logger.LogInformation(">>> Database provider: {Provider}", provider.ToUpper());
 logger.LogInformation(">>> Environment: {Environment}", builder.Environment.EnvironmentName);
 
-app.MapOpenApi();
-app.UseSwaggerUI(c =>
+if (app.Environment.IsDevelopment())
 {
-    c.SwaggerEndpoint("/openapi/v1.json", "SAPennant API");
-});
+    app.MapOpenApi();
+    app.UseSwaggerUI(c =>
+    {
+        c.SwaggerEndpoint("/openapi/v1.json", "SAPennant API");
+    });
+}
 
 app.UseCors("AllowAngular");
 app.UseIpRateLimiting();
