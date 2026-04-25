@@ -163,6 +163,9 @@ public class GolfboxSyncService
 
             await SyncUnsettledPoolsAsync(matches, roundStatuses, currentYear, season.RegularId, false, isSenior: false);
 
+            if (season.FinalsId.HasValue)
+                await SyncUnsettledPoolsAsync(matches, roundStatuses, currentYear, season.FinalsId.Value, true, isSenior: false);
+
             if (season.SeniorRegularId.HasValue)
             {
                 await SyncUnsettledPoolsAsync(matches, roundStatuses, currentYear, season.SeniorRegularId.Value, false, isSenior: true);
@@ -543,13 +546,19 @@ public class GolfboxSyncService
     }
 
     private async Task SyncUnsettledPoolsAsync(
-        IPennantMatchRepository matches,
-        IRoundStatusRepository roundStatuses,
-        int year, int interclubId, bool isFinals, bool isSenior = false)
+    IPennantMatchRepository matches,
+    IRoundStatusRepository roundStatuses,
+    int year, int interclubId, bool isFinals, bool isSenior = false)
     {
         var overview = await GetJsonpAsync(
             $"{BASE_URL}/InterclubHandler/GetInterclubData/interclubID/{interclubId}/language/2057/");
         if (overview == null) return;
+        var tournament = overview.Value.GetProperty("Tournament");
+        _logger.LogInformation("Tournament keys: {Keys}",
+            string.Join(", ", tournament.EnumerateObject().Select(p => p.Name)));
+
+        var divisionsElement = tournament.GetProperty("Divisions");
+        _logger.LogInformation("Divisions ValueKind: {Kind}", divisionsElement.ValueKind);
 
         var divisions = overview.Value
             .GetProperty("Tournament")
@@ -562,8 +571,28 @@ public class GolfboxSyncService
             foreach (var pool in div.GetProperty("Pools").EnumerateArray())
             {
                 var poolName = (pool.GetProperty("Name").GetString() ?? "").Trim();
+
+                // Skip pools with no competition ID
+                if (pool.GetProperty("CompetitionID").ValueKind == JsonValueKind.Null)
+                {
+                    _logger.LogInformation("Skipping {Pool} — no CompetitionID", poolName);
+                    continue;
+                }
+
                 var competitionId = pool.GetProperty("CompetitionID").GetInt64();
-                await SyncUnsettledRoundsForPoolAsync(matches, roundStatuses, year, isFinals, isSenior, divisionName, poolName, competitionId);
+
+                if (isFinals)
+                {
+                    // Finals use bracket format — delete and re-sync the whole pool
+                    await matches.DeleteFinalsByYearPoolAsync(year, poolName, isSenior);
+                    await matches.SaveChangesAsync();
+                    await SyncPoolAsync(matches, year, isFinals, isSenior, divisionName, poolName, competitionId);
+                }
+                else
+                {
+                    await SyncUnsettledRoundsForPoolAsync(matches, roundStatuses, year, isFinals, isSenior, divisionName, poolName, competitionId);
+                }
+
                 await Task.Delay(200);
             }
         }

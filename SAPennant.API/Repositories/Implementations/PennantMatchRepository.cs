@@ -215,4 +215,15 @@ public class PennantMatchRepository : EfRepository<PennantMatch>, IPennantMatchR
                      && (m.HomeClub == club || m.AwayClub == club))
             .ToListAsync();
     }
+
+    public async Task DeleteFinalsByYearPoolAsync(int year, string pool, bool isSenior)
+    {
+        var matches = await _dbSet
+            .Where(m => m.Year == year &&
+                        m.Pool == pool &&
+                        m.IsFinals == true &&
+                        m.IsSenior == isSenior)
+            .ToListAsync();
+        _dbSet.RemoveRange(matches);
+    }
 }
