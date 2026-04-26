@@ -6,7 +6,7 @@ public class PennantSyncBackgroundService : BackgroundService
 {
     private readonly IServiceScopeFactory _scopeFactory;
     private readonly ILogger<PennantSyncBackgroundService> _logger;
-    private static readonly TimeSpan Interval = TimeSpan.FromHours(1);
+    private static readonly TimeSpan Interval = TimeSpan.FromMinutes(5);
 
     public PennantSyncBackgroundService(
         IServiceScopeFactory scopeFactory,

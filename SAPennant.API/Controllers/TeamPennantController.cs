@@ -251,18 +251,22 @@ public class TeamPennantController : ControllerBase
     [HttpGet("finalists")]
     public async Task<IActionResult> GetFinalists([FromQuery] int year, [FromQuery] string pool)
     {
-        // For completed seasons — derive from actual finals data
-        var finalsMatches = await _matches.GetByYearAndPoolAsync(year, pool);
-        var actualFinalists = finalsMatches
-            .Where(m => m.IsFinals && (m.Round == "Semi Final" || m.Round == "Final"))
-            .SelectMany(m => new[] { m.HomeClub, m.AwayClub })
-            .Distinct()
-            .ToList();
+        var currentYear = DateTime.UtcNow.Year;
 
-        if (actualFinalists.Any())
+        if (year < currentYear)
+        {
+            // Previous seasons — derive from actual finals data in the database
+            var finalsMatches = await _matches.GetByYearAndPoolAsync(year, pool);
+            var actualFinalists = finalsMatches
+                .Where(m => m.IsFinals)
+                .SelectMany(m => new[] { m.HomeClub, m.AwayClub })
+                .Distinct()
+                .ToList();
+
             return Ok(new { finalists = actualFinalists, source = "actual" });
+        }
 
-        // For current/future seasons — use config to get top N from standings
+        // Current season — always use FinalistCount config to mark the cutoff line
         var config = await _poolFinalistConfigs.GetAsync(pool);
         if (config == null)
             return Ok(new { finalists = new List<string>(), source = "none" });
