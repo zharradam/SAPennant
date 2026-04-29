@@ -1,5 +1,6 @@
 import { Component, OnInit, signal } from '@angular/core';
 import { PennantService } from '../pennant.service';
+import { LoggingService } from '../logging.service';
 
 @Component({
   selector: 'sa-pennant-honour-roll',
@@ -25,7 +26,10 @@ export class HonourRollComponent implements OnInit {
   years: number[] = [];
   groupBy: 'year' | 'pool' = 'year';
 
-  constructor(private pennant: PennantService) {}
+  constructor(
+    private pennant: PennantService,
+    private logging: LoggingService
+  ) {}
 
   ngOnInit(): void {
     this.pennant.getHonourRollNarratives().subscribe(data => {
@@ -47,6 +51,7 @@ export class HonourRollComponent implements OnInit {
   }
 
   onCompetitionChange(): void {
+    this.logging.info(`Honour roll competition changed: "${this.selectedCompetition}"`, 'HonourRollComponent');
     this.selectedPool = '';
     this.selectedYear = undefined;
     this.narrativeExpanded = false;
@@ -55,6 +60,7 @@ export class HonourRollComponent implements OnInit {
   }
 
   load(): void {
+    this.logging.info(`Honour roll loaded: competition="${this.selectedCompetition}" pool="${this.selectedPool || 'all'}" year=${this.selectedYear ?? 'all'} club="${this.selectedClub || 'all'}"`, 'HonourRollComponent');
     this.isLoading.set(true);
     this.pennant.getHonourRoll({
       competition: this.selectedCompetition || undefined,
@@ -63,10 +69,14 @@ export class HonourRollComponent implements OnInit {
       club: this.selectedClub || undefined,
     }).subscribe({
       next: (data) => {
+        //this.logging.info(`Honour roll results: ${data.length} entries`, 'HonourRollComponent');
         this.results.set(data);
         this.isLoading.set(false);
       },
-      error: () => this.isLoading.set(false)
+      error: (err) => {
+        this.logging.error(`Honour roll load failed: ${err?.message ?? err}`, 'HonourRollComponent');
+        this.isLoading.set(false);
+      }
     });
   }
 
@@ -79,10 +89,10 @@ export class HonourRollComponent implements OnInit {
   }
 
   toggleNarrative(): void {
+    this.logging.info(`Narrative toggled: "${this.selectedCompetition}" — ${!this.narrativeExpanded ? 'expanded' : 'collapsed'}`, 'HonourRollComponent');
     this.narrativeExpanded = !this.narrativeExpanded;
   }
 
-  // Group results by year for display
   get groupedResults(): { year: number; entries: any[] }[] {
     const map = new Map<number, any[]>();
     for (const r of this.results()) {
@@ -99,7 +109,7 @@ export class HonourRollComponent implements OnInit {
   }
 
   onGroupByChange(): void {
-  // no reload needed, just re-renders
+    this.logging.info(`Honour roll group by changed: "${this.groupBy}"`, 'HonourRollComponent');
   }
 
   get groupedByPool(): { pool: string; entries: any[] }[] {

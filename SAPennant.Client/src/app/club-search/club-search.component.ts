@@ -5,6 +5,7 @@ import { PennantService } from '../pennant.service';
 import { ClubPlayer } from '../models/pennant.models';
 import { CLUB_LOGOS } from '../data/club-logos';
 import { InsightsService } from '../insights.service';
+import { LoggingService } from '../logging.service';
 
 @Component({
   selector: 'sa-pennant-club',
@@ -34,10 +35,13 @@ export class ClubSearchComponent {
   sortDir: 'asc' | 'desc' = 'desc';
 
   private readonly clubLogos = CLUB_LOGOS;
-
   private suggestSubject = new Subject<string>();
 
-  constructor(private pennant: PennantService, private insights: InsightsService) {
+  constructor(
+    private pennant: PennantService,
+    private insights: InsightsService,
+    private logging: LoggingService
+  ) {
     this.suggestSubject.pipe(
       debounceTime(300),
       distinctUntilChanged(),
@@ -65,6 +69,7 @@ export class ClubSearchComponent {
   }
 
   selectSuggestion(club: string): void {
+    this.logging.info(`Club suggestion selected: "${club}"`, 'ClubSearchComponent');
     this.query = club;
     this.showSuggestions.set(false);
     this.suggestions.set([]);
@@ -75,6 +80,7 @@ export class ClubSearchComponent {
     if (!this.query || this.query.trim().length < 2) return;
     this.showSuggestions.set(false);
     this.selectedClub = this.query.trim();
+    //this.logging.info(`Club search: "${this.selectedClub}"`, 'ClubSearchComponent');
     this.insights.trackEvent('ClubSearch', { club: this.selectedClub });
     this.isLoading.set(true);
     this.isSlowResponse.set(false);
@@ -85,6 +91,7 @@ export class ClubSearchComponent {
       next: players => {
         clearTimeout(this.slowTimeout);
         this.isSlowResponse.set(false);
+        //this.logging.info(`Club search results: "${this.selectedClub}" — ${players.length} players`, 'ClubSearchComponent');
         this.allPlayers = players;
         this.availableYears = [...new Set(players.map(p => p.year))].sort((a, b) => b - a);
         this.selectedYears = new Set(this.availableYears);
@@ -95,13 +102,14 @@ export class ClubSearchComponent {
       error: err => {
         clearTimeout(this.slowTimeout);
         this.isSlowResponse.set(false);
-        console.error(err);
+        this.logging.error(`Club search failed for "${this.selectedClub}": ${err?.message ?? err}`, 'ClubSearchComponent');
         this.isLoading.set(false);
       }
     });
   }
 
   toggleYear(year: number): void {
+    this.logging.info(`Club year filter toggled: ${year}`, 'ClubSearchComponent');
     if (this.selectedYears.has(year)) {
       if (this.selectedYears.size === 1) return;
       this.selectedYears.delete(year);
@@ -112,6 +120,7 @@ export class ClubSearchComponent {
   }
 
   togglePool(pool: string): void {
+    this.logging.info(`Club pool filter toggled: ${pool}`, 'ClubSearchComponent');
     if (this.selectedPools.has(pool)) {
       if (this.selectedPools.size === 1) return;
       this.selectedPools.delete(pool);
@@ -122,6 +131,8 @@ export class ClubSearchComponent {
   }
 
   setSort(col: typeof this.sortCol): void {
+    const newDir = this.sortCol === col ? (this.sortDir === 'asc' ? 'desc' : 'asc') : (col === 'playerName' ? 'asc' : 'desc');
+    this.logging.info(`Club sort changed: ${col} ${newDir}`, 'ClubSearchComponent');
     if (this.sortCol === col) {
       this.sortDir = this.sortDir === 'asc' ? 'desc' : 'asc';
     } else {
@@ -129,7 +140,7 @@ export class ClubSearchComponent {
       this.sortDir = col === 'playerName' ? 'asc' : 'desc';
     }
   }
-  
+
   get players(): ClubPlayer[] {
     const filtered = this.allPlayers.filter(p =>
       this.selectedYears.has(p.year) &&
@@ -169,12 +180,12 @@ export class ClubSearchComponent {
     });
   }
 
-  get totalPlayed(): number { 
-    return this.players.reduce((s, p) => s + p.played, 0); 
+  get totalPlayed(): number {
+    return this.players.reduce((s, p) => s + p.played, 0);
   }
-  
-  get totalWins(): number { 
-    return this.players.reduce((s, p) => s + p.wins, 0); 
+
+  get totalWins(): number {
+    return this.players.reduce((s, p) => s + p.wins, 0);
   }
 
   get clubWinRate(): number {
@@ -186,6 +197,7 @@ export class ClubSearchComponent {
   }
 
   goToPlayer(playerName: string): void {
+    this.logging.info(`Player selected from club search: "${playerName}" at "${this.selectedClub}"`, 'ClubSearchComponent');
     this.playerSelected.emit(playerName);
   }
 

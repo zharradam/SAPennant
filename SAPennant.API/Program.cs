@@ -6,6 +6,8 @@ using Microsoft.IdentityModel.Tokens;
 using SAPennant.API.Data;
 using SAPennant.API.Infrastructure;
 using SAPennant.API.Services;
+using Serilog;
+using Serilog.Sinks.Grafana.Loki;
 using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -88,6 +90,39 @@ builder.Services.AddCors(options =>
               .AllowAnyMethod();
     });
 });
+
+var lokiUrl = builder.Configuration["Loki:Url"];
+var lokiUserId = builder.Configuration["Loki:UserId"];
+var lokiApiToken = builder.Configuration["Loki:ApiToken"];
+var environment = builder.Environment.EnvironmentName;
+
+var logConfig = new LoggerConfiguration()
+    .MinimumLevel.Information()
+    .MinimumLevel.Override("Microsoft", Serilog.Events.LogEventLevel.Warning)
+    .MinimumLevel.Override("Microsoft.EntityFrameworkCore", Serilog.Events.LogEventLevel.Warning)
+    .MinimumLevel.Override("System", Serilog.Events.LogEventLevel.Warning)
+    .Enrich.WithProperty("source", "backend")
+    .WriteTo.Console();
+
+if (!string.IsNullOrWhiteSpace(lokiUrl) && !string.IsNullOrWhiteSpace(lokiUserId) && !string.IsNullOrWhiteSpace(lokiApiToken))
+{
+    logConfig.WriteTo.GrafanaLoki(
+        lokiUrl,
+        credentials: new LokiCredentials
+        {
+            Login = lokiUserId,
+            Password = lokiApiToken
+        },
+        labels: new[]
+        {
+            new LokiLabel { Key = "app", Value = builder.Configuration["Loki:AppName"] ?? "sapennant-api" },
+            new LokiLabel { Key = "env", Value = environment }
+        }
+    );
+}
+
+Log.Logger = logConfig.CreateLogger();
+builder.Host.UseSerilog();
 
 var app = builder.Build();
 

@@ -238,11 +238,11 @@ public class TeamPennantController : ControllerBase
         var all = await _roundStatuses.GetByYearAsync(year);
         var poolStatuses = all.Where(r => r.Pool == pool).ToList();
 
-        _logger.LogInformation("Found {Count} round statuses for {Year} {Pool}",
-            poolStatuses.Count, year, pool);
+        /** Don't need too much logging here, but keeping this around for now in case we need to troubleshoot any issues with the active round logic
+        _logger.LogInformation("Found {Count} round statuses for {Year} {Pool}", poolStatuses.Count, year, pool);
         foreach (var r in poolStatuses)
             _logger.LogInformation("Round={Round} IsSettled={IsSettled}", r.Round, r.IsSettled);
-
+        */
         var activeRound = poolStatuses.FirstOrDefault(r => !r.IsSettled)?.Round;
 
         return Ok(new { activeRound });

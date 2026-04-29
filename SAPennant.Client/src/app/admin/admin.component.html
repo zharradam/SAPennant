@@ -76,6 +76,25 @@
             </button>
           </div>
         </div>
+        <div class="section-footer">
+          <div class="interval-wrap">
+            <label>Poll every</label>
+            <input
+              type="number"
+              [ngModel]="pollingInterval()"
+              (ngModelChange)="pollingInterval.set($event)"
+              min="1"
+              max="1440"
+              style="width: 70px"
+            />
+            <span>min</span>
+            <button class="btn-primary" (click)="savePollingInterval()" [disabled]="isSavingInterval()">
+              {{ isSavingInterval() ? 'Saving...' : 'Save interval' }}
+            </button>
+            <span class="interval-badge success" *ngIf="intervalSaved()">✓ Saved</span>
+            <span class="interval-badge error" *ngIf="intervalError()">⚠ {{ intervalError() }}</span>
+          </div>
+        </div>
       </div>
 
       <div class="section-card">

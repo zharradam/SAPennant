@@ -1,4 +1,4 @@
-import { NgModule, provideBrowserGlobalErrorListeners } from '@angular/core';
+import { NgModule, provideBrowserGlobalErrorListeners, ErrorHandler } from '@angular/core';
 import { BrowserModule } from '@angular/platform-browser';
 import { FormsModule } from '@angular/forms';
 import { HttpClientModule, provideHttpClient, withInterceptors } from '@angular/common/http';
@@ -17,6 +17,7 @@ import { TeamPennantComponent } from './team-pennant/team-pennant.component';
 import { HonourRollComponent } from './honour-roll/honour-roll.component';
 import { ServiceWorkerModule } from '@angular/service-worker';
 import { ScrollHintDirective } from './directives/scroll-hint.directive';
+import { GlobalErrorHandler } from './global-error-handler';
 
 @NgModule({
   declarations: [
@@ -42,6 +43,7 @@ import { ScrollHintDirective } from './directives/scroll-hint.directive';
     }),
   ],
   providers: [
+    { provide: ErrorHandler, useClass: GlobalErrorHandler },
     provideBrowserGlobalErrorListeners(),
     provideHttpClient(withInterceptors([authInterceptor])),
   ],

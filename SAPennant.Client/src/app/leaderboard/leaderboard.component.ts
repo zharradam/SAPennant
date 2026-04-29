@@ -1,6 +1,7 @@
 import { Component, OnInit, signal, output } from '@angular/core';
 import { PennantService } from '../pennant.service';
 import { InsightsService } from '../insights.service';
+import { LoggingService } from '../logging.service';
 
 @Component({
   selector: 'sa-pennant-leaderboard',
@@ -28,7 +29,11 @@ export class LeaderboardComponent implements OnInit {
   divisionPools: Record<string, string[]> = {};
   filteredPools: string[] = [];
 
-  constructor(private pennant: PennantService, private insights: InsightsService) {}
+  constructor(
+    private pennant: PennantService,
+    private insights: InsightsService,
+    private logging: LoggingService
+  ) {}
 
   ngOnInit(): void {
     this.pennant.getFilters().subscribe(filters => {
@@ -42,6 +47,7 @@ export class LeaderboardComponent implements OnInit {
   }
 
   onDivisionChange(): void {
+    this.logging.info(`Division filter changed: "${this.selectedDivision || 'all'}"`, 'LeaderboardComponent');
     this.selectedPool = '';
     this.filteredPools = this.selectedDivision
       ? (this.divisionPools[this.selectedDivision] ?? this.pools)
@@ -50,6 +56,7 @@ export class LeaderboardComponent implements OnInit {
   }
 
   sortBy(column: string): void {
+    this.logging.info(`Sort changed: ${column} ${this.sortColumn === column ? (this.sortDirection === 'desc' ? 'asc' : 'desc') : 'desc'}`, 'LeaderboardComponent');
     if (this.sortColumn === column) {
       this.sortDirection = this.sortDirection === 'desc' ? 'asc' : 'desc';
     } else {
@@ -79,10 +86,12 @@ export class LeaderboardComponent implements OnInit {
   }
 
   nextPage(): void {
+    this.logging.info(`Leaderboard page: ${this.currentPage + 2} of ${this.totalPages}`, 'LeaderboardComponent');
     if (this.currentPage < this.totalPages - 1) this.currentPage++;
   }
 
   prevPage(): void {
+    this.logging.info(`Leaderboard page: ${this.currentPage} of ${this.totalPages}`, 'LeaderboardComponent');
     if (this.currentPage > 0) this.currentPage--;
   }
 
@@ -91,6 +100,7 @@ export class LeaderboardComponent implements OnInit {
   }
 
   selectPlayer(name: string): void {
+    this.logging.info(`Player selected from leaderboard: "${name}"`, 'LeaderboardComponent');
     this.pennant.pendingSearch.set(name);
     this.playerSelected.emit(name);
   }
@@ -101,8 +111,9 @@ export class LeaderboardComponent implements OnInit {
       division: this.selectedDivision || 'all',
       pool: this.selectedPool || 'all'
     });
+    this.logging.info(`Leaderboard loaded: year=${this.selectedYear ?? 'all'} division="${this.selectedDivision || 'all'}" pool="${this.selectedPool || 'all'}" minGames=${this.minGames}`, 'LeaderboardComponent');
     this.isLoading.set(true);
-    this.currentPage = 0; // reset to first page on filter change
+    this.currentPage = 0;
     this.pennant.getLeaderboard({
       year: this.selectedYear,
       division: this.selectedDivision || undefined,
@@ -114,7 +125,7 @@ export class LeaderboardComponent implements OnInit {
         this.isLoading.set(false);
       },
       error: (err) => {
-        console.error(err);
+        this.logging.error(`Leaderboard load failed: ${err?.message ?? err}`, 'LeaderboardComponent');
         this.isLoading.set(false);
       }
     });

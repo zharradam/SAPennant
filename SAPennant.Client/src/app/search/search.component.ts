@@ -5,6 +5,7 @@ import { Subject } from 'rxjs';
 import { debounceTime, distinctUntilChanged, switchMap } from 'rxjs/operators';
 import { InsightsService } from '../insights.service';
 import { getClubLogo } from '../data/club-logos';
+import { LoggingService } from '../logging.service';
 
 @Component({
   selector: 'sa-pennant-search',
@@ -32,7 +33,11 @@ export class SearchComponent implements OnInit {
   private searchSubject = new Subject<string>();
   private searchSource = 'search';
 
-  constructor(private pennant: PennantService, private insights: InsightsService) {
+  constructor(
+    private pennant: PennantService,
+    private insights: InsightsService,
+    private logging: LoggingService
+  ) {
     this.searchSubject.pipe(
       debounceTime(0),
       distinctUntilChanged(),
@@ -62,7 +67,7 @@ export class SearchComponent implements OnInit {
       error: (err) => {
         clearTimeout(this.slowTimeout);
         this.isSlowResponse.set(false);
-        console.error(err);
+        this.logging.error(`Search failed for "${this.query}": ${err?.message ?? err}`, 'SearchComponent');
         this.isLoading.set(false);
       }
     });
@@ -84,7 +89,6 @@ export class SearchComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    // Check for ?player= in URL first
     const params = new URLSearchParams(window.location.search);
     const urlPlayer = params.get('player');
     if (urlPlayer) {
@@ -93,7 +97,6 @@ export class SearchComponent implements OnInit {
       return;
     }
 
-    // Fall back to pending search from leaderboard/club navigation
     const pending = this.pennant.pendingSearch();
     if (pending) {
       this.query = pending;
@@ -123,6 +126,7 @@ export class SearchComponent implements OnInit {
   }
 
   selectSuggestion(name: string): void {
+    this.logging.info(`Suggestion selected: "${name}"`, 'SearchComponent');
     this.searchSource = 'suggestion';
     this.query = name;
     this.showSuggestions.set(false);
@@ -135,6 +139,7 @@ export class SearchComponent implements OnInit {
   }
 
   toggleYear(year: number): void {
+    //this.logging.info(`Year filter toggled: ${year}`, 'SearchComponent');
     if (this.selectedYears.has(year)) {
       if (this.selectedYears.size === 1) return;
       this.selectedYears.delete(year);
@@ -145,6 +150,7 @@ export class SearchComponent implements OnInit {
   }
 
   togglePool(pool: string): void {
+    //this.logging.info(`Pool filter toggled: ${pool}`, 'SearchComponent');
     if (this.selectedPools.has(pool)) {
       if (this.selectedPools.size === 1) return;
       this.selectedPools.delete(pool);
@@ -244,6 +250,8 @@ export class SearchComponent implements OnInit {
   }
 
   async sharePlayer(): Promise<void> {
+    this.logging.info(`Share player: "${this.playerName}" from ${this.playerClub}`, 'SearchComponent');
+
     const name = this.playerName;
     const club = this.playerClub;
     const url = `https://sapennantgolf.com/?player=${encodeURIComponent(name)}`;
@@ -258,12 +266,9 @@ export class SearchComponent implements OnInit {
     const ctx = canvas.getContext('2d')!;
     ctx.scale(scale, scale);
 
-
-    // Background
     ctx.fillStyle = '#0f1e3d';
     ctx.fillRect(0, 0, W, H);
 
-    // Avatar circle
     const initials = name.split(' ').map((n: string) => n[0]).slice(0, 2).join('').toUpperCase();
     const logoUrl = getClubLogo(club);
 
@@ -271,7 +276,6 @@ export class SearchComponent implements OnInit {
       await new Promise<void>((resolve) => {
         const img = new Image();
         img.onload = () => {
-          // White circle background
           ctx.fillStyle = '#ffffff';
           ctx.beginPath();
           ctx.arc(52, 45, 28, 0, Math.PI * 2);
@@ -283,14 +287,13 @@ export class SearchComponent implements OnInit {
           ctx.imageSmoothingEnabled = true;
           ctx.imageSmoothingQuality = 'high';
           ctx.drawImage(img, 22, 15, 60, 60);
-          ctx.restore()
+          ctx.restore();
           resolve();
         };
-        img.onerror = () => resolve(); // fall back silently
+        img.onerror = () => resolve();
         img.src = logoUrl;
       });
     } else {
-      // Initials fallback
       ctx.fillStyle = 'rgba(255,255,255,0.15)';
       ctx.beginPath();
       ctx.arc(52, 45, 28, 0, Math.PI * 2);
@@ -302,19 +305,16 @@ export class SearchComponent implements OnInit {
       ctx.fillText(initials, 52, 45);
     }
 
-    // Player name
     ctx.textAlign = 'left';
     ctx.textBaseline = 'alphabetic';
     ctx.fillStyle = '#ffffff';
     ctx.font = 'bold 22px Arial';
     ctx.fillText(name, 92, 44);
 
-    // Club + year range
     ctx.fillStyle = 'rgba(255,255,255,0.55)';
     ctx.font = '14px Arial';
     ctx.fillText(`${club} · ${this.yearRange}`, 92, 66);
 
-    // Divider
     ctx.strokeStyle = 'rgba(255,255,255,0.12)';
     ctx.lineWidth = 1;
     ctx.beginPath();
@@ -322,7 +322,6 @@ export class SearchComponent implements OnInit {
     ctx.lineTo(W - 24, 90);
     ctx.stroke();
 
-    // Stats
     const stats = [
       { label: 'PLAYED',   value: String(this.results.length), color: '#ffffff' },
       { label: 'WON',      value: String(this.wins),           color: '#5db83a' },
@@ -342,7 +341,6 @@ export class SearchComponent implements OnInit {
       ctx.fillText(s.label, cx, 168);
     });
 
-    // Divider
     ctx.strokeStyle = 'rgba(255,255,255,0.12)';
     ctx.lineWidth = 1;
     ctx.beginPath();
@@ -350,24 +348,20 @@ export class SearchComponent implements OnInit {
     ctx.lineTo(W - 24, 185);
     ctx.stroke();
 
-    // Branding
     ctx.textAlign = 'left';
     ctx.fillStyle = 'rgba(255,255,255,0.3)';
     ctx.font = 'bold 11px Arial';
     ctx.fillText('SA PENNANT GOLF · SOUTH AUSTRALIA', 24, 210);
 
-    // URL
     ctx.fillStyle = 'rgba(255,255,255,0.4)';
     ctx.font = '11px Arial';
     ctx.fillText(url, 24, 228);
 
-    // Pools right-aligned
     ctx.textAlign = 'right';
     ctx.fillStyle = 'rgba(255,255,255,0.25)';
     ctx.font = '11px Arial';
     ctx.fillText(this.allPools, W - 24, 228);
 
-    // Replace the entire toBlob callback with this:
     canvas.toBlob(async (blob) => {
       if (!blob || blob.size === 0) return;
 
@@ -375,24 +369,27 @@ export class SearchComponent implements OnInit {
       const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
 
       if (isMobile && navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
-        // Mobile — native share sheet with image
         try {
           this.shareState.set('sharing');
           await navigator.share({ files: [file], text: shareText });
+          this.logging.info(`Share completed (native) for "${name}"`, 'SearchComponent');
           this.shareState.set('idle');
           return;
-        } catch {
+        } catch (err: any) {
+          if (err?.name !== 'AbortError') {
+            this.logging.warn(`Native share failed for "${name}": ${err?.message ?? err}`, 'SearchComponent');
+          }
           this.shareState.set('idle');
         }
       }
 
-      // Desktop — download the image + copy URL to clipboard
       const imageUrl = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = imageUrl;
       a.download = `${name.replace(/\s+/g, '-').toLowerCase()}-pennant-stats.png`;
       a.click();
       URL.revokeObjectURL(imageUrl);
+      this.logging.info(`Share downloaded (desktop) for "${name}"`, 'SearchComponent');
 
       try {
         await navigator.clipboard.writeText(`https://sapennantgolf.com/?player=${encodeURIComponent(name)}`);
@@ -443,7 +440,7 @@ export class SearchComponent implements OnInit {
       error: (err) => {
         clearTimeout(this.slowTimeout);
         this.isSlowResponse.set(false);
-        console.error(err);
+        this.logging.error(`Search failed for "${query}": ${err?.message ?? err}`, 'SearchComponent');
         this.isLoading.set(false);
       }
     });
@@ -454,6 +451,7 @@ export class SearchComponent implements OnInit {
       query: this.query,
       source: this.searchSource
     });
+    this.logging.info(`Player search: "${this.query}" via ${this.searchSource} — ${data.length} results`, 'SearchComponent');
     this.allResults = data;
     this.availableYears = [...new Set(data.map(m => m.year))].sort((a, b) => b - a);
     this.selectedYears = new Set(this.availableYears);
@@ -461,7 +459,6 @@ export class SearchComponent implements OnInit {
     this.selectedPools = new Set(this.availablePools);
     this.isLoading.set(false);
 
-    // Update URL with the resolved player name
     if (data.length > 0) {
       this.setPlayerUrl(this.playerName);
     }

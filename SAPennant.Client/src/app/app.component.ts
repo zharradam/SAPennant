@@ -5,6 +5,7 @@ import { retry, switchMap } from 'rxjs/operators';
 import { interval } from 'rxjs';
 import { buildInfo } from '../environments/build-info';
 import { Router } from '@angular/router';
+import { LoggingService } from './logging.service';
 
 @Component({
   selector: 'sa-pennant-root',
@@ -42,9 +43,22 @@ export class App implements OnInit, AfterViewInit  {
   @ViewChild('overlayBall') overlayBall!: ElementRef<HTMLImageElement>;
   @ViewChild('overlaySpinner') overlaySpinner!: ElementRef<HTMLDivElement>;
 
-  constructor(private pennant: PennantService, private router: Router, private insights: InsightsService) {}
+  constructor(private pennant: PennantService, private router: Router, private insights: InsightsService, private logging: LoggingService) {}
 
   ngOnInit(): void {
+    const originalError = console.error.bind(console);
+    const originalWarn = console.warn.bind(console);
+
+    console.error = (...args: any[]) => {
+      originalError(...args);
+      this.logging.error(args.map(a => String(a)).join(' '), 'console');
+    };
+
+    console.warn = (...args: any[]) => {
+      originalWarn(...args);
+      this.logging.warn(args.map(a => String(a)).join(' '), 'console');
+    };
+
     // Auto-switch to Player Search tab if URL contains ?player=
     const params = new URLSearchParams(window.location.search);
     if (params.get('player')) {

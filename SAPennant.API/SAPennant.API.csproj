@@ -20,6 +20,9 @@
 		<PackageReference Include="Microsoft.Extensions.Diagnostics.HealthChecks.EntityFrameworkCore" Version="10.0.7" />
 		<PackageReference Include="Microsoft.OpenApi" Version="2.4.1" />
 		<PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="10.0.1" />
+		<PackageReference Include="Serilog.AspNetCore" Version="10.0.0" />
+		<PackageReference Include="Serilog.Sinks.Console" Version="6.1.1" />
+		<PackageReference Include="Serilog.Sinks.Grafana.Loki" Version="8.3.2" />
 		<PackageReference Include="Swashbuckle.AspNetCore" Version="10.1.7" />
 		<PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="8.17.0" />
 	</ItemGroup>

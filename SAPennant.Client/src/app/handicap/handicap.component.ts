@@ -3,6 +3,7 @@ import { PennantService } from '../pennant.service';
 import { HandicapPlayer, HandicapDataPoint } from '../models/pennant.models';
 import { getClubLogo } from '../data/club-logos';
 import { InsightsService } from '../insights.service';
+import { LoggingService } from '../logging.service';
 
 @Component({
   selector: 'sa-pennant-handicap',
@@ -22,22 +23,29 @@ export class HandicapComponent implements OnInit {
   sortCol: 'playerName' | 'lowestHandicap' | 'currentHandicap' | 'club' = 'lowestHandicap';
   sortDir: 'asc' | 'desc' = 'asc';
 
-  constructor(private pennant: PennantService, private insights: InsightsService) {}
+  constructor(
+    private pennant: PennantService,
+    private insights: InsightsService,
+    private logging: LoggingService
+  ) {}
 
   ngOnInit(): void {
     this.pennant.getHandicapLeaderboard().subscribe({
       next: players => {
+        this.logging.info(`Handicap leaderboard loaded: ${players.length} players`, 'HandicapComponent');
         this.players = players;
         this.isLoading.set(false);
       },
       error: err => {
-        console.error(err);
+        this.logging.error(`Handicap leaderboard load failed: ${err?.message ?? err}`, 'HandicapComponent');
         this.isLoading.set(false);
       }
     });
   }
 
   setSort(col: typeof this.sortCol): void {
+    const newDir = this.sortCol === col ? (this.sortDir === 'asc' ? 'desc' : 'asc') : 'asc';
+    this.logging.info(`Handicap sort changed: ${col} ${newDir}`, 'HandicapComponent');
     if (this.sortCol === col) {
       this.sortDir = this.sortDir === 'asc' ? 'desc' : 'asc';
     } else {
@@ -58,21 +66,26 @@ export class HandicapComponent implements OnInit {
 
   openModal(player: HandicapPlayer): void {
     this.selectedPlayer = player;
+    this.logging.info(`Handicap history opened: "${player.playerName}" from ${player.club}`, 'HandicapComponent');
     this.insights.trackEvent('HandicapSearch', { player: this.selectedPlayer.playerName });
     this.historyLoading.set(true);
     this.pennant.getHandicapHistory(player.playerName).subscribe({
       next: history => {
+        //this.logging.info(`Handicap history loaded: "${player.playerName}" — ${history.length} data points`, 'HandicapComponent');
         this.history = history;
         this.historyLoading.set(false);
       },
       error: err => {
-        console.error(err);
+        this.logging.error(`Handicap history load failed for "${player.playerName}": ${err?.message ?? err}`, 'HandicapComponent');
         this.historyLoading.set(false);
       }
     });
   }
 
   closeModal(): void {
+    if (this.selectedPlayer) {
+      //this.logging.info(`Handicap history closed: "${this.selectedPlayer.playerName}"`, 'HandicapComponent');
+    }
     this.selectedPlayer = null;
     this.history = [];
   }
@@ -105,7 +118,7 @@ export class HandicapComponent implements OnInit {
     if (!this.history.length) return { minH: 0, maxH: 0, width: 600, height: 220, padding: 40 };
     const handicaps = this.history
       .map(h => h.handicap)
-      .filter(h => h >= -10 && h <= 54); // extra safety filter
+      .filter(h => h >= -10 && h <= 54);
     return {
       minH: Math.round((Math.min(...handicaps) - 1) * 10) / 10,
       maxH: Math.round((Math.max(...handicaps) + 1) * 10) / 10,

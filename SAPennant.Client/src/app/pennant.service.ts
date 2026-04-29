@@ -219,4 +219,14 @@ export class PennantService {
       `${this.API_URL}/teampennant/finalists?year=${year}&pool=${encodeURIComponent(pool)}`
     );
   }
+
+  getPollingInterval() {
+    return this.http.get<{ minutes: number }>(`${this.API_URL}/sync/polling-interval`);
+  }
+
+  setPollingInterval(minutes: number) {
+    return this.http.post(`${this.API_URL}/sync/polling-interval`, minutes, {
+      headers: { 'Content-Type': 'application/json' }
+    });
+  }
 }

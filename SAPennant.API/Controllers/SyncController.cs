@@ -141,4 +141,22 @@ public class SyncController : ControllerBase
         await _appSettings.SetAsync("MaintenanceMode", enabled ? "true" : "false");
         return Ok(new { enabled });
     }
+
+    [HttpPost("polling-interval")]
+    [Authorize]
+    public async Task<IActionResult> SetPollingInterval([FromBody] int minutes)
+    {
+        if (minutes < 5 || minutes > 1440)
+            return BadRequest("Must be between 5 and 1440 minutes");
+
+        await _settings.SetIntAsync("PollingIntervalMinutes", minutes);
+        return Ok();
+    }
+
+    [HttpGet("polling-interval")]
+    public async Task<IActionResult> GetPollingInterval()
+    {
+        var minutes = await _settings.GetIntAsync("PollingIntervalMinutes", 60);
+        return Ok(new { minutes });
+    }
 }
