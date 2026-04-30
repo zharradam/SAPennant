@@ -223,7 +223,11 @@
                   </thead>
                   <tbody>
                     <tr *ngFor="let p of expandedMatchPlayers()">
-                      <td class="player-name" [class.won]="p.playerWon === true" [class.lost]="p.playerWon === false" [class.halved]="p.playerWon === null">
+                      <td class="player-name" 
+                          [class.won]="p.playerWon === true" 
+                          [class.lost]="p.playerWon === false" 
+                          [class.halved]="p.playerWon === null"
+                          (click)="openPlayerModal(p.playerName); $event.stopPropagation()">
                         {{ p.playerName }}
                       </td>
                       <td class="num result-cell">
@@ -231,7 +235,10 @@
                           {{ formatResult(p.result, p.playerWon) }}
                         </span>
                       </td>
-                      <td class="opponent-name">{{ p.opponentName }}</td>
+                      <td class="opponent-name" 
+                          (click)="openPlayerModal(p.opponentName); $event.stopPropagation()">
+                        {{ p.opponentName }}
+                      </td>
                     </tr>
                   </tbody>
                 </table>
@@ -243,4 +250,10 @@
 
     </div>
   </div>
+
+  <sa-pennant-player-modal
+    *ngIf="selectedPlayerModal()"
+    [playerName]="selectedPlayerModal()"
+    (closed)="closePlayerModal()"
+  ></sa-pennant-player-modal>
 </div>

@@ -36,6 +36,7 @@ export class TeamPennantComponent implements OnInit {
   isLoadingClubRounds = signal(false);
   activeRound = signal<string | null>(null);
   finalists = signal<string[]>([]);
+  selectedPlayerModal = signal<string | null>(null);
 
   constructor(private pennant: PennantService) {}
 
@@ -264,5 +265,13 @@ export class TeamPennantComponent implements OnInit {
     if (!this.isFinalist(club)) return false;
     const nextRow = this.leaderboard()[index + 1];
     return nextRow ? !this.isFinalist(nextRow.club) : false;
+  }
+
+  openPlayerModal(name: string): void {
+    this.selectedPlayerModal.set(name);
+  }
+
+  closePlayerModal(): void {
+    this.selectedPlayerModal.set(null);
   }
 }

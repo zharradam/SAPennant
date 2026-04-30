@@ -676,3 +676,8 @@
     gap: 6px;
   }
 }
+
+.player-name, .opponent-name {
+  cursor: pointer;
+  &:hover { text-decoration: underline; }
+}

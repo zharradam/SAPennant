@@ -1,0 +1,94 @@
+<div class="summary-bar">
+  <div class="summary-stat">
+    <div class="val">{{ results.length }}</div>
+    <div class="lbl">matches</div>
+  </div>
+  <div class="summary-divider"></div>
+  <div class="summary-stat win">
+    <div class="val">{{ wins }}</div>
+    <div class="lbl">wins</div>
+  </div>
+  <div class="summary-stat loss">
+    <div class="val">{{ losses }}</div>
+    <div class="lbl">losses</div>
+  </div>
+  <div class="summary-stat halved">
+    <div class="val">{{ halved }}</div>
+    <div class="lbl">halved</div>
+  </div>
+  <div class="summary-divider"></div>
+  <div class="summary-stat">
+    <div class="val highlight">{{ winRate }}%</div>
+    <div class="lbl">win rate</div>
+  </div>
+  <div class="summary-stat">
+    <div class="val">{{ finalsRecord }}</div>
+    <div class="lbl">finals W/P</div>
+  </div>
+</div>
+
+<div class="year-filter">
+  <div
+    *ngFor="let year of availableYears"
+    class="year-chip"
+    [class.active]="selectedYears.has(year)"
+    (click)="toggleYear(year)"
+  >
+    {{ year }}
+  </div>
+</div>
+
+<div class="pool-filter" *ngIf="availablePools.length > 1">
+  <div
+    *ngFor="let pool of availablePools"
+    class="pool-chip"
+    [class.active]="selectedPools.has(pool)"
+    (click)="togglePool(pool)"
+  >
+    {{ pool }}
+  </div>
+</div>
+
+<ng-container *ngFor="let group of groupedResults">
+  <div class="group-header">
+    <div class="group-title">
+      {{ group.year }}
+      <span class="finals-tag" *ngIf="group.isFinals">Finals</span>
+    </div>
+    <div class="group-record">{{ divisionRecord(group.matches) }}</div>
+  </div>
+
+  <div class="match-card"
+    *ngFor="let m of group.matches"
+    [class.finals]="m.isFinals"
+    [class.win-card]="m.playerWon === true"
+    [class.loss-card]="m.playerWon === false">
+    <div class="match-left">
+      <div class="match-meta">
+        <span class="pill division">{{ m.division }}</span>
+        <span class="pill pool">{{ m.pool }}</span>
+      </div>
+      <div class="match-clubs">{{ m.homeClub }} vs {{ m.awayClub }}</div>
+      <div class="match-player">
+        <b>{{ m.playerName }}</b>
+        <span class="vs">vs</span>
+        {{ m.opponentName }}
+      </div>
+      <div class="match-detail">
+        {{ m.round }}
+        <span *ngIf="m.venue"> · {{ m.venue }}</span>
+        <span *ngIf="m.format === 'foursome'"> · Foursomes</span>
+        <span *ngIf="m.playerHandicap"> · HCP {{ m.playerHandicap }} vs {{ m.opponentHandicap }}</span>
+      </div>
+    </div>
+    <div class="match-right">
+      <div class="match-date">{{ m.date }}</div>
+      <div class="result-wrap">
+        <span class="result-badge win" *ngIf="m.playerWon === true">Win</span>
+        <span class="result-badge loss" *ngIf="m.playerWon === false">Loss</span>
+        <span class="result-badge halved" *ngIf="m.playerWon === null">Halved</span>
+        <span class="result-score" *ngIf="m.playerWon !== null">{{ formatResult(m) }}</span>
+      </div>
+    </div>
+  </div>
+</ng-container>

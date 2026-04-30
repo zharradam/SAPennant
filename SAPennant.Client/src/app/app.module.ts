@@ -18,6 +18,8 @@ import { HonourRollComponent } from './honour-roll/honour-roll.component';
 import { ServiceWorkerModule } from '@angular/service-worker';
 import { ScrollHintDirective } from './directives/scroll-hint.directive';
 import { GlobalErrorHandler } from './global-error-handler';
+import { PlayerStatsComponent } from './player-stats/player-stats.component';
+import { PlayerModalComponent } from './player-modal/player-modal.component';
 
 @NgModule({
   declarations: [
@@ -32,6 +34,8 @@ import { GlobalErrorHandler } from './global-error-handler';
     TeamPennantComponent,
     HonourRollComponent,
     ScrollHintDirective,
+    PlayerStatsComponent,
+    PlayerModalComponent,
   ],
   imports: [
     BrowserModule,

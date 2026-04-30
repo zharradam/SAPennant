@@ -1,0 +1,40 @@
+<div class="modal-overlay" (click)="onOverlayClick($event)">
+  <div class="modal-panel">
+    <div class="modal-header">
+      <div class="modal-avatar" *ngIf="!getClubLogoUrl()">{{ resolvedName | slice:0:1 }}</div>
+      <img class="modal-club-logo" *ngIf="getClubLogoUrl()" [src]="getClubLogoUrl()" [alt]="resolvedClub" />
+      <div class="modal-header-text">
+        <div class="modal-title">{{ resolvedName }}</div>
+        <div class="modal-sub">{{ resolvedClub }}</div>
+      </div>
+      <div class="modal-header-actions">
+        <button class="share-btn" (click)="sharePlayer()" [class.copied]="shareStateValue === 'copied'">
+          <svg *ngIf="shareStateValue !== 'copied'" width="15" height="15" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="15" cy="4" r="2"/><circle cx="5" cy="10" r="2"/><circle cx="15" cy="16" r="2"/>
+            <line x1="7" y1="9" x2="13" y2="5"/><line x1="7" y1="11" x2="13" y2="15"/>
+          </svg>
+          <svg *ngIf="shareStateValue === 'copied'" width="15" height="15" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="4 10 8 14 16 6"/>
+          </svg>
+          {{ shareStateValue === 'copied' ? 'Copied!' : 'Share' }}
+        </button>
+        <button class="modal-close" (click)="close()">✕</button>
+      </div>
+    </div>
+    <div class="modal-body">
+      <div class="status loading" *ngIf="isLoading()">
+        <span class="spinner"></span> Loading player history…
+      </div>
+      <sa-pennant-player-stats
+        #statsRef
+        *ngIf="!isLoading() && matches().length > 0"
+        [matches]="matches()"
+        [playerName]="resolvedName"
+        [playerClub]="resolvedClub"
+      ></sa-pennant-player-stats>
+      <div class="no-results" *ngIf="!isLoading() && matches().length === 0">
+        No match history found for {{ playerName }}.
+      </div>
+    </div>
+  </div>
+</div>
