@@ -6,6 +6,7 @@ import { interval } from 'rxjs';
 import { buildInfo } from '../environments/build-info';
 import { Router } from '@angular/router';
 import { LoggingService } from './logging.service';
+import { SwUpdate } from '@angular/service-worker';
 
 @Component({
   selector: 'sa-pennant-root',
@@ -13,7 +14,7 @@ import { LoggingService } from './logging.service';
   standalone: false,
   styleUrl: './app.component.scss'
 })
-export class App implements OnInit, AfterViewInit  {
+export class App implements OnInit, AfterViewInit {
   activeTab = signal<'team' | 'search' | 'club' | 'leaderboard' | 'handicap' | 'honour-roll' | 'admin'>('team');
   selectedPlayer = signal('');
   isLoadingApi = signal(true);
@@ -43,7 +44,13 @@ export class App implements OnInit, AfterViewInit  {
   @ViewChild('overlayBall') overlayBall!: ElementRef<HTMLImageElement>;
   @ViewChild('overlaySpinner') overlaySpinner!: ElementRef<HTMLDivElement>;
 
-  constructor(private pennant: PennantService, private router: Router, private insights: InsightsService, private logging: LoggingService) {}
+  constructor(
+    private pennant: PennantService,
+    private router: Router,
+    private insights: InsightsService,
+    private logging: LoggingService,
+    private swUpdate: SwUpdate
+  ) {}
 
   ngOnInit(): void {
     const originalError = console.error.bind(console);
@@ -59,7 +66,20 @@ export class App implements OnInit, AfterViewInit  {
       this.logging.warn(args.map(a => String(a)).join(' '), 'console');
     };
 
-    // Auto-switch to Player Search tab if URL contains ?player=
+    // Check for app updates and reload silently
+    if (this.swUpdate.isEnabled) {
+      this.swUpdate.versionUpdates.subscribe(event => {
+        if (event.type === 'VERSION_READY') {
+          this.swUpdate.activateUpdate().then(() => {
+            this.logging.info('New app version available — reloading', 'SwUpdate');
+            document.location.reload();
+          });
+        }
+      });
+
+      this.swUpdate.checkForUpdate();
+    }
+
     const params = new URLSearchParams(window.location.search);
     if (params.get('player')) {
       this.activeTab.set('search');
@@ -91,14 +111,14 @@ export class App implements OnInit, AfterViewInit  {
   ngAfterViewInit(): void {
     this.startParticles();
   }
- 
+
   navigateToPlayer(name: string): void {
     this.pennant.pendingSearch.set(name);
     this.activeTab.set('search');
   }
 
   get lastUpdated() {
-     return this.pennant.lastUpdated; 
+    return this.pennant.lastUpdated;
   }
 
   toggleMenu(): void {
@@ -124,7 +144,7 @@ export class App implements OnInit, AfterViewInit  {
   checkMaintenance(): void {
     this.pennant.getMaintenance().subscribe({
       next: (data) => this.maintenanceMode.set(data.enabled),
-      error: () => {} // silently fail
+      error: () => {}
     });
   }
 
@@ -136,25 +156,23 @@ export class App implements OnInit, AfterViewInit  {
     const isIos = /iPhone|iPad|iPod/.test(navigator.userAgent);
     const isInStandaloneMode = (window.navigator as any).standalone === true;
     const isDismissed = localStorage.getItem('sapennant_ios_banner_dismissed') === 'true';
-    
+
     if (isIos && !isInStandaloneMode && !isDismissed) {
       this.showIosBanner.set(true);
     }
   }
 
   dismissIosBanner(): void {
-    localStorage.setItem('sapennant_ios_banner_dismissed', 'true')
+    localStorage.setItem('sapennant_ios_banner_dismissed', 'true');
     this.showIosBanner.set(false);
   }
 
   startOverlayAnimations(): void {
-    // Rotating messages
     this.msgInterval = setInterval(() => {
       this.msgIndex = (this.msgIndex + 1) % this.overlayMessages.length;
       this.overlayMessage.set(this.overlayMessages[this.msgIndex]);
     }, 2000);
 
-    // Progress bar grows to 85% over 8 seconds then stops
     this.barWidth = 0;
     this.barInterval = setInterval(() => {
       if (this.barWidth < 85) {
@@ -177,7 +195,6 @@ export class App implements OnInit, AfterViewInit  {
     resize();
     window.addEventListener('resize', resize);
 
-    // Create particles
     for (let i = 0; i < 30; i++) {
       this.particles.push({
         x: Math.random() * window.innerWidth,
@@ -214,26 +231,22 @@ export class App implements OnInit, AfterViewInit  {
     clearInterval(this.msgInterval);
     clearInterval(this.barInterval);
 
-    // Jump bar to 100% and go green
     if (this.overlayBar?.nativeElement) {
       this.overlayBar.nativeElement.style.width = '100%';
       this.overlayBar.nativeElement.style.transition = 'width 0.3s ease';
       this.overlayBar.nativeElement.classList.add('ready');
     }
 
-    // Ball glow green
     if (this.overlayBall?.nativeElement) {
       this.overlayBall.nativeElement.classList.add('ready');
     }
 
-    // Spinner turns green
     if (this.overlaySpinner?.nativeElement) {
       this.overlaySpinner.nativeElement.classList.add('ready');
     }
 
     this.overlayMessage.set('Ready!');
 
-    // Fade out after brief green flash
     setTimeout(() => {
       this.showOverlay.set(false);
     }, 800);
