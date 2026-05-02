@@ -43,7 +43,7 @@ import { PlayerModalComponent } from './player-modal/player-modal.component';
     HttpClientModule,
     ServiceWorkerModule.register('ngsw-worker.js', {
       enabled: environment.production,
-      registrationStrategy: 'registerWhenStable:30000',
+      registrationStrategy: 'registerImmediately',
     }),
   ],
   providers: [
