@@ -19,10 +19,17 @@
       if (window.location.hostname === 'zharradam.github.io') {
         window.location.replace('https://sapennantgolf.com');
       }
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.getRegistrations().then(function(registrations) {
+          for (var i = 0; i < registrations.length; i++) {
+            registrations[i].unregister();
+          }
+        });
+      }
     </script>
   <style>*{box-sizing:border-box;margin:0;padding:0}body{background:#f0f2f5}html{overflow-y:scroll;scrollbar-width:none;-ms-overflow-style:none}</style><link rel="stylesheet" href="styles-RGDA6UGQ.css" media="print" onload="this.media='all'"><noscript><link rel="stylesheet" href="styles-RGDA6UGQ.css"></noscript></head>
   <body>
     <sa-pennant-root></sa-pennant-root>
     <noscript>Please enable JavaScript to continue using this application.</noscript>
-  <script src="main-PKJ5MUOV.js" type="module"></script></body>
+  <script src="main-QM43WWVC.js" type="module"></script></body>
 </html>
