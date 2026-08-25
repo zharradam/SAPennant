@@ -131,8 +131,8 @@ var app = builder.Build();
 
 var logger = app.Services.GetRequiredService<ILogger<Program>>();
 var provider = builder.Configuration["DatabaseProvider"] ?? "sqlserver";
-logger.LogInformation(">>> Database provider: {Provider}", provider.ToUpper());
-logger.LogInformation(">>> Environment: {Environment}", builder.Environment.EnvironmentName);
+logger.LogInformation(">>> Database provider: {Provider:l}", provider.ToUpper());
+logger.LogInformation(">>> Environment: {Environment:l}", builder.Environment.EnvironmentName);
 
 if (app.Environment.IsDevelopment())
 {
