@@ -91,7 +91,40 @@ export class App implements OnInit, AfterViewInit {
 
     interval(15 * 60 * 1000).pipe(
       switchMap(() => this.pennant.getLastUpdated())
-    ).subscribe();
+    ).subscribe(() => this.checkForNewVersion());
+
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible') this.checkForNewVersion();
+    });
+  }
+
+  // Replaces the removed SwUpdate flow: compare the deployed bundle hash
+  // against the one this page loaded with, and reload once when they differ.
+  private currentBundleHash(): string | null {
+    const src = document.querySelector('script[src*="main-"]')?.getAttribute('src') ?? '';
+    return /main-([A-Z0-9]+)\.js/.exec(src)?.[1] ?? null;
+  }
+
+  private checkForNewVersion(): void {
+    const current = this.currentBundleHash();
+    if (!current) return; // dev server — bundles aren't hashed
+
+    fetch(new URL('index.html', document.baseURI).toString(), { cache: 'no-store' })
+      .then(r => (r.ok ? r.text() : null))
+      .then(html => {
+        const latest = html ? /main-([A-Z0-9]+)\.js/.exec(html)?.[1] : null;
+        if (!latest || latest === current) return;
+
+        // Only attempt one reload per new version, so a briefly stale HTTP
+        // cache can't cause a reload loop.
+        const guardKey = 'sapennant_reload_for';
+        if (sessionStorage.getItem(guardKey) === latest) return;
+        sessionStorage.setItem(guardKey, latest);
+
+        this.logging.info(`New version deployed (${latest}) — reloading`, 'VersionCheck');
+        setTimeout(() => window.location.reload(), 1000);
+      })
+      .catch(() => {});
   }
 
   ngAfterViewInit(): void {
