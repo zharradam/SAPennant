@@ -13,23 +13,29 @@ export class LoggingService {
 
   // Anonymous identity: visitor id persists on this browser (localStorage),
   // session id lasts one browsing session per tab (sessionStorage). Both are
-  // random — no personal information.
-  private readonly visitorId = LoggingService.stableId(() => localStorage, 'sapennant_visitor', 6);
-  private readonly sessionId = LoggingService.stableId(() => sessionStorage, 'sapennant_session', 4);
+  // random — no personal information. Whether each id had to be created just
+  // now tells us if this is a first visit, a returning visitor, or a reload.
+  private readonly visitor = LoggingService.stableId(() => localStorage, 'sapennant_visitor', 6);
+  private readonly session = LoggingService.stableId(() => sessionStorage, 'sapennant_session', 4);
 
   constructor(private http: HttpClient) {}
 
-  private static stableId(store: () => Storage, key: string, length: number): string {
+  get visitType(): 'first visit' | 'return' | 'reload' {
+    if (this.visitor.isNew) return 'first visit';
+    return this.session.isNew ? 'return' : 'reload';
+  }
+
+  private static stableId(store: () => Storage, key: string, length: number): { id: string; isNew: boolean } {
     try {
       const s = store();
-      let id = s.getItem(key);
-      if (!id) {
-        id = crypto.randomUUID().replace(/-/g, '').slice(0, length);
-        s.setItem(key, id);
-      }
-      return id;
+      const existing = s.getItem(key);
+      if (existing) return { id: existing, isNew: false };
+      const id = crypto.randomUUID().replace(/-/g, '').slice(0, length);
+      s.setItem(key, id);
+      return { id, isNew: true };
     } catch {
-      return ''; // storage blocked (private mode) — server falls back to IP hash
+      // storage blocked (private mode) — server falls back to IP hash
+      return { id: '', isNew: false };
     }
   }
 
@@ -66,8 +72,8 @@ export class LoggingService {
     try {
       this.http.post(`${environment.apiUrl}/log`, {
         level, message, context,
-        visitorId: this.visitorId,
-        sessionId: this.sessionId
+        visitorId: this.visitor.id,
+        sessionId: this.session.id
       }).subscribe({ error: () => {} });
     } catch {
       // Swallow — logging must never break the app.

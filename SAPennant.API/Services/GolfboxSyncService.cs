@@ -157,7 +157,7 @@ public class GolfboxSyncService
         try
         {
             var currentYear = DateTime.UtcNow.Year;
-            _logger.LogInformation("Checking unsettled rounds for {Year}...", currentYear);
+            _logger.LogDebug("Checking unsettled rounds for {Year}...", currentYear);
 
             using var scope = _scopeFactory.CreateScope();
             var matches = scope.ServiceProvider.GetRequiredService<IPennantMatchRepository>();
