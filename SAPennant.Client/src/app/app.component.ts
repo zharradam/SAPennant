@@ -59,6 +59,9 @@ export class App implements OnInit, AfterViewInit {
 
     console.error = (...args: any[]) => {
       originalError(...args);
+      // Error objects reach GlobalErrorHandler, which ships them with full
+      // context — forwarding them here too would double-log every error.
+      if (args[0] instanceof Error) return;
       this.logging.error(args.map(a => String(a)).join(' '), 'console');
     };
 

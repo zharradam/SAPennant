@@ -5,9 +5,25 @@ import { LoggingService } from './logging.service';
 export class GlobalErrorHandler implements ErrorHandler {
   constructor(private logging: LoggingService) {}
 
+  // Browser-generated noise that carries no actionable detail by design:
+  // "Script error." is the masked message for errors from cross-origin or
+  // extension-injected scripts; the ResizeObserver notices are benign
+  // browser quirks. Nothing in our code can be fixed from these.
+  private static readonly NOISE = [
+    'Script error.',
+    'ResizeObserver loop limit exceeded',
+    'ResizeObserver loop completed with undelivered notifications',
+  ];
+
   handleError(error: any): void {
     const message = error?.message ?? String(error);
     const stack = error?.stack ?? 'no stack';
+
+    if (GlobalErrorHandler.NOISE.some(n => message.startsWith(n))) {
+      // Keep it visible in devtools (console.debug isn't shipped to the API).
+      console.debug('Suppressed unactionable error:', error);
+      return;
+    }
     const url = window.location.href;
     const userAgent = navigator.userAgent;
     const timestamp = new Date().toISOString();
