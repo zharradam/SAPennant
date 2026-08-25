@@ -1,6 +1,8 @@
-﻿using Microsoft.ApplicationInsights;
+using Microsoft.ApplicationInsights;
 using Microsoft.AspNetCore.Mvc;
+using SAPennant.API.Domain;
 using SAPennant.API.Repositories.Interfaces;
+using SAPennant.API.Services;
 
 namespace SAPennant.API.Controllers;
 
@@ -11,15 +13,18 @@ public class SearchController : ControllerBase
     private readonly IPennantMatchRepository _matches;
     private readonly ISyncLogRepository _syncLogs;
     private readonly TelemetryClient _telemetry;
+    private readonly DataCacheService _cache;
 
     public SearchController(
         IPennantMatchRepository matches,
         ISyncLogRepository syncLogs,
-        TelemetryClient telemetry)
+        TelemetryClient telemetry,
+        DataCacheService cache)
     {
         _matches = matches;
         _syncLogs = syncLogs;
         _telemetry = telemetry;
+        _cache = cache;
     }
 
     [HttpGet]
@@ -53,168 +58,176 @@ public class SearchController : ControllerBase
         [FromQuery] string? pool,
         [FromQuery] int minGames = 5)
     {
-        bool? isSenior = division?.ToLower() == "senior" ? true : null;
-
-        var matches = await _matches.GetLeaderboardDataAsync(year, division, pool, isSenior);
-
-        // Division filtering in memory
-        if (!string.IsNullOrWhiteSpace(division))
-        {
-            var d = division.ToLower();
-            if (d == "men's")
-                matches = matches.Where(m =>
-                    m.Division.ToLower().Contains("men's") &&
-                    !m.Division.ToLower().Contains("women's"));
-            else if (d == "women's")
-                matches = matches.Where(m => m.Division.ToLower().Contains("women's"));
-            else if (d == "junior")
-                matches = matches.Where(m => m.Division.ToLower().Contains("junior"));
-            else if (d == "senior")
-                matches = matches.Where(m => m.IsSenior);
-        }
-
-        var leaderboard = matches
-            .GroupBy(m => m.PlayerName)
-            .Where(g =>
-                !string.IsNullOrWhiteSpace(g.Key) &&
-                !g.Key.StartsWith("-") &&
-                !g.Key.StartsWith("- ") &&
-                g.Key.Length > 3)
-            .Select(g =>
+        var result = await _cache.GetOrCreateAsync(
+            $"leaderboard:{year}:{division}:{pool}:{minGames}",
+            async () =>
             {
-                var all = g.ToList();
-                var singles = all.Where(m => m.Format == "single").ToList();
-                var foursomes = all.Where(m => m.Format == "foursome").ToList();
-                var finals = all.Where(m => m.IsFinals).ToList();
+                bool? isSenior = division?.ToLower() == "senior" ? true : null;
 
-                var wins = all.Count(m => m.PlayerWon == true);
-                var losses = all.Count(m => m.PlayerWon == false);
-                var halved = all.Count(m => m.PlayerWon == null);
-                var played = all.Count;
-                var winRate = played > 0 ? Math.Round((double)wins / played * 100, 1) : 0;
+                var matches = await _matches.GetLeaderboardDataAsync(year, division, pool, isSenior);
 
-                var finalsWins = finals.Count(m => m.PlayerWon == true);
-                var finalsPlayed = finals.Count;
-
-                var bestResult = all
-                    .Where(m => m.PlayerWon == true && m.Result != null)
-                    .OrderByDescending(m => ExtractMargin(m.Result))
-                    .FirstOrDefault()?.Result ?? "—";
-
-                var club = g
-                    .GroupBy(m => m.PlayerClub)
-                    .OrderByDescending(c => c.Count())
-                    .First().Key;
-
-                var division2 = g
-                    .GroupBy(m => m.Division)
-                    .OrderByDescending(c => c.Count())
-                    .First().Key;
-
-                var pool2 = g
-                    .GroupBy(m => m.Pool)
-                    .OrderByDescending(c => c.Count())
-                    .First().Key;
-
-                return new
+                // Division filtering in memory
+                if (!string.IsNullOrWhiteSpace(division))
                 {
-                    playerName = g.Key,
-                    club,
-                    division = division2,
-                    pool = pool2,
-                    played,
-                    wins,
-                    losses,
-                    halved,
-                    winRate,
-                    finalsWins,
-                    finalsPlayed,
-                    finalsRecord = finalsPlayed > 0 ? $"{finalsWins}/{finalsPlayed}" : "—",
-                    bestResult,
-                    singlesPlayed = singles.Count,
-                    singlesWins = singles.Count(m => m.PlayerWon == true),
-                    foursomesPlayed = foursomes.Count,
-                    foursomesWins = foursomes.Count(m => m.PlayerWon == true),
-                };
-            })
-            .Where(p => p.played >= minGames)
-            .OrderByDescending(p => p.winRate)
-            .ThenByDescending(p => p.played)
-            .ToList();
+                    var d = division.ToLower();
+                    if (d == "men's")
+                        matches = matches.Where(m =>
+                            m.Division.ToLower().Contains("men's") &&
+                            !m.Division.ToLower().Contains("women's"));
+                    else if (d == "women's")
+                        matches = matches.Where(m => m.Division.ToLower().Contains("women's"));
+                    else if (d == "junior")
+                        matches = matches.Where(m => m.Division.ToLower().Contains("junior"));
+                    else if (d == "senior")
+                        matches = matches.Where(m => m.IsSenior);
+                }
 
-        return Ok(leaderboard);
-    }
+                var leaderboard = matches
+                    .GroupBy(m => m.PlayerName)
+                    .Where(g => PlayerRules.IsRealPlayerName(g.Key))
+                    .Select(g =>
+                    {
+                        var all = g.ToList();
+                        var singles = all.Where(m => m.Format == "single").ToList();
+                        var foursomes = all.Where(m => m.Format == "foursome").ToList();
+                        var finals = all.Where(m => m.IsFinals).ToList();
 
-    private static int ExtractMargin(string? result)
-    {
-        if (string.IsNullOrEmpty(result)) return 0;
-        var match = System.Text.RegularExpressions.Regex.Match(result, @"^(\d+)&");
-        if (match.Success) return int.Parse(match.Groups[1].Value);
-        match = System.Text.RegularExpressions.Regex.Match(result, @"^(\d+) Hole");
-        if (match.Success) return int.Parse(match.Groups[1].Value);
-        return 0;
+                        var wins = all.Count(m => m.PlayerWon == true);
+                        var losses = all.Count(m => m.PlayerWon == false);
+                        var halved = all.Count(m => m.PlayerWon == null);
+                        var played = all.Count;
+                        var winRate = played > 0 ? Math.Round((double)wins / played * 100, 1) : 0;
+
+                        var finalsWins = finals.Count(m => m.PlayerWon == true);
+                        var finalsPlayed = finals.Count;
+
+                        var bestResult = all
+                            .Where(m => m.PlayerWon == true && m.Result != null)
+                            .OrderByDescending(m => ResultParser.ExtractMargin(m.Result))
+                            .FirstOrDefault()?.Result ?? "—";
+
+                        var club = g
+                            .GroupBy(m => m.PlayerClub)
+                            .OrderByDescending(c => c.Count())
+                            .First().Key;
+
+                        var division2 = g
+                            .GroupBy(m => m.Division)
+                            .OrderByDescending(c => c.Count())
+                            .First().Key;
+
+                        var pool2 = g
+                            .GroupBy(m => m.Pool)
+                            .OrderByDescending(c => c.Count())
+                            .First().Key;
+
+                        return new
+                        {
+                            playerName = g.Key,
+                            club,
+                            division = division2,
+                            pool = pool2,
+                            played,
+                            wins,
+                            losses,
+                            halved,
+                            winRate,
+                            finalsWins,
+                            finalsPlayed,
+                            finalsRecord = finalsPlayed > 0 ? $"{finalsWins}/{finalsPlayed}" : "—",
+                            bestResult,
+                            singlesPlayed = singles.Count,
+                            singlesWins = singles.Count(m => m.PlayerWon == true),
+                            foursomesPlayed = foursomes.Count,
+                            foursomesWins = foursomes.Count(m => m.PlayerWon == true),
+                        };
+                    })
+                    .Where(p => p.played >= minGames)
+                    .OrderByDescending(p => p.winRate)
+                    .ThenByDescending(p => p.played)
+                    .ToList();
+
+                return leaderboard;
+            });
+
+        return Ok(result);
     }
 
     [HttpGet("filters")]
     public async Task<IActionResult> Filters([FromQuery] int? year = null)
     {
-        var years = await _matches.GetDistinctYearsAsync();
+        var result = await _cache.GetOrCreateAsync(
+            $"filters:{year}",
+            async () =>
+            {
+                var years = await _matches.GetDistinctYearsAsync();
 
-        var poolDivisions = await _matches.GetPoolDivisionsAsync(year);
+                var poolDivisions = await _matches.GetPoolDivisionsAsync(year);
 
-        var hasSenior = poolDivisions.Any(p => p.IsSenior);
+                var hasSenior = poolDivisions.Any(p => p.IsSenior);
 
-        var divisionPools = new Dictionary<string, List<string>>
-        {
-            ["Men's"] = poolDivisions.Where(p => !p.IsSenior && (
-                p.Pool.Contains("Simpson") || p.Pool.Contains("Bonnar") ||
-                p.Pool.Contains("Men's")))
-                .Select(p => p.Pool).Distinct().OrderBy(p => p).ToList(),
+                var divisionPools = new Dictionary<string, List<string>>
+                {
+                    ["Men's"] = poolDivisions.Where(p => !p.IsSenior && (
+                        p.Pool.Contains("Simpson") || p.Pool.Contains("Bonnar") ||
+                        p.Pool.Contains("Men's")))
+                        .Select(p => p.Pool).Distinct().OrderBy(p => p).ToList(),
 
-            ["Women's"] = poolDivisions.Where(p => !p.IsSenior && (
-                p.Pool.Contains("Women") || p.Pool.Contains("Pike") ||
-                p.Pool.Contains("Sanderson") || p.Pool.Contains("Cleek")))
-                .Select(p => p.Pool).Distinct().OrderBy(p => p).ToList(),
+                    ["Women's"] = poolDivisions.Where(p => !p.IsSenior && (
+                        p.Pool.Contains("Women") || p.Pool.Contains("Pike") ||
+                        p.Pool.Contains("Sanderson") || p.Pool.Contains("Cleek")))
+                        .Select(p => p.Pool).Distinct().OrderBy(p => p).ToList(),
 
-            ["Junior"] = poolDivisions.Where(p => !p.IsSenior && (
-                p.Pool.Contains("Junior") || p.Pool.Contains("Sharp")))
-                .Select(p => p.Pool).Distinct().OrderBy(p => p).ToList(),
-        };
+                    ["Junior"] = poolDivisions.Where(p => !p.IsSenior && (
+                        p.Pool.Contains("Junior") || p.Pool.Contains("Sharp")))
+                        .Select(p => p.Pool).Distinct().OrderBy(p => p).ToList(),
+                };
 
-        if (hasSenior)
-        {
-            divisionPools["Senior"] = poolDivisions.Where(p => p.IsSenior)
-                .Select(p => p.Pool).Distinct().OrderBy(p => p).ToList();
-        }
+                if (hasSenior)
+                {
+                    divisionPools["Senior"] = poolDivisions.Where(p => p.IsSenior)
+                        .Select(p => p.Pool).Distinct().OrderBy(p => p).ToList();
+                }
 
-        var allPools = poolDivisions
-            .Select(p => p.Pool)
-            .Distinct()
-            .OrderBy(p => p)
-            .ToList();
+                var allPools = poolDivisions
+                    .Select(p => p.Pool)
+                    .Distinct()
+                    .OrderBy(p => p)
+                    .ToList();
 
-        return Ok(new
-        {
-            years,
-            pools = allPools,
-            divisions = divisionPools.Keys.ToList(),
-            divisionPools
-        });
+                return new
+                {
+                    years,
+                    pools = allPools,
+                    divisions = divisionPools.Keys.ToList(),
+                    divisionPools
+                };
+            });
+
+        return Ok(result);
     }
 
     [HttpGet("last-updated")]
     public async Task<IActionResult> LastUpdated()
     {
-        var last = await _syncLogs.GetLatestAsync();
-        var localTime = last?.SyncedAt.ToLocalTime();
+        var result = await _cache.GetOrCreateAsync(
+            "last-updated",
+            async () =>
+            {
+                var last = await _syncLogs.GetLatestAsync();
+                var localTime = last?.SyncedAt.ToLocalTime();
 
-        return Ok(new
-        {
-            lastUpdated = localTime,
-            display = localTime != null
-                ? localTime.Value.ToString("dd MMM yyyy h:mm tt")
-                : "Never"
-        });
+                return new
+                {
+                    lastUpdated = localTime,
+                    display = localTime != null
+                        ? localTime.Value.ToString("dd MMM yyyy h:mm tt")
+                        : "Never"
+                };
+            },
+            ttl: TimeSpan.FromMinutes(1));
+
+        return Ok(result);
     }
 
     [HttpGet("clubs/search")]
@@ -232,103 +245,120 @@ public class SearchController : ControllerBase
         [FromQuery] string clubName,
         [FromQuery] int minGames = 1)
     {
-        var matches = await _matches.GetByClubAsync(clubName);
-
-        var players = matches
-            .GroupBy(m => new { m.PlayerName, m.Year, m.Pool })
-            .Select(g =>
+        var result = await _cache.GetOrCreateAsync(
+            $"club-players:{clubName}:{minGames}",
+            async () =>
             {
-                var all = g.ToList();
-                var wins = all.Count(m => m.PlayerWon == true);
-                var losses = all.Count(m => m.PlayerWon == false);
-                var halved = all.Count(m => m.PlayerWon == null);
-                var played = all.Count;
-                var winRate = played > 0 ? Math.Round((double)wins / played * 100, 1) : 0;
+                var matches = await _matches.GetByClubAsync(clubName);
 
-                return new
-                {
-                    playerName = g.Key.PlayerName,
-                    club = clubName,
-                    year = g.Key.Year,
-                    pool = g.Key.Pool,
-                    played,
-                    wins,
-                    losses,
-                    halved,
-                    winRate,
-                };
-            })
-            .Where(p => p.played >= minGames)
-            .OrderByDescending(p => p.winRate)
-            .ThenByDescending(p => p.played)
-            .ToList();
+                var players = matches
+                    .GroupBy(m => new { m.PlayerName, m.Year, m.Pool })
+                    .Select(g =>
+                    {
+                        var all = g.ToList();
+                        var wins = all.Count(m => m.PlayerWon == true);
+                        var losses = all.Count(m => m.PlayerWon == false);
+                        var halved = all.Count(m => m.PlayerWon == null);
+                        var played = all.Count;
+                        var winRate = played > 0 ? Math.Round((double)wins / played * 100, 1) : 0;
 
-        return Ok(players);
+                        return new
+                        {
+                            playerName = g.Key.PlayerName,
+                            club = clubName,
+                            year = g.Key.Year,
+                            pool = g.Key.Pool,
+                            played,
+                            wins,
+                            losses,
+                            halved,
+                            winRate,
+                        };
+                    })
+                    .Where(p => p.played >= minGames)
+                    .OrderByDescending(p => p.winRate)
+                    .ThenByDescending(p => p.played)
+                    .ToList();
+
+                return players;
+            });
+
+        return Ok(result);
     }
 
     [HttpGet("handicap-leaderboard")]
     public async Task<IActionResult> HandicapLeaderboard()
     {
-        var matches = await _matches.GetHandicapDataAsync();
-
-        var players = matches
-            .Where(m => decimal.TryParse(m.PlayerHandicap, out var h) && h >= -10 && h <= 54)
-            .GroupBy(m => m.PlayerName)
-            .Where(g =>
-                !string.IsNullOrWhiteSpace(g.Key) &&
-                !g.Key.StartsWith("-") &&
-                g.Key.Length > 3)
-            .Select(g =>
+        var result = await _cache.GetOrCreateAsync(
+            "handicap-leaderboard",
+            async () =>
             {
-                var handicaps = g
-                    .Where(m => decimal.TryParse(m.PlayerHandicap, out var h) && h >= -10 && h <= 54)
-                    .OrderBy(m => m.SortDate)
+                var matches = await _matches.GetHandicapDataAsync();
+
+                var players = matches
+                    .Where(m => PlayerRules.TryParseHandicap(m.PlayerHandicap, out _))
+                    .GroupBy(m => m.PlayerName)
+                    .Where(g => PlayerRules.IsRealPlayerName(g.Key))
+                    .Select(g =>
+                    {
+                        var handicaps = g
+                            .OrderBy(m => m.SortDate)
+                            .ToList();
+
+                        var lowestHcp = handicaps.Min(m => decimal.Parse(m.PlayerHandicap!));
+                        var latestHcp = handicaps.Last();
+
+                        var club = g
+                            .GroupBy(m => m.PlayerClub)
+                            .OrderByDescending(c => c.Count())
+                            .First().Key;
+
+                        return new
+                        {
+                            playerName = g.Key,
+                            club,
+                            lowestHandicap = lowestHcp,
+                            currentHandicap = decimal.Parse(latestHcp.PlayerHandicap!),
+                            dataPoints = handicaps.Count
+                        };
+                    })
+                    .Where(p => p.dataPoints >= 3)
+                    .OrderBy(p => p.lowestHandicap)
                     .ToList();
 
-                var lowestHcp = handicaps.Min(m => decimal.Parse(m.PlayerHandicap!));
-                var latestHcp = handicaps.Last();
+                return players;
+            });
 
-                var club = g
-                    .GroupBy(m => m.PlayerClub)
-                    .OrderByDescending(c => c.Count())
-                    .First().Key;
-
-                return new
-                {
-                    playerName = g.Key,
-                    club,
-                    lowestHandicap = lowestHcp,
-                    currentHandicap = decimal.Parse(latestHcp.PlayerHandicap!),
-                    dataPoints = handicaps.Count
-                };
-            })
-            .Where(p => p.dataPoints >= 3)
-            .OrderBy(p => p.lowestHandicap)
-            .ToList();
-
-        return Ok(players);
+        return Ok(result);
     }
 
     [HttpGet("handicap-history/{playerName}")]
     public async Task<IActionResult> HandicapHistory(string playerName)
     {
-        var matches = await _matches.GetHandicapHistoryAsync(playerName);
-
-        var history = matches
-            .Where(m => decimal.TryParse(m.PlayerHandicap, out var h) && h >= -10 && h <= 54)
-            .Select(m => new
+        var result = await _cache.GetOrCreateAsync(
+            $"handicap-history:{playerName}",
+            async () =>
             {
-                date = m.Date,
-                sortDate = m.SortDate,
-                handicap = decimal.Parse(m.PlayerHandicap!),
-                opponent = m.OpponentName,
-                result = m.PlayerWon == true ? "Win" : m.PlayerWon == false ? "Loss" : "Halved",
-                pool = m.Pool,
-                year = m.Year
-            })
-            .OrderBy(m => m.sortDate)
-            .ToList();
+                var matches = await _matches.GetHandicapHistoryAsync(playerName);
 
-        return Ok(history);
+                var history = matches
+                    .Where(m => PlayerRules.TryParseHandicap(m.PlayerHandicap, out _))
+                    .Select(m => new
+                    {
+                        date = m.Date,
+                        sortDate = m.SortDate,
+                        handicap = decimal.Parse(m.PlayerHandicap!),
+                        opponent = m.OpponentName,
+                        result = m.PlayerWon == true ? "Win" : m.PlayerWon == false ? "Loss" : "Halved",
+                        pool = m.Pool,
+                        year = m.Year
+                    })
+                    .OrderBy(m => m.sortDate)
+                    .ToList();
+
+                return history;
+            });
+
+        return Ok(result);
     }
 }

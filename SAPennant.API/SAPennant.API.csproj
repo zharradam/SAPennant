@@ -18,7 +18,7 @@
 			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
 		</PackageReference>
 		<PackageReference Include="Microsoft.Extensions.Diagnostics.HealthChecks.EntityFrameworkCore" Version="10.0.7" />
-		<PackageReference Include="Microsoft.OpenApi" Version="2.4.1" />
+		<PackageReference Include="Microsoft.OpenApi" Version="2.12.2" />
 		<PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="10.0.1" />
 		<PackageReference Include="Serilog.AspNetCore" Version="10.0.0" />
 		<PackageReference Include="Serilog.Sinks.Console" Version="6.1.1" />
@@ -29,6 +29,10 @@
 
 	<ItemGroup>
 	  <Folder Include="Migrations\Postgres\" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <InternalsVisibleTo Include="SAPennant.API.Tests" />
 	</ItemGroup>
 
 </Project>

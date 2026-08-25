@@ -162,6 +162,22 @@
         </div>
       </div>
 
+      <div class="section-card">
+        <div class="section-header">
+          <div>
+            <h2>Database Backup</h2>
+            <p>Download every table as CSV in a single zip</p>
+          </div>
+          <div class="header-right">
+            <span class="message error" *ngIf="backupError()">⚠ {{ backupError() }}</span>
+            <button class="btn-primary" (click)="downloadBackup()" [disabled]="isBackingUp()">
+              <span *ngIf="isBackingUp()">⏳ Preparing...</span>
+              <span *ngIf="!isBackingUp()">Download backup</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
       <div class="logout-wrap">
         <button class="btn-logout" (click)="logout()">Sign out</button>
       </div>

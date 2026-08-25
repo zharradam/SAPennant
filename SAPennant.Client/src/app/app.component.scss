@@ -388,6 +388,34 @@
   transition: opacity 0.3s ease;
 }
 
+.api-overlay-msg.failed {
+  color: #fca5a5;
+  height: auto;
+  max-width: 260px;
+}
+
+.api-overlay-fill.failed {
+  width: 100% !important;
+  background: linear-gradient(90deg, #b91c1c, #ef4444);
+}
+
+.api-overlay-retry {
+  margin-top: 14px;
+  padding: 8px 22px;
+  font-size: 12px;
+  letter-spacing: 0.05em;
+  color: #fff;
+  background: linear-gradient(90deg, #1d4ed8, #2563eb);
+  border: none;
+  border-radius: 99px;
+  cursor: pointer;
+  transition: filter 0.2s ease;
+
+  &:hover {
+    filter: brightness(1.15);
+  }
+}
+
 .api-overlay-canvas {
   position: absolute;
   inset: 0;

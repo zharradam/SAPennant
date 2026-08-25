@@ -48,6 +48,7 @@ builder.Services.AddHostedService<PennantSyncBackgroundService>();
 builder.Services.AddScoped<SettingsService>();
 
 builder.Services.AddMemoryCache();
+builder.Services.AddSingleton<DataCacheService>();
 builder.Services.Configure<IpRateLimitOptions>(
     builder.Configuration.GetSection("IpRateLimiting"));
 builder.Services.AddSingleton<IIpPolicyStore, MemoryCacheIpPolicyStore>();

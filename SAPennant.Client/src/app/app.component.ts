@@ -4,9 +4,12 @@ import { InsightsService } from './insights.service';
 import { retry, switchMap } from 'rxjs/operators';
 import { interval } from 'rxjs';
 import { buildInfo } from '../environments/build-info';
-import { Router } from '@angular/router';
 import { LoggingService } from './logging.service';
 import { SwUpdate } from '@angular/service-worker';
+
+type TabName = 'team' | 'search' | 'club' | 'leaderboard' | 'handicap' | 'honour-roll' | 'admin';
+
+const TAB_NAMES: readonly TabName[] = ['team', 'search', 'club', 'leaderboard', 'handicap', 'honour-roll', 'admin'];
 
 @Component({
   selector: 'sa-pennant-root',
@@ -15,7 +18,7 @@ import { SwUpdate } from '@angular/service-worker';
   styleUrl: './app.component.scss'
 })
 export class App implements OnInit, AfterViewInit {
-  activeTab = signal<'team' | 'search' | 'club' | 'leaderboard' | 'handicap' | 'honour-roll' | 'admin'>('team');
+  activeTab = signal<TabName>('team');
   selectedPlayer = signal('');
   isLoadingApi = signal(true);
   menuOpen = signal(false);
@@ -25,6 +28,7 @@ export class App implements OnInit, AfterViewInit {
   showIosBanner = signal(false);
   showOverlay = signal(true);
   overlayMessage = signal('Waking up the server…');
+  apiFailed = signal(false);
 
   private overlayMessages = [
     'Waking up the server…',
@@ -46,7 +50,6 @@ export class App implements OnInit, AfterViewInit {
 
   constructor(
     private pennant: PennantService,
-    private router: Router,
     private insights: InsightsService,
     private logging: LoggingService,
     private swUpdate: SwUpdate
@@ -80,28 +83,27 @@ export class App implements OnInit, AfterViewInit {
       this.swUpdate.checkForUpdate();
     }
 
+    // Restore the tab from the URL path (shareable links), then let a
+    // ?player= param force the search tab as before.
+    const initialTab = this.tabFromPath(window.location.pathname);
+    if (initialTab) this.activeTab.set(initialTab);
+
     const params = new URLSearchParams(window.location.search);
     if (params.get('player')) {
       this.activeTab.set('search');
     }
+
+    window.addEventListener('popstate', () => {
+      this.activeTab.set(this.tabFromPath(window.location.pathname) ?? 'team');
+      this.menuOpen.set(false);
+    });
 
     this.checkMaintenance();
     setInterval(() => this.checkMaintenance(), 60000);
     this.checkIosBanner();
     this.startOverlayAnimations();
 
-    this.pennant.refreshLastUpdated().pipe(
-      retry({ count: 10, delay: 3000 })
-    ).subscribe({
-      next: () => {
-        this.completeOverlay();
-        this.isLoadingApi.set(false);
-      },
-      error: () => {
-        this.completeOverlay();
-        this.isLoadingApi.set(false);
-      }
-    });
+    this.connectToApi();
 
     interval(15 * 60 * 1000).pipe(
       switchMap(() => this.pennant.getLastUpdated())
@@ -112,9 +114,40 @@ export class App implements OnInit, AfterViewInit {
     this.startParticles();
   }
 
+  connectToApi(): void {
+    this.pennant.refreshLastUpdated().pipe(
+      retry({ count: 10, delay: 3000 })
+    ).subscribe({
+      next: () => {
+        this.completeOverlay();
+        this.isLoadingApi.set(false);
+      },
+      error: () => this.failOverlay()
+    });
+  }
+
+  failOverlay(): void {
+    clearInterval(this.msgInterval);
+    clearInterval(this.barInterval);
+    this.apiFailed.set(true);
+    this.overlayMessage.set("Couldn't reach the server — it may be down. Please try again shortly.");
+  }
+
+  retryConnection(): void {
+    this.apiFailed.set(false);
+    this.overlayMessage.set('Waking up the server…');
+    this.startOverlayAnimations();
+    this.connectToApi();
+  }
+
   navigateToPlayer(name: string): void {
     this.pennant.pendingSearch.set(name);
-    this.activeTab.set('search');
+    this.selectTab('search');
+  }
+
+  private tabFromPath(pathname: string): TabName | null {
+    const segment = pathname.replace(/\/+$/, '').split('/').pop() ?? '';
+    return (TAB_NAMES as readonly string[]).includes(segment) ? (segment as TabName) : null;
   }
 
   get lastUpdated() {
@@ -125,11 +158,16 @@ export class App implements OnInit, AfterViewInit {
     this.menuOpen.set(!this.menuOpen());
   }
 
-  selectTab(tab: 'team' | 'club' | 'leaderboard' | 'handicap' | 'search' | 'honour-roll' | 'admin'): void {
+  selectTab(tab: TabName): void {
     this.activeTab.set(tab);
     this.menuOpen.set(false);
     this.insights.trackTabView(tab);
     this.checkMaintenance();
+
+    const path = tab === 'team' ? '/' : `/${tab}`;
+    if (window.location.pathname !== path) {
+      history.pushState(null, '', path);
+    }
   }
 
   openAbout(e: Event): void {
@@ -146,10 +184,6 @@ export class App implements OnInit, AfterViewInit {
       next: (data) => this.maintenanceMode.set(data.enabled),
       error: () => {}
     });
-  }
-
-  isAdminRoute(): boolean {
-    return this.router.url.includes('/admin');
   }
 
   checkIosBanner(): void {

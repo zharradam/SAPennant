@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations.Schema;
+using System.ComponentModel.DataAnnotations.Schema;
+using SAPennant.API.Domain;
 
 namespace SAPennant.API.Models;
 
@@ -11,6 +12,7 @@ public class PennantMatch
     public string Pool { get; set; } = string.Empty;
     public string Round { get; set; } = string.Empty;
     public string Date { get; set; } = string.Empty;
+    public DateOnly? MatchDate { get; set; }
     public string HomeClub { get; set; } = string.Empty;
     public string AwayClub { get; set; } = string.Empty;
     public string PlayerName { get; set; } = string.Empty;
@@ -25,23 +27,10 @@ public class PennantMatch
     public string? Venue { get; set; }
     public bool IsSenior { get; set; }
 
+    // Kept for JSON compatibility with the client (serialised as sortDate).
+    // MatchDate is the stored source of truth; parsing Date is only a fallback
+    // for rows that predate the backfill.
     [NotMapped]
-    public DateTime? SortDate
-    {
-        get
-        {
-            var normalised = (Date ?? "")
-                .Replace("Sept ", "Sep ")
-                .Replace("June ", "Jun ")
-                .Replace("July ", "Jul ");
-
-            return DateTime.TryParseExact(
-                normalised,
-                new[] { "dd MMM yyyy", "dd MMMM yyyy" },
-                System.Globalization.CultureInfo.InvariantCulture,
-                System.Globalization.DateTimeStyles.None,
-                out var dt
-            ) ? dt : null;
-        }
-    }
+    public DateTime? SortDate =>
+        (MatchDate ?? PennantDates.ParseDisplayDate(Date))?.ToDateTime(TimeOnly.MinValue);
 }

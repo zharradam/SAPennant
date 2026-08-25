@@ -9,17 +9,20 @@ public class GolfboxSyncService
     private readonly IServiceScopeFactory _scopeFactory;
     private readonly HttpClient _http;
     private readonly ILogger<GolfboxSyncService> _logger;
+    private readonly DataCacheService _dataCache;
     private const string BASE_URL = "https://scores.golfbox.dk/Handlers";
     private static readonly SemaphoreSlim _syncLock = new SemaphoreSlim(1, 1);
 
     public GolfboxSyncService(
         IServiceScopeFactory scopeFactory,
         HttpClient http,
-        ILogger<GolfboxSyncService> logger)
+        ILogger<GolfboxSyncService> logger,
+        DataCacheService dataCache)
     {
         _scopeFactory = scopeFactory;
         _http = http;
         _logger = logger;
+        _dataCache = dataCache;
     }
 
     public async Task SyncAllAsync()
@@ -53,6 +56,7 @@ public class GolfboxSyncService
             await syncLogs.AddAsync(new SyncLog { SyncedAt = DateTime.UtcNow, Type = "Full" });
             await syncLogs.SaveChangesAsync();
 
+            _dataCache.Invalidate();
             _logger.LogInformation("Golfbox sync complete.");
         }
         finally
@@ -128,6 +132,7 @@ public class GolfboxSyncService
             await syncLogs.AddAsync(new SyncLog { SyncedAt = DateTime.UtcNow, Type = $"Refresh {year}" });
             await syncLogs.SaveChangesAsync();
 
+            _dataCache.Invalidate();
             _logger.LogInformation("Refresh complete for {Year}", year);
         }
         finally
@@ -175,6 +180,8 @@ public class GolfboxSyncService
 
             await syncLogs.AddAsync(new SyncLog { SyncedAt = DateTime.UtcNow, Type = $"UnsettledSync {currentYear}" });
             await syncLogs.SaveChangesAsync();
+
+            _dataCache.Invalidate();
         }
         finally
         {
@@ -376,15 +383,22 @@ public class GolfboxSyncService
         long competitionId, long teamMatchId, int year, bool isFinals, bool isSenior,
         string division, string poolName, int roundNumber, string startTime, int totalRounds = 1)
     {
-        var results = new List<PennantMatch>();
         var data = await GetJsonpAsync($"{BASE_URL}/TeamMatchHandler/GetTeamMatch/CompetitionId/{competitionId}/TeamMatchId/{teamMatchId}/language/2057/");
-        if (data == null) return results;
+        if (data == null) return new List<PennantMatch>();
 
-        var tm = data.Value.GetProperty("TeamMatch");
+        return ParseTeamMatch(data.Value, year, isFinals, isSenior, division, poolName, roundNumber, startTime, totalRounds);
+    }
+
+    internal static List<PennantMatch> ParseTeamMatch(
+        JsonElement data, int year, bool isFinals, bool isSenior,
+        string division, string poolName, int roundNumber, string startTime, int totalRounds = 1)
+    {
+        var results = new List<PennantMatch>();
+        var tm = data.GetProperty("TeamMatch");
         var homeClub = (tm.GetProperty("Home").GetProperty("Name").GetString() ?? "").Trim();
         var awayClub = (tm.GetProperty("Away").GetProperty("Name").GetString() ?? "").Trim();
         var venue = tm.TryGetProperty("InterclubHostingClub", out var v) ? v.GetString()?.Trim() : null;
-        var date = ParseDate(startTime);
+        var (date, matchDate) = ParseStartTime(startTime);
         var round = GetRoundName(roundNumber, isFinals, totalRounds);
 
         foreach (var matchProp in tm.GetProperty("Matches").EnumerateObject())
@@ -420,6 +434,7 @@ public class GolfboxSyncService
                     Pool = poolName,
                     Round = round,
                     Date = date,
+                    MatchDate = matchDate,
                     HomeClub = homeClub,
                     AwayClub = awayClub,
                     PlayerName = homeName,
@@ -446,6 +461,7 @@ public class GolfboxSyncService
                     Pool = poolName,
                     Round = round,
                     Date = date,
+                    MatchDate = matchDate,
                     HomeClub = homeClub,
                     AwayClub = awayClub,
                     PlayerName = awayName,
@@ -465,7 +481,7 @@ public class GolfboxSyncService
         return results;
     }
 
-    private string GetRoundName(int roundNumber, bool isFinals, int totalRounds)
+    internal static string GetRoundName(int roundNumber, bool isFinals, int totalRounds)
     {
         if (!isFinals) return $"Round {roundNumber}";
         if (roundNumber == totalRounds) return "Final";
@@ -474,13 +490,13 @@ public class GolfboxSyncService
         return $"Round {roundNumber}";
     }
 
-    private string ToTitleCase(string name)
+    internal static string ToTitleCase(string name)
     {
         if (string.IsNullOrWhiteSpace(name)) return name;
         return System.Globalization.CultureInfo.InvariantCulture.TextInfo.ToTitleCase(name.ToLower());
     }
 
-    private string GetPlayerNames(JsonElement team)
+    internal static string GetPlayerNames(JsonElement team)
     {
         if (!team.TryGetProperty("Entries", out var entries)) return "";
         return string.Join(" & ", entries.EnumerateArray()
@@ -488,7 +504,7 @@ public class GolfboxSyncService
             .Where(n => !string.IsNullOrEmpty(n))).Trim();
     }
 
-    private string? GetPlayerHandicap(JsonElement team)
+    internal static string? GetPlayerHandicap(JsonElement team)
     {
         if (!team.TryGetProperty("Entries", out var entries)) return null;
         var handicaps = entries.EnumerateArray()
@@ -497,7 +513,7 @@ public class GolfboxSyncService
         return string.Join(" & ", handicaps);
     }
 
-    private string GetPlayerClub(JsonElement team, string fallback)
+    internal static string GetPlayerClub(JsonElement team, string fallback)
     {
         if (!team.TryGetProperty("Entries", out var entries)) return fallback.Trim();
         var first = entries.EnumerateArray().FirstOrDefault();
@@ -505,15 +521,15 @@ public class GolfboxSyncService
         return (first.GetProperty("ClubName").GetString() ?? fallback).Trim();
     }
 
-    private string ParseDate(string startTime)
+    internal static (string Display, DateOnly? Date) ParseStartTime(string startTime)
     {
-        if (startTime.Length < 8) return "";
+        if (startTime.Length < 8) return ("", null);
         var y = startTime[..4];
         var m = startTime[4..6];
         var d = startTime[6..8];
-        return DateTime.TryParse($"{y}-{m}-{d}", out var dt)
-            ? dt.ToString("dd MMM yyyy")
-            : "";
+        return DateOnly.TryParse($"{y}-{m}-{d}", out var dt)
+            ? (dt.ToString("dd MMM yyyy"), dt)
+            : ("", null);
     }
 
     private async Task<JsonElement?> GetJsonpAsync(string url)
@@ -524,17 +540,12 @@ public class GolfboxSyncService
             var fullUrl = $"{url}{(url.Contains('?') ? "&" : "?")}callback={cbName}&_={DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}";
             var response = await _http.GetStringAsync(fullUrl);
 
-            var start = response.IndexOf('{');
-            var end = response.LastIndexOf('}');
-
-            if (start < 0 || end <= start)
+            var json = ExtractJson(response);
+            if (json == null)
             {
                 _logger.LogWarning("No JSON found in response from {Url}", url);
                 return null;
             }
-
-            var json = response[start..(end + 1)];
-            json = json.Replace(":!0", ":true").Replace(":!1", ":false");
 
             return JsonSerializer.Deserialize<JsonElement>(json);
         }
@@ -543,6 +554,20 @@ public class GolfboxSyncService
             _logger.LogError(ex, "Failed to fetch {Url}", url);
             return null;
         }
+    }
+
+    /// Golfbox responses are JSONP with JS-minified booleans (!0/!1); strip the
+    /// callback wrapper and normalise to plain JSON.
+    internal static string? ExtractJson(string response)
+    {
+        var start = response.IndexOf('{');
+        var end = response.LastIndexOf('}');
+
+        if (start < 0 || end <= start) return null;
+
+        return response[start..(end + 1)]
+            .Replace(":!0", ":true")
+            .Replace(":!1", ":false");
     }
 
     private async Task SyncUnsettledPoolsAsync(

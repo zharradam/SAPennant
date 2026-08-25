@@ -1,4 +1,6 @@
-﻿using SAPennant.API.Services;
+﻿using Microsoft.EntityFrameworkCore;
+using SAPennant.API.Data;
+using SAPennant.API.Domain;
 
 namespace SAPennant.API.Services;
 
@@ -18,6 +20,9 @@ public class PennantSyncBackgroundService : BackgroundService
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         _logger.LogInformation("Pennant sync background service started.");
+
+        await BackfillMatchDatesAsync(stoppingToken);
+
         await Task.Delay(TimeSpan.FromMinutes(5), stoppingToken);
 
         var lastSync = DateTime.UtcNow;
@@ -50,6 +55,46 @@ public class PennantSyncBackgroundService : BackgroundService
             }
 
             await Task.Delay(TimeSpan.FromSeconds(30), stoppingToken);
+        }
+    }
+
+    /// One-time backfill of PennantMatch.MatchDate from the legacy display-string
+    /// Date column. No-ops once every parseable row has been filled.
+    private async Task BackfillMatchDatesAsync(CancellationToken stoppingToken)
+    {
+        try
+        {
+            using var scope = _scopeFactory.CreateScope();
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+
+            var pending = await db.PennantMatches
+                .Where(m => m.MatchDate == null && m.Date != "")
+                .ToListAsync(stoppingToken);
+
+            if (pending.Count == 0) return;
+
+            var filled = 0;
+            foreach (var match in pending)
+            {
+                var parsed = PennantDates.ParseDisplayDate(match.Date);
+                if (parsed != null)
+                {
+                    match.MatchDate = parsed;
+                    filled++;
+                }
+            }
+
+            await db.SaveChangesAsync(stoppingToken);
+            _logger.LogInformation(
+                "MatchDate backfill: filled {Filled} of {Pending} rows missing a date.",
+                filled, pending.Count);
+        }
+        catch (OperationCanceledException)
+        {
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "MatchDate backfill failed — will retry on next startup.");
         }
     }
 }

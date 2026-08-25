@@ -17,6 +17,8 @@ jobs:
           dotnet-version: '10.x'
       - name: Build with dotnet
         run: dotnet build ./SAPennant.API/SAPennant.API.csproj --configuration Release
+      - name: Run tests
+        run: dotnet test ./SAPennant.API.Tests/SAPennant.API.Tests.csproj --configuration Release
       - name: dotnet publish
         run: dotnet publish ./SAPennant.API/SAPennant.API.csproj -c Release -o ./myapp
       - name: Upload artifact for deployment job

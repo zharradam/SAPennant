@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using SAPennant.API.Data;
+using SAPennant.API.Domain;
 using SAPennant.API.Models;
 using SAPennant.API.Repositories.Base;
 using SAPennant.API.Repositories.Interfaces;
@@ -93,11 +94,10 @@ public class PennantMatchRepository : EfRepository<PennantMatch>, IPennantMatchR
         var firstPart = parts[0];
 
         var names = await _dbSet
+            .Where(PlayerRules.HasRealPlayerName)
             .Where(m =>
-                (EF.Functions.Like(m.PlayerName.ToLower(), $"{firstPart}%") ||
-                 EF.Functions.Like(m.PlayerName.ToLower(), $"% {firstPart}%")) &&
-                !m.PlayerName.StartsWith("-") &&
-                m.PlayerName.Length > 3)
+                EF.Functions.Like(m.PlayerName.ToLower(), $"{firstPart}%") ||
+                EF.Functions.Like(m.PlayerName.ToLower(), $"% {firstPart}%"))
             .Select(m => m.PlayerName)
             .Distinct()
             .ToListAsync();
@@ -155,11 +155,8 @@ public class PennantMatchRepository : EfRepository<PennantMatch>, IPennantMatchR
     public async Task<IEnumerable<PennantMatch>> GetByClubAsync(string clubName)
     {
         return await _dbSet
-            .Where(m =>
-                m.PlayerClub == clubName &&
-                !string.IsNullOrWhiteSpace(m.PlayerName) &&
-                !m.PlayerName.StartsWith("-") &&
-                m.PlayerName.Length > 3)
+            .Where(m => m.PlayerClub == clubName)
+            .Where(PlayerRules.HasRealPlayerName)
             .ToListAsync();
     }
 

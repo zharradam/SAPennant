@@ -220,6 +220,10 @@ export class PennantService {
     );
   }
 
+  downloadBackup(): Observable<Blob> {
+    return this.http.get(`${this.API_URL}/backup`, { responseType: 'blob' });
+  }
+
   getPollingInterval() {
     return this.http.get<{ minutes: number }>(`${this.API_URL}/sync/polling-interval`);
   }

@@ -4,6 +4,8 @@ SAPennant.API/appsettings.Development.json
 # Build output
 SAPennant.API/bin/
 SAPennant.API/obj/
+SAPennant.API.Tests/bin/
+SAPennant.API.Tests/obj/
 
 # Visual Studio
 .vs/

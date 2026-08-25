@@ -149,6 +149,9 @@ namespace SAPennant.API.Migrations.Postgres
                     b.Property<bool>("IsSenior")
                         .HasColumnType("boolean");
 
+                    b.Property<DateOnly?>("MatchDate")
+                        .HasColumnType("date");
+
                     b.Property<string>("OpponentClub")
                         .IsRequired()
                         .HasColumnType("text");

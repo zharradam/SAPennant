@@ -1,0 +1,50 @@
+name: Build and deploy Angular client to GitHub Pages
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'SAPennant.Client/**'
+      - 'sitemap.xml'
+      - '.github/workflows/deploy-client.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-deploy:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: SAPennant.Client
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: SAPennant.Client/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      # prebuild stamps src/environments/build-info.ts with the commit hash
+      - name: Build
+        run: npm run build
+
+      - name: Add SPA fallback and root files
+        run: |
+          cp dist/SAPennant/browser/index.html dist/SAPennant/browser/404.html
+          cp ../sitemap.xml dist/SAPennant/browser/sitemap.xml
+          cp ../google4134bd2769fffc0b.html dist/SAPennant/browser/
+
+      - name: Deploy to gh-pages
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: SAPennant.Client/dist/SAPennant/browser
+          publish_branch: gh-pages
+          cname: sapennantgolf.com

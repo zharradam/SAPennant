@@ -10,5 +10,5 @@ leaderboards, and handicap tracking across 2021–2026.
 ## Tech Stack
 - **Frontend:** Angular 19, hosted on GitHub Pages
 - **API:** ASP.NET Core .NET 10, hosted on Azure App Service
-- **Database:** Azure SQL
+- **Database:** PostgreSQL, hosted on Neon
 - **Data Source:** Golf SA / Golfbox

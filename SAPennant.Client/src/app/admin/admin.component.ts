@@ -37,6 +37,8 @@ export class AdminComponent implements OnInit {
   isSyncEnabled = signal(false);
   isMaintenanceMode = signal(false);
   intervalError = signal<string | null>(null);
+  isBackingUp = signal(false);
+  backupError = signal<string | null>(null);
 
   constructor(
     public pennant: PennantService,
@@ -57,6 +59,28 @@ export class AdminComponent implements OnInit {
     });
 
     this.pennant.getPollingInterval().subscribe(r => this.pollingInterval.set(r.minutes));
+  }
+
+  downloadBackup(): void {
+    this.isBackingUp.set(true);
+    this.backupError.set(null);
+    this.pennant.downloadBackup().subscribe({
+      next: (blob) => {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `sapennant-backup-${new Date().toISOString().slice(0, 10)}.zip`;
+        a.click();
+        URL.revokeObjectURL(url);
+        this.isBackingUp.set(false);
+        this.logging.info('Database backup downloaded', 'AdminComponent');
+      },
+      error: (err) => {
+        this.isBackingUp.set(false);
+        this.backupError.set('Backup failed. Please try again.');
+        this.logging.error(`Backup download failed: status ${err.status}`, 'AdminComponent');
+      }
+    });
   }
 
   login(): void {

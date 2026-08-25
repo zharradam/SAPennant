@@ -9,8 +9,9 @@
         </div>
         <div class="api-overlay-title">SA Pennant Golf</div>
         <div class="api-overlay-sub">South Australia</div>
-        <div class="api-overlay-bar"><div class="api-overlay-fill" #overlayBar></div></div>
-        <div class="api-overlay-msg">{{ overlayMessage() }}</div>
+        <div class="api-overlay-bar"><div class="api-overlay-fill" [class.failed]="apiFailed()" #overlayBar></div></div>
+        <div class="api-overlay-msg" [class.failed]="apiFailed()">{{ overlayMessage() }}</div>
+        <button class="api-overlay-retry" *ngIf="apiFailed()" (click)="retryConnection()">Try again</button>
       </div>
     </div>
     <div class="nav-inner">

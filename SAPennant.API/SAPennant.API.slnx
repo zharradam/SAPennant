@@ -1,3 +1,4 @@
 <Solution>
+  <Project Path="../SAPennant.API.Tests/SAPennant.API.Tests.csproj" />
   <Project Path="SAPennant.API.csproj" />
 </Solution>

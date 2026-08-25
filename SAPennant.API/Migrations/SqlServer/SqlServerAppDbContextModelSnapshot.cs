@@ -149,6 +149,9 @@ namespace SAPennant.API.Migrations.SqlServer
                     b.Property<bool>("IsSenior")
                         .HasColumnType("bit");
 
+                    b.Property<DateOnly?>("MatchDate")
+                        .HasColumnType("date");
+
                     b.Property<string>("OpponentClub")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
