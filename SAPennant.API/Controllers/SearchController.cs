@@ -1,4 +1,3 @@
-using Microsoft.ApplicationInsights;
 using Microsoft.AspNetCore.Mvc;
 using SAPennant.API.Domain;
 using SAPennant.API.Repositories.Interfaces;
@@ -12,25 +11,20 @@ public class SearchController : ControllerBase
 {
     private readonly IPennantMatchRepository _matches;
     private readonly ISyncLogRepository _syncLogs;
-    private readonly TelemetryClient _telemetry;
     private readonly DataCacheService _cache;
 
     public SearchController(
         IPennantMatchRepository matches,
         ISyncLogRepository syncLogs,
-        TelemetryClient telemetry,
         DataCacheService cache)
     {
         _matches = matches;
         _syncLogs = syncLogs;
-        _telemetry = telemetry;
         _cache = cache;
     }
 
     [HttpGet]
-    public async Task<IActionResult> Search(
-        [FromQuery] string q,
-        [FromQuery] string? source = "search")
+    public async Task<IActionResult> Search([FromQuery] string q)
     {
         if (string.IsNullOrWhiteSpace(q) || q.Length < 2)
             return BadRequest(new { error = "Query must be at least 2 characters" });
