@@ -6,6 +6,7 @@
     "ng": "ng",
     "start": "ng serve",
     "build": "ng build --configuration production --base-href \"https://sapennantgolf.com/\"",
+    "postbuild": "node scripts/generate-static-routes.js",
     "watch": "ng build --watch --configuration development",
     "test": "ng test"
   },
