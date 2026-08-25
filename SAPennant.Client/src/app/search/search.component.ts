@@ -117,7 +117,6 @@ export class SearchComponent implements OnInit {
   }
 
   selectSuggestion(name: string): void {
-    this.logging.info(`Suggestion selected: "${name}"`, 'SearchComponent');
     this.searchSource = 'suggestion';
     this.query = name;
     this.showSuggestions.set(false);
@@ -185,7 +184,7 @@ export class SearchComponent implements OnInit {
       query: this.query,
       source: this.searchSource
     });
-    this.logging.info(`Player search: "${this.query}" via ${this.searchSource} — ${data.length} results`, 'SearchComponent');
+    this.logging.usage('search', `"${this.query}" → ${data.length} results`);
     this.allResults = data;
     this.isLoading.set(false);
     if (data.length > 0) {

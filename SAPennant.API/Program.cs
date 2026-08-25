@@ -103,6 +103,7 @@ var logConfig = new LoggerConfiguration()
     .MinimumLevel.Override("Microsoft.EntityFrameworkCore", Serilog.Events.LogEventLevel.Warning)
     .MinimumLevel.Override("System", Serilog.Events.LogEventLevel.Warning)
     .Enrich.WithProperty("source", "backend")
+    .Enrich.WithProperty("category", "app") // default; scopes override with usage/frontend/sync
     .WriteTo.Console();
 
 if (!string.IsNullOrWhiteSpace(lokiUrl) && !string.IsNullOrWhiteSpace(lokiUserId) && !string.IsNullOrWhiteSpace(lokiApiToken))
@@ -118,7 +119,8 @@ if (!string.IsNullOrWhiteSpace(lokiUrl) && !string.IsNullOrWhiteSpace(lokiUserId
         {
             new LokiLabel { Key = "app", Value = builder.Configuration["Loki:AppName"] ?? "sapennant-api" },
             new LokiLabel { Key = "env", Value = environment }
-        }
+        },
+        propertiesAsLabels: new[] { "category" }
     );
 }
 

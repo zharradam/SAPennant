@@ -25,6 +25,13 @@ export class LoggingService {
     this.send('error', message, context);
   }
 
+  /// Structured usage event — shows up in Grafana under category=usage.
+  /// `event` is a short verb (visit, tab, search, player, club, ...);
+  /// `data` is the human detail.
+  usage(event: string, data?: string) {
+    this.send('usage', data ?? '', event);
+  }
+
   private send(level: string, message: string, context?: string) {
     // Never log errors about the log endpoint itself — that's how loops start.
     if (message.includes('/api/log')) return;

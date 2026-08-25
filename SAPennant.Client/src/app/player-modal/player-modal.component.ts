@@ -36,7 +36,7 @@ export class PlayerModalComponent implements OnChanges {
   load(name: string): void {
     this.isLoading.set(true);
     this.matches.set([]);
-    this.logging.info(`Player modal opened: "${name}"`, 'PlayerModalComponent');
+    this.logging.usage('player', `${name} (via team results)`);
     this.pennant.search(name, 'team-results-modal').subscribe({
       next: (data) => {
         this.matches.set(data);

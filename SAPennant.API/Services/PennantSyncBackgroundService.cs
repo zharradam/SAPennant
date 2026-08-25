@@ -19,6 +19,9 @@ public class PennantSyncBackgroundService : BackgroundService
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
+        using var logScope = _logger.BeginScope(
+            new Dictionary<string, object> { ["category"] = "sync" });
+
         _logger.LogInformation("Pennant sync background service started.");
 
         await BackfillMatchDatesAsync(stoppingToken);
@@ -26,6 +29,7 @@ public class PennantSyncBackgroundService : BackgroundService
         await Task.Delay(TimeSpan.FromMinutes(5), stoppingToken);
 
         var lastSync = DateTime.UtcNow;
+        bool? wasEnabled = null;
 
         while (!stoppingToken.IsCancellationRequested)
         {
@@ -34,6 +38,12 @@ public class PennantSyncBackgroundService : BackgroundService
             var isEnabled = await settings.GetBoolAsync("AutoSyncEnabled", true);
             var intervalMinutes = await settings.GetIntAsync("PollingIntervalMinutes", 60);
             var nextSync = lastSync.AddMinutes(intervalMinutes);
+
+            if (isEnabled != wasEnabled)
+            {
+                _logger.LogInformation("Background sync is {State}.", isEnabled ? "enabled" : "disabled");
+                wasEnabled = isEnabled;
+            }
 
             if (isEnabled && DateTime.UtcNow >= nextSync)
             {
@@ -48,10 +58,6 @@ public class PennantSyncBackgroundService : BackgroundService
                 {
                     _logger.LogError(ex, "Error during background sync.");
                 }
-            }
-            else if (!isEnabled)
-            {
-                _logger.LogInformation("Background sync is disabled, skipping.");
             }
 
             await Task.Delay(TimeSpan.FromSeconds(30), stoppingToken);

@@ -25,9 +25,13 @@ public class GolfboxSyncService
         _dataCache = dataCache;
     }
 
+    private IDisposable? BeginSyncScope() =>
+        _logger.BeginScope(new Dictionary<string, object> { ["category"] = "sync" });
+
     public async Task SyncAllAsync()
     {
         await _syncLock.WaitAsync();
+        using var _ = BeginSyncScope();
         try
         {
             _logger.LogInformation("Starting Golfbox sync...");
@@ -68,6 +72,7 @@ public class GolfboxSyncService
     public async Task RefreshYearAsync(int year)
     {
         await _syncLock.WaitAsync();
+        using var _ = BeginSyncScope();
         try
         {
             _logger.LogInformation("Refreshing {Year}...", year);
@@ -148,6 +153,7 @@ public class GolfboxSyncService
             _logger.LogInformation("Sync already in progress, skipping unsettled sync.");
             return;
         }
+        using var _ = BeginSyncScope();
         try
         {
             var currentYear = DateTime.UtcNow.Year;
@@ -250,7 +256,7 @@ public class GolfboxSyncService
         var exists = await matches.ExistsAsync(year, isFinals, isSenior);
         if (exists)
         {
-            _logger.LogInformation("Skipping {Year} {Type} {Senior}— already loaded",
+            _logger.LogDebug("Skipping {Year} {Type} {Senior}— already loaded",
                 year, isFinals ? "Finals" : "Regular", isSenior ? "Senior " : "");
             return;
         }
@@ -578,13 +584,6 @@ public class GolfboxSyncService
         var overview = await GetJsonpAsync(
             $"{BASE_URL}/InterclubHandler/GetInterclubData/interclubID/{interclubId}/language/2057/");
         if (overview == null) return;
-        var tournament = overview.Value.GetProperty("Tournament");
-        _logger.LogInformation("Tournament keys: {Keys}",
-            string.Join(", ", tournament.EnumerateObject().Select(p => p.Name)));
-
-        var divisionsElement = tournament.GetProperty("Divisions");
-        _logger.LogInformation("Divisions ValueKind: {Kind}", divisionsElement.ValueKind);
-
         var divisions = overview.Value
             .GetProperty("Tournament")
             .GetProperty("Divisions")
@@ -600,7 +599,7 @@ public class GolfboxSyncService
                 // Skip pools with no competition ID
                 if (pool.GetProperty("CompetitionID").ValueKind == JsonValueKind.Null)
                 {
-                    _logger.LogInformation("Skipping {Pool} — no CompetitionID", poolName);
+                    _logger.LogDebug("Skipping {Pool} — no CompetitionID", poolName);
                     continue;
                 }
 
@@ -641,7 +640,7 @@ public class GolfboxSyncService
 
         if (firstClass.TryGetProperty("Rounds", out var roundsProp))
         {
-            _logger.LogInformation("Pool {Pool} has Rounds structure", poolName);
+            _logger.LogDebug("Pool {Pool} has Rounds structure", poolName);
             var allRounds = roundsProp.EnumerateObject().ToList();
             int totalRounds = allRounds.Count;
 
@@ -655,7 +654,7 @@ public class GolfboxSyncService
         }
         else if (firstClass.TryGetProperty("TeamMatches", out var teamMatchesDirect))
         {
-            _logger.LogInformation("Pool {Pool} has direct TeamMatches structure", poolName);
+            _logger.LogDebug("Pool {Pool} has direct TeamMatches structure", poolName);
 
             var matchesByRound = teamMatchesDirect.EnumerateObject()
                 .GroupBy(tm => tm.Value.TryGetProperty("InterclubRoundNumber", out var rn) ? rn.GetInt32() : 1)
@@ -692,7 +691,7 @@ public class GolfboxSyncService
             var hasData = allMatches.Any(m => m.IsSenior == isSenior);
             if (hasData)
             {
-                _logger.LogInformation("Skipping {Pool} {Round} — already settled", poolName, roundName);
+                _logger.LogDebug("Skipping {Pool} {Round} — already settled", poolName, roundName);
                 return;
             }
             _logger.LogInformation("Re-syncing {Pool} {Round} — marked settled but no data found", poolName, roundName);
@@ -704,7 +703,7 @@ public class GolfboxSyncService
         var allSettled = teamMatchList.All(tm => tm.Value.GetProperty("IsSettled").GetBoolean());
         var anySettled = teamMatchList.Any(tm => tm.Value.GetProperty("IsSettled").GetBoolean());
 
-        _logger.LogInformation("Pool={Pool} Round={Round} TeamMatches={Count} AnySettled={AnySettled} AllSettled={AllSettled}",
+        _logger.LogDebug("Pool={Pool} Round={Round} TeamMatches={Count} AnySettled={AnySettled} AllSettled={AllSettled}",
             poolName, roundName, teamMatchList.Count, anySettled, allSettled);
 
         if (!anySettled) return;
@@ -745,7 +744,8 @@ public class GolfboxSyncService
         }
 
         await roundStatuses.SaveChangesAsync();
-        _logger.LogInformation("Synced {Count} matches for {Pool} {Round}", newMatches.Count, poolName, roundName);
+        if (newMatches.Count > 0)
+            _logger.LogInformation("Synced {Count} matches for {Pool} {Round}", newMatches.Count, poolName, roundName);
     }
 
     private async Task ProcessUnsettledRoundFromListAsync(
@@ -763,7 +763,7 @@ public class GolfboxSyncService
             var hasData = allMatches.Any(m => m.IsSenior == isSenior);
             if (hasData)
             {
-                _logger.LogInformation("Skipping {Pool} {Round} — already settled", poolName, roundName);
+                _logger.LogDebug("Skipping {Pool} {Round} — already settled", poolName, roundName);
                 return;
             }
             _logger.LogInformation("Re-syncing {Pool} {Round} — marked settled but no data found", poolName, roundName);
@@ -774,7 +774,7 @@ public class GolfboxSyncService
         var allSettled = teamMatchList.All(tm => tm.Value.GetProperty("IsSettled").GetBoolean());
         var anySettled = teamMatchList.Any(tm => tm.Value.GetProperty("IsSettled").GetBoolean());
 
-        _logger.LogInformation("Pool={Pool} Round={Round} TeamMatches={Count} AnySettled={AnySettled} AllSettled={AllSettled}",
+        _logger.LogDebug("Pool={Pool} Round={Round} TeamMatches={Count} AnySettled={AnySettled} AllSettled={AllSettled}",
             poolName, roundName, teamMatchList.Count, anySettled, allSettled);
 
         if (!anySettled) return;
@@ -815,6 +815,7 @@ public class GolfboxSyncService
         }
 
         await roundStatuses.SaveChangesAsync();
-        _logger.LogInformation("Synced {Count} matches for {Pool} {Round}", newMatches.Count, poolName, roundName);
+        if (newMatches.Count > 0)
+            _logger.LogInformation("Synced {Count} matches for {Pool} {Round}", newMatches.Count, poolName, roundName);
     }
 }

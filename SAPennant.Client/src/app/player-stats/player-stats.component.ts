@@ -118,7 +118,7 @@ export class PlayerStatsComponent implements OnChanges {
   }
 
   async sharePlayer(): Promise<void> {
-    this.logging.info(`Share player: "${this.playerName}" from ${this.playerClub}`, 'PlayerStatsComponent');
+    this.logging.usage('share', `${this.playerName} (${this.playerClub})`);
 
     const name = this.playerName;
     const club = this.playerClub;
@@ -240,7 +240,6 @@ export class PlayerStatsComponent implements OnChanges {
         try {
           this.shareState.set('sharing');
           await navigator.share({ files: [file], text: shareText });
-          this.logging.info(`Share completed (native) for "${name}"`, 'PlayerStatsComponent');
           this.shareState.set('idle');
           return;
         } catch (err: any) {
@@ -257,7 +256,6 @@ export class PlayerStatsComponent implements OnChanges {
       a.download = `${name.replace(/\s+/g, '-').toLowerCase()}-pennant-stats.png`;
       a.click();
       URL.revokeObjectURL(imageUrl);
-      this.logging.info(`Share downloaded (desktop) for "${name}"`, 'PlayerStatsComponent');
 
       try {
         await navigator.clipboard.writeText(url);

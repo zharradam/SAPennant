@@ -1,4 +1,6 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using System.Security.Cryptography;
+using System.Text;
+using Microsoft.AspNetCore.Mvc;
 
 namespace SAPennant.API.Controllers;
 
@@ -23,16 +25,49 @@ public class LogController : ControllerBase
     [HttpPost]
     public IActionResult Log([FromBody] FrontendLogEntry entry)
     {
-        using (_logger.BeginScope(new Dictionary<string, object> { ["source"] = "frontend" }))
+        var visitor = VisitorTag();
+        var level = entry.Level?.ToLower();
+
+        // Usage events: level "usage", Context carries the event name
+        // (visit, tab, search, player, club, handicap, share) and Message
+        // the detail. Rendered as one clean line per user action.
+        if (level == "usage")
         {
-            var level = entry.Level?.ToLower();
+            using (BeginFrontendScope("usage", visitor))
+                _logger.LogInformation("{Event:l} {Data:l} [{Visitor:l}]",
+                    entry.Context ?? "event", entry.Message, visitor);
+            return Ok();
+        }
+
+        using (BeginFrontendScope("frontend", visitor))
+        {
             if (level == "error")
-                _logger.LogError("{Context} {Message}", entry.Context, entry.Message);
+                _logger.LogError("{Context:l}: {Message:l} [{Visitor:l}]", entry.Context, entry.Message, visitor);
             else if (level == "warn")
-                _logger.LogWarning("{Context} {Message}", entry.Context, entry.Message);
+                _logger.LogWarning("{Context:l}: {Message:l} [{Visitor:l}]", entry.Context, entry.Message, visitor);
             else
-                _logger.LogInformation("{Context} {Message}", entry.Context, entry.Message);
+                _logger.LogInformation("{Context:l}: {Message:l} [{Visitor:l}]", entry.Context, entry.Message, visitor);
         }
         return Ok();
+    }
+
+    private IDisposable? BeginFrontendScope(string category, string visitor) =>
+        _logger.BeginScope(new Dictionary<string, object>
+        {
+            ["source"] = "frontend",
+            ["category"] = category,
+            ["visitor"] = visitor
+        });
+
+    /// Short anonymous per-visitor tag (hash of IP + user agent) so distinct
+    /// visitors are countable in Grafana without storing raw IPs.
+    private string VisitorTag()
+    {
+        var ip = Request.Headers["X-Forwarded-For"].FirstOrDefault()?.Split(',')[0].Trim()
+                 ?? HttpContext.Connection.RemoteIpAddress?.ToString()
+                 ?? "unknown";
+        var ua = Request.Headers.UserAgent.ToString();
+        var hash = SHA256.HashData(Encoding.UTF8.GetBytes($"{ip}|{ua}"));
+        return Convert.ToHexString(hash)[..6].ToLower();
     }
 }

@@ -32,7 +32,6 @@ export class HandicapComponent implements OnInit {
   ngOnInit(): void {
     this.pennant.getHandicapLeaderboard().subscribe({
       next: players => {
-        this.logging.info(`Handicap leaderboard loaded: ${players.length} players`, 'HandicapComponent');
         this.players = players;
         this.isLoading.set(false);
       },
@@ -44,8 +43,6 @@ export class HandicapComponent implements OnInit {
   }
 
   setSort(col: typeof this.sortCol): void {
-    const newDir = this.sortCol === col ? (this.sortDir === 'asc' ? 'desc' : 'asc') : 'asc';
-    this.logging.info(`Handicap sort changed: ${col} ${newDir}`, 'HandicapComponent');
     if (this.sortCol === col) {
       this.sortDir = this.sortDir === 'asc' ? 'desc' : 'asc';
     } else {
@@ -66,7 +63,7 @@ export class HandicapComponent implements OnInit {
 
   openModal(player: HandicapPlayer): void {
     this.selectedPlayer = player;
-    this.logging.info(`Handicap history opened: "${player.playerName}" from ${player.club}`, 'HandicapComponent');
+    this.logging.usage('handicap', `${player.playerName} (${player.club})`);
     this.insights.trackEvent('HandicapSearch', { player: this.selectedPlayer.playerName });
     this.historyLoading.set(true);
     this.pennant.getHandicapHistory(player.playerName).subscribe({
