@@ -11,7 +11,27 @@ export class LoggingService {
   private windowStart = 0;
   private sentInWindow = 0;
 
+  // Anonymous identity: visitor id persists on this browser (localStorage),
+  // session id lasts one browsing session per tab (sessionStorage). Both are
+  // random — no personal information.
+  private readonly visitorId = LoggingService.stableId(() => localStorage, 'sapennant_visitor', 6);
+  private readonly sessionId = LoggingService.stableId(() => sessionStorage, 'sapennant_session', 4);
+
   constructor(private http: HttpClient) {}
+
+  private static stableId(store: () => Storage, key: string, length: number): string {
+    try {
+      const s = store();
+      let id = s.getItem(key);
+      if (!id) {
+        id = crypto.randomUUID().replace(/-/g, '').slice(0, length);
+        s.setItem(key, id);
+      }
+      return id;
+    } catch {
+      return ''; // storage blocked (private mode) — server falls back to IP hash
+    }
+  }
 
   info(message: string, context?: string) {
     this.send('info', message, context);
@@ -44,8 +64,11 @@ export class LoggingService {
     if (++this.sentInWindow > LoggingService.MAX_PER_MINUTE) return;
 
     try {
-      this.http.post(`${environment.apiUrl}/log`, { level, message, context })
-        .subscribe({ error: () => {} });
+      this.http.post(`${environment.apiUrl}/log`, {
+        level, message, context,
+        visitorId: this.visitorId,
+        sessionId: this.sessionId
+      }).subscribe({ error: () => {} });
     } catch {
       // Swallow — logging must never break the app.
     }
