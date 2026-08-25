@@ -1,6 +1,9 @@
 # API secrets
 SAPennant.API/appsettings.Development.json
 
+# Database backups — never commit data dumps (public repo)
+Backups/
+
 # Build output
 SAPennant.API/bin/
 SAPennant.API/obj/

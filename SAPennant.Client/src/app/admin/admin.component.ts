@@ -61,19 +61,50 @@ export class AdminComponent implements OnInit {
     this.pennant.getPollingInterval().subscribe(r => this.pollingInterval.set(r.minutes));
   }
 
-  downloadBackup(): void {
+  async downloadBackup(): Promise<void> {
+    const filename = `sapennant-backup-${new Date().toISOString().slice(0, 10)}.zip`;
+
+    // Where supported (Chrome/Edge), open a Save As dialog immediately —
+    // it must happen on the click gesture, before the slow download. Pick
+    // the SAPennant\Backups folder once and the browser remembers it for
+    // next time. Elsewhere (Firefox/Safari) we fall back to a normal
+    // download into the browser's Downloads folder.
+    let fileHandle: any = null;
+    const picker = (window as any).showSaveFilePicker;
+    if (picker) {
+      try {
+        fileHandle = await picker.call(window, {
+          suggestedName: filename,
+          types: [{ description: 'Zip archive', accept: { 'application/zip': ['.zip'] } }]
+        });
+      } catch (e: any) {
+        if (e?.name === 'AbortError') return; // user cancelled the dialog
+        fileHandle = null; // any other picker failure → plain download
+      }
+    }
+
     this.isBackingUp.set(true);
     this.backupError.set(null);
     this.pennant.downloadBackup().subscribe({
-      next: (blob) => {
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `sapennant-backup-${new Date().toISOString().slice(0, 10)}.zip`;
-        a.click();
-        URL.revokeObjectURL(url);
+      next: async (blob) => {
+        try {
+          if (fileHandle) {
+            const writable = await fileHandle.createWritable();
+            await writable.write(blob);
+            await writable.close();
+          } else {
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            a.click();
+            URL.revokeObjectURL(url);
+          }
+          this.logging.info('Database backup downloaded', 'AdminComponent');
+        } catch {
+          this.backupError.set('Could not save the backup file.');
+        }
         this.isBackingUp.set(false);
-        this.logging.info('Database backup downloaded', 'AdminComponent');
       },
       error: (err) => {
         this.isBackingUp.set(false);
