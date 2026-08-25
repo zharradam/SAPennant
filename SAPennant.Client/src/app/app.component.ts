@@ -5,7 +5,6 @@ import { retry, switchMap } from 'rxjs/operators';
 import { interval } from 'rxjs';
 import { buildInfo } from '../environments/build-info';
 import { LoggingService } from './logging.service';
-import { SwUpdate } from '@angular/service-worker';
 
 type TabName = 'team' | 'search' | 'club' | 'leaderboard' | 'handicap' | 'honour-roll' | 'admin';
 
@@ -51,8 +50,7 @@ export class App implements OnInit, AfterViewInit {
   constructor(
     private pennant: PennantService,
     private insights: InsightsService,
-    private logging: LoggingService,
-    private swUpdate: SwUpdate
+    private logging: LoggingService
   ) {}
 
   ngOnInit(): void {
@@ -68,20 +66,6 @@ export class App implements OnInit, AfterViewInit {
       originalWarn(...args);
       this.logging.warn(args.map(a => String(a)).join(' '), 'console');
     };
-
-    // Check for app updates and reload silently
-    if (this.swUpdate.isEnabled) {
-      this.swUpdate.versionUpdates.subscribe(event => {
-        if (event.type === 'VERSION_READY') {
-          this.swUpdate.activateUpdate().then(() => {
-            this.logging.info('New app version available — reloading', 'SwUpdate');
-            document.location.reload();
-          });
-        }
-      });
-
-      this.swUpdate.checkForUpdate();
-    }
 
     // Restore the tab from the URL path (shareable links), then let a
     // ?player= param force the search tab as before.

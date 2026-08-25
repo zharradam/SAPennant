@@ -2,7 +2,6 @@ import { NgModule, provideBrowserGlobalErrorListeners, ErrorHandler } from '@ang
 import { BrowserModule } from '@angular/platform-browser';
 import { FormsModule } from '@angular/forms';
 import { HttpClientModule, provideHttpClient, withInterceptors } from '@angular/common/http';
-import { environment } from '../environments/environment';
 
 import { App } from './app.component';
 import { SearchComponent } from './search/search.component';
@@ -15,7 +14,6 @@ import { ClubSearchComponent } from './club-search/club-search.component';
 import { HandicapComponent } from './handicap/handicap.component';
 import { TeamPennantComponent } from './team-pennant/team-pennant.component';
 import { HonourRollComponent } from './honour-roll/honour-roll.component';
-import { ServiceWorkerModule } from '@angular/service-worker';
 import { ScrollHintDirective } from './directives/scroll-hint.directive';
 import { GlobalErrorHandler } from './global-error-handler';
 import { PlayerStatsComponent } from './player-stats/player-stats.component';
@@ -41,10 +39,6 @@ import { PlayerModalComponent } from './player-modal/player-modal.component';
     BrowserModule,
     FormsModule,
     HttpClientModule,
-    ServiceWorkerModule.register('ngsw-worker.js', {
-      enabled: environment.production,
-      registrationStrategy: 'registerImmediately',
-    }),
   ],
   providers: [
     { provide: ErrorHandler, useClass: GlobalErrorHandler },
