@@ -130,7 +130,7 @@
               </div>
             </div>
 
-            <!--div class="season-finals-id" *ngIf="!s.finalsId">
+            <div class="season-finals-id" *ngIf="!s.finalsId">
               <input type="number" [(ngModel)]="newFinalsId[s.year]" placeholder="Enter finals ID..." />
               <button class="btn-secondary" (click)="updateFinalsId(s)" [disabled]="!newFinalsId[s.year]">Save</button>
             </div>
@@ -143,7 +143,7 @@
             <div class="season-finals-id" *ngIf="s.seniorRegularId && !s.seniorFinalsId">
               <input type="number" [(ngModel)]="newSeniorFinalsId[s.year]" placeholder="Enter senior finals ID..." />
               <button class="btn-secondary" (click)="updateSeniorFinalsId(s)" [disabled]="!newSeniorFinalsId[s.year]">Save Senior Finals</button>
-            </div-->
+            </div>
 
             <div class="season-actions">
               <span class="message"
