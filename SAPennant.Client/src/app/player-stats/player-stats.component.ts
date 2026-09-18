@@ -227,7 +227,11 @@ export class PlayerStatsComponent implements OnChanges {
     ctx.fillText(this.allPools, W - 24, 228);
 
     canvas.toBlob(async (blob) => {
-      if (!blob || blob.size === 0) return;
+      if (!blob || blob.size === 0) {
+        this.logging.warn(`Share card render produced no image for "${name}"`, 'PlayerStatsComponent');
+        this.shareState.set('idle');
+        return;
+      }
 
       const file = new File([blob], 'pennant-stats.png', { type: 'image/png' });
       const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
@@ -251,7 +255,9 @@ export class PlayerStatsComponent implements OnChanges {
       a.href = imageUrl;
       a.download = `${name.replace(/\s+/g, '-').toLowerCase()}-pennant-stats.png`;
       a.click();
-      URL.revokeObjectURL(imageUrl);
+      // Revoke on the next tick: Firefox and Safari cancel the download if the
+      // blob URL is released before they have started fetching it.
+      setTimeout(() => URL.revokeObjectURL(imageUrl), 0);
 
       try {
         await navigator.clipboard.writeText(url);
