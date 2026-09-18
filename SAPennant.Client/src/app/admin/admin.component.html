@@ -85,7 +85,7 @@
               (ngModelChange)="pollingInterval.set($event)"
               min="1"
               max="1440"
-              style="width: 70px"
+              class="interval-input"
             />
             <span>min</span>
             <button class="btn-primary" (click)="savePollingInterval()" [disabled]="isSavingInterval()">
@@ -131,18 +131,18 @@
             </div>
 
             <div class="season-finals-id" *ngIf="!s.finalsId">
-              <input type="number" [(ngModel)]="newFinalsId[s.year]" placeholder="Enter finals ID..." />
+              <input type="number" [(ngModel)]="newFinalsId[s.year]" placeholder="Finals ID" />
               <button class="btn-secondary" (click)="updateFinalsId(s)" [disabled]="!newFinalsId[s.year]">Save</button>
             </div>
 
             <div class="season-finals-id" *ngIf="!s.seniorRegularId">
-              <input type="number" [(ngModel)]="newSeniorRegularId[s.year]" placeholder="Enter senior regular ID..." />
-              <button class="btn-secondary" (click)="updateSeniorRegularId(s)" [disabled]="!newSeniorRegularId[s.year]">Save Senior</button>
+              <input type="number" [(ngModel)]="newSeniorRegularId[s.year]" placeholder="Senior regular ID" />
+              <button class="btn-secondary" (click)="updateSeniorRegularId(s)" [disabled]="!newSeniorRegularId[s.year]">Save</button>
             </div>
 
             <div class="season-finals-id" *ngIf="s.seniorRegularId && !s.seniorFinalsId">
-              <input type="number" [(ngModel)]="newSeniorFinalsId[s.year]" placeholder="Enter senior finals ID..." />
-              <button class="btn-secondary" (click)="updateSeniorFinalsId(s)" [disabled]="!newSeniorFinalsId[s.year]">Save Senior Finals</button>
+              <input type="number" [(ngModel)]="newSeniorFinalsId[s.year]" placeholder="Senior finals ID" />
+              <button class="btn-secondary" (click)="updateSeniorFinalsId(s)" [disabled]="!newSeniorFinalsId[s.year]">Save</button>
             </div>
 
             <div class="season-actions">

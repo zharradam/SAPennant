@@ -160,8 +160,11 @@
 .season-row {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
+  gap: 12px;
+  // Let the controls drop below the badges rather than crushing them when the
+  // row genuinely runs out of width (narrow screens), not merely when it is a
+  // pixel or two short.
+  flex-wrap: wrap;
   padding: 12px 16px;
   background: #f8f9fc;
   border-radius: 10px;
@@ -172,6 +175,10 @@
   display: flex;
   align-items: center;
   gap: 12px;
+  // Size to content: don't grow into the space the controls need (that pushed
+  // the Refresh button onto a second line), and don't get squeezed so far that
+  // the ID badges wrap into a narrow column.
+  flex: 0 0 auto;
 }
 
 .season-year {
@@ -210,6 +217,7 @@
   display: flex;
   gap: 8px;
   align-items: center;
+  flex: 0 0 auto;
 
   input {
     padding: 7px 12px;
@@ -218,7 +226,7 @@
     border: 1px solid #d0d0ce;
     border-radius: 8px;
     outline: none;
-    width: 160px;
+    width: 140px;
     background: #fff;
     color: #1a1a1a;
 
@@ -234,8 +242,8 @@
   align-items: center;
   gap: 12px;
   flex-shrink: 0;
-  min-width: 200px;
   justify-content: flex-end;
+  margin-left: auto;
 }
 
 .message {
@@ -407,6 +415,25 @@
   display: flex;
   align-items: center;
   gap: 8px;
+
+  // Wide enough for the largest allowed value (1440) plus the number
+  // spinners, which the old 70px cut off.
+  .interval-input {
+    width: 6rem;
+    padding: 7px 12px;
+    font-size: 14px;
+    font-family: inherit;
+    border: 1px solid #d0d0ce;
+    border-radius: 8px;
+    outline: none;
+    background: #fff;
+    color: #1a1a1a;
+
+    &:focus {
+      border-color: #3b82f6;
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.12);
+    }
+  }
 
   label {
     font-size: 13px;
