@@ -261,10 +261,17 @@ export class TeamPennantComponent implements OnInit {
     return this.finalists().includes(club);
   }
 
+  // Marks the row the finals cutoff line is drawn under. Deliberately the last
+  // finalist anywhere in the ladder rather than "a finalist followed by a
+  // non-finalist": if the finalists are ever non-contiguous the latter draws a
+  // line at every gap, which is how a pool once rendered two cutoff lines.
   isLastFinalist(club: string, index: number): boolean {
-    if (!this.isFinalist(club)) return false;
-    const nextRow = this.leaderboard()[index + 1];
-    return nextRow ? !this.isFinalist(nextRow.club) : false;
+    const rows = this.leaderboard();
+    let lastIndex = -1;
+    for (let i = 0; i < rows.length; i++) {
+      if (this.isFinalist(rows[i].club)) lastIndex = i;
+    }
+    return index === lastIndex && index < rows.length - 1;
   }
 
   openPlayerModal(name: string): void {

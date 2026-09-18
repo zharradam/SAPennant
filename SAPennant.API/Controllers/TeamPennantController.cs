@@ -84,8 +84,11 @@ public class TeamPennantController : ControllerBase
                         Pts = pts
                     };
                 })
+                // Ladder order is points, then points for. Matches the finalist
+                // cut-line in GetFinalists — the two must agree or the table and
+                // the cut-line can rank the same clubs differently.
                 .OrderByDescending(c => c.Pts)
-                .ThenByDescending(c => c.ScoreFor - c.ScoreAgainst)
+                .ThenByDescending(c => c.ScoreFor)
                 .ToList()
                 .Select((c, i) => new
                 {
@@ -336,6 +339,7 @@ public class TeamPennantController : ControllerBase
                         ScoreFor = points.Sum(p => p.mine)
                     };
                 })
+                // Same order as the ladder in GetLeaderboard: points, then points for.
                 .OrderByDescending(c => c.Pts)
                 .ThenByDescending(c => c.ScoreFor)
                 .Take(config.FinalistCount)

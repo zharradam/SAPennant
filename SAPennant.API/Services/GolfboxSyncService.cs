@@ -1,4 +1,5 @@
-﻿using SAPennant.API.Models;
+﻿using SAPennant.API.Domain;
+using SAPennant.API.Models;
 using SAPennant.API.Repositories.Interfaces;
 using System.Text.Json;
 
@@ -254,7 +255,7 @@ public class GolfboxSyncService
             var divisionName = (div.GetProperty("Name").GetString() ?? "").Trim();
             foreach (var pool in div.GetProperty("Pools").EnumerateArray())
             {
-                var poolName = (pool.GetProperty("Name").GetString() ?? "").Trim();
+                var poolName = PennantPools.Normalise(pool.GetProperty("Name").GetString() ?? "");
                 var competitionId = pool.GetProperty("CompetitionID");
                 if (competitionId.ValueKind == JsonValueKind.Null) continue;
 
@@ -572,7 +573,7 @@ public class GolfboxSyncService
             var divisionName = (div.GetProperty("Name").GetString() ?? "").Trim();
             foreach (var pool in div.GetProperty("Pools").EnumerateArray())
             {
-                var poolName = (pool.GetProperty("Name").GetString() ?? "").Trim();
+                var poolName = PennantPools.Normalise(pool.GetProperty("Name").GetString() ?? "");
 
                 // Skip pools with no competition ID
                 if (pool.GetProperty("CompetitionID").ValueKind == JsonValueKind.Null)
