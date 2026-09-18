@@ -5,9 +5,12 @@
 }
 
 .filters {
-  display: flex;
+  // Four equal columns that halve to 2x2, then to one. A wrapping flex row
+  // packed three filters onto the first line and stranded the fourth
+  // full-width beneath them.
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 12px;
-  flex-wrap: wrap;
   margin-bottom: 1.5rem;
   background: #1a2f5a;
   border-radius: 12px;
@@ -19,8 +22,8 @@
   display: flex;
   flex-direction: column;
   gap: 4px;
-  flex: 1;
-  min-width: 140px;
+  // The grid sizes these; a min-width here would overflow the narrow columns.
+  min-width: 0;
 
   label {
     font-size: 11px;
@@ -81,7 +84,7 @@
 
 .results-count {
   font-size: 13px;
-  color: #888;
+  color: #4b5563;
   margin-bottom: 0.75rem;
   padding: 0 4px;
 }
@@ -169,7 +172,7 @@
 
   &.bronze {
     background: #CD7F32;
-    color: #fff;
+    color: #3d2408;
   }
 }
 
@@ -219,7 +222,7 @@
 
   span {
     font-size: 14px;
-    color: #888;
+    color: #4b5563;
   }
 }
 
@@ -258,10 +261,14 @@
   }
 
   .filters {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 8px;
+  }
+}
 
-    .filter-group {
-      min-width: 120px;
-    }
+// Below this the two columns get too narrow for the select labels.
+@media (max-width: 380px) {
+  .filters {
+    grid-template-columns: minmax(0, 1fr);
   }
 }

@@ -5,10 +5,23 @@
 }
 
 .filters {
-  display: flex;
+  // Four equal columns that halve to 2x2, then to one. A wrapping flex row
+  // packed three filters onto the first line and stranded the fourth
+  // full-width beneath them.
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 12px;
-  flex-wrap: wrap;
   margin-bottom: 1.5rem;
+
+  @media (max-width: 700px) {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  // Below this the two columns get too narrow for the select labels.
+  @media (max-width: 380px) {
+    grid-template-columns: minmax(0, 1fr);
+  }
   background: #1a2f5a;
   border-radius: 12px;
   padding: 1.25rem;
@@ -45,8 +58,8 @@
   display: flex;
   flex-direction: column;
   gap: 4px;
-  flex: 1;
-  min-width: 140px;
+  // The grid sizes these; a min-width here would overflow the narrow columns.
+  min-width: 0;
 
   label {
     font-size: 11px;
@@ -203,6 +216,23 @@
       &.pts { font-weight: 700; color: #1a2f5a; }
     }
   }
+
+  // Phones: the 480px floor above forces a horizontal scroll the content
+  // doesn't need — most of that width is cell padding, not data. Drop the
+  // floor and tighten the padding so all eight columns fit instead.
+  // Must stay last: it overrides the padding set above at equal specificity.
+  @media (max-width: 600px) {
+    table { min-width: 0; }
+
+    thead th,
+    tbody tr td {
+      padding: 10px 4px;
+    }
+
+    thead th.rank { width: 36px; }
+
+    tbody tr td.score { font-size: 12px; }
+  }
 }
 
 .rank-badge {
@@ -219,7 +249,7 @@
 
   &.gold { background: #FFD700; color: #7a5a00; }
   &.silver { background: #C0C0C0; color: #444; }
-  &.bronze { background: #CD7F32; color: #fff; }
+  &.bronze { background: #CD7F32; color: #3d2408; }
 }
 
 // ── Round Match Cards ───────────────────────────────────
@@ -305,7 +335,7 @@
 
 .match-chevron {
   font-size: 18px;
-  color: #aaa;
+  color: #6b7280;
   transition: transform 0.2s;
 
   &.open { transform: rotate(90deg); }
@@ -380,11 +410,6 @@
   @media (max-width: 600px) {
     font-size: 12px;
 
-    thead th,
-    tbody td {
-      padding: 7px 8px;
-    }
-
     .result-badge {
       font-size: 11px;
       padding: 2px 7px;
@@ -396,12 +421,14 @@
     text-align: left;
     font-size: 11px;
     font-weight: 600;
-    color: #888;
+    color: #4b5563;
     text-transform: uppercase;
     letter-spacing: 0.06em;
     background: #f0f4ff;
 
     &.num { text-align: center; }
+    // Matches td.opponent-name below, which is right-aligned.
+    &.opponent { text-align: right; }
   }
 
   tbody tr {
@@ -428,11 +455,20 @@
 
       &.result-cell { text-align: center; white-space: nowrap; }
       &.opponent-name { text-align: right; }
-
-      @media (max-width: 900px) {
-        padding: 8px 10px;
-      }
     }
+  }
+
+  // Header and body cells must keep the same horizontal padding, or the
+  // right-aligned Opponent column stops lining up with its heading.
+  // Must stay last: overrides the padding set above at equal specificity.
+  @media (max-width: 900px) {
+    thead th,
+    tbody tr td { padding: 8px 10px; }
+  }
+
+  @media (max-width: 600px) {
+    thead th,
+    tbody tr td { padding: 7px 8px; }
   }
 }
 

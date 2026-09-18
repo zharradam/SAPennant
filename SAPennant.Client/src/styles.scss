@@ -288,9 +288,9 @@ body {
 .no-results {
   text-align: center;
   padding: 4rem 0;
-  color: #888;
+  color: #6b7280;
 
-  .no-results-icon {
+  .empty-icon {
     margin-bottom: 12px;
     display: flex;
     justify-content: center;
@@ -303,12 +303,18 @@ body {
     margin: 0;
   }
 
-  span { display: none; }
+  span {
+    display: block;
+    margin-top: 6px;
+    font-size: 13px;
+    font-weight: 400;
+    color: #6b7280;
+  }
 }
 
 .empty-state {
   text-align: center;
-  color: #888;
+  color: #6b7280;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -483,6 +489,13 @@ body {
     height: 200px;
   }
 
+  /* Hero shrinks to 200px here and the footer is hidden, so the desktop
+     calc would leave the empty state short of the viewport.
+     200 hero + 56 nav + 48 .content padding (1rem top, 2rem bottom). */
+  .empty-state {
+    min-height: calc(100vh - 200px - 56px - 48px);
+  }
+
   .hero-inner {
     h1 { font-size: 26px; letter-spacing: -0.5px; }
     p { font-size: 13px; margin-bottom: 1rem; }
@@ -531,6 +544,28 @@ body {
 
   .footer-centre,
   .footer-right { position: static; transform: none; }
+}
+
+/* ── Browser surfaces ── */
+
+::selection {
+  background: rgba(37, 99, 235, 0.85);
+  color: #fff;
+}
+
+/* Controls across the app set `outline: none` on :focus, which also removes
+   the keyboard ring. Re-establish it for :focus-visible only, so pointer
+   users see no change. !important is needed to beat component-scoped rules. */
+:focus-visible {
+  outline: 2px solid #2563eb !important;
+  outline-offset: 2px;
+}
+
+.nav :focus-visible,
+.nav-drawer :focus-visible,
+.hero :focus-visible,
+.footer :focus-visible {
+  outline-color: #93c5fd !important;
 }
 
 html {

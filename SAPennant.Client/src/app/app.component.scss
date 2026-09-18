@@ -39,7 +39,7 @@
   .nav-brand-sub {
     font-size: 9px;
     font-weight: 600;
-    color: rgba(255,255,255,0.4);
+    color: rgba(255,255,255,0.55);
     letter-spacing: 0.2em;
     text-transform: uppercase;
     margin-top: 4px;
@@ -84,7 +84,7 @@
 
 .nav-updated {
   font-size: 11px;
-  color: rgba(255,255,255,0.3);
+  color: rgba(255,255,255,0.55);
   white-space: nowrap;
   min-width: 160px;
   text-align: right;
@@ -95,7 +95,7 @@
   bottom: 0;
   left: 0;
   right: 0;
-  background: rgba(10, 18, 25, 0.25);
+  background: rgba(10, 18, 25, 0.72);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   border-top: 1px solid rgba(255,255,255,0.04);
