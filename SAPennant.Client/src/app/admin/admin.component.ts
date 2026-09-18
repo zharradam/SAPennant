@@ -51,14 +51,13 @@ export class AdminComponent implements OnInit {
       this.loadSeasons();
       this.pennant.refreshLastUpdated();
       this.pennant.getSyncStatus().subscribe(s => this.isSyncEnabled.set(s.enabled));
+      this.pennant.getPollingInterval().subscribe(r => this.pollingInterval.set(r.minutes));
     }
 
     this.pennant.getMaintenance().subscribe({
       next: (data) => this.isMaintenanceMode.set(data.enabled),
       error: () => {}
     });
-
-    this.pennant.getPollingInterval().subscribe(r => this.pollingInterval.set(r.minutes));
   }
 
   async downloadBackup(): Promise<void> {

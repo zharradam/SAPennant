@@ -9,6 +9,9 @@ namespace SAPennant.API.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
+// Everything here either mutates data or is admin-only. Endpoints the public
+// site needs are opted out individually with [AllowAnonymous].
+[Authorize]
 public class SyncController : ControllerBase
 {
     private readonly GolfboxSyncService _sync;
@@ -103,7 +106,6 @@ public class SyncController : ControllerBase
     }
 
     [HttpPost("sync-unsettled")]
-    [Authorize]
     public async Task<IActionResult> SyncUnsettled()
     {
         await _sync.SyncCurrentYearUnsettledAsync();
@@ -111,7 +113,6 @@ public class SyncController : ControllerBase
     }
 
     [HttpGet("sync-status")]
-    [Authorize]
     public async Task<IActionResult> GetSyncStatus()
     {
         var enabled = await _settings.GetBoolAsync("AutoSyncEnabled", true);
@@ -119,7 +120,6 @@ public class SyncController : ControllerBase
     }
 
     [HttpPost("sync-toggle")]
-    [Authorize]
     public async Task<IActionResult> ToggleSync([FromBody] bool enabled)
     {
         await _settings.SetBoolAsync("AutoSyncEnabled", enabled);
@@ -135,7 +135,6 @@ public class SyncController : ControllerBase
     }
 
     [HttpPost("maintenance")]
-    [Authorize]
     public async Task<IActionResult> SetMaintenance([FromBody] bool enabled)
     {
         await _appSettings.SetAsync("MaintenanceMode", enabled ? "true" : "false");
@@ -143,7 +142,6 @@ public class SyncController : ControllerBase
     }
 
     [HttpPost("polling-interval")]
-    [Authorize]
     public async Task<IActionResult> SetPollingInterval([FromBody] int minutes)
     {
         if (minutes < 5 || minutes > 1440)
