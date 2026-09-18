@@ -1,4 +1,5 @@
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
+using SAPennant.API.Domain;
 using SAPennant.API.Repositories.Interfaces;
 using SAPennant.API.Services;
 
@@ -38,16 +39,14 @@ public class TeamPennantController : ControllerBase
                     .GroupBy(m => new { m.Round, m.HomeClub, m.AwayClub })
                     .Select(g =>
                     {
-                        var deduped = g.OrderBy(m => m.Id)
-                                       .Where((m, i) => i % 2 == 0)
-                                       .ToList();
+                        var deduped = TeamScoring.Dedupe(g);
                         return new
                         {
                             g.Key.Round,
                             g.Key.HomeClub,
                             g.Key.AwayClub,
-                            HomePoints = deduped.Sum(m => m.PlayerWon == true ? 1.0 : m.PlayerWon == null ? 0.5 : 0.0),
-                            AwayPoints = deduped.Sum(m => m.PlayerWon == false ? 1.0 : m.PlayerWon == null ? 0.5 : 0.0),
+                            HomePoints = TeamScoring.HomePoints(deduped),
+                            AwayPoints = TeamScoring.AwayPoints(deduped),
                         };
                     })
                     .ToList();
@@ -122,16 +121,14 @@ public class TeamPennantController : ControllerBase
                     .GroupBy(m => new { m.HomeClub, m.AwayClub })
                     .Select(g =>
                     {
-                        var deduped = g.OrderBy(m => m.Id)
-                                       .Where((m, i) => i % 2 == 0)
-                                       .ToList();
+                        var deduped = TeamScoring.Dedupe(g);
                         return new
                         {
                             g.Key.HomeClub,
                             g.Key.AwayClub,
                             Venue = deduped.FirstOrDefault()?.Venue,
-                            HomePoints = deduped.Sum(m => m.PlayerWon == true ? 1.0 : m.PlayerWon == null ? 0.5 : 0.0),
-                            AwayPoints = deduped.Sum(m => m.PlayerWon == false ? 1.0 : m.PlayerWon == null ? 0.5 : 0.0),
+                            HomePoints = TeamScoring.HomePoints(deduped),
+                            AwayPoints = TeamScoring.AwayPoints(deduped),
                         };
                     })
                     .ToList();
@@ -153,9 +150,7 @@ public class TeamPennantController : ControllerBase
             {
                 var matches = await _matches.GetMatchAsync(year, pool, round, home, away);
 
-                var deduped = matches
-                    .OrderBy(m => m.Id)
-                    .Where((m, i) => i % 2 == 0)
+                var deduped = TeamScoring.Dedupe(matches)
                     .Select(m => new
                     {
                         m.PlayerName,
@@ -182,14 +177,7 @@ public class TeamPennantController : ControllerBase
             {
                 var rounds = await _matches.GetRoundsListAsync(year, pool);
 
-                var ordered = rounds.OrderBy(r =>
-                {
-                    if (r == "Final") return 999;
-                    if (r == "Semi Final") return 998;
-                    var match = System.Text.RegularExpressions.Regex.Match(r, @"\d+");
-                    return match.Success ? int.Parse(match.Value) : 0;
-                })
-                .ToList();
+                var ordered = rounds.OrderBy(PennantRounds.SortKey).ToList();
 
                 return ordered;
             });
@@ -211,13 +199,10 @@ public class TeamPennantController : ControllerBase
 
                 var final = matchList.First();
 
-                var deduped = matchList
-                    .OrderBy(m => m.Id)
-                    .Where((m, i) => i % 2 == 0)
-                    .ToList();
+                var deduped = TeamScoring.Dedupe(matchList);
 
-                var homePoints = deduped.Sum(m => m.PlayerWon == true ? 1.0 : m.PlayerWon == null ? 0.5 : 0.0);
-                var awayPoints = deduped.Sum(m => m.PlayerWon == false ? 1.0 : m.PlayerWon == null ? 0.5 : 0.0);
+                var homePoints = TeamScoring.HomePoints(deduped);
+                var awayPoints = TeamScoring.AwayPoints(deduped);
 
                 return new
                 {
@@ -246,12 +231,10 @@ public class TeamPennantController : ControllerBase
                     .GroupBy(m => new { m.Round, m.HomeClub, m.AwayClub })
                     .Select(g =>
                     {
-                        var deduped = g.OrderBy(m => m.Id)
-                                       .Where((m, i) => i % 2 == 0)
-                                       .ToList();
+                        var deduped = TeamScoring.Dedupe(g);
 
-                        var homePoints = deduped.Sum(m => m.PlayerWon == true ? 1.0 : m.PlayerWon == null ? 0.5 : 0.0);
-                        var awayPoints = deduped.Sum(m => m.PlayerWon == false ? 1.0 : m.PlayerWon == null ? 0.5 : 0.0);
+                        var homePoints = TeamScoring.HomePoints(deduped);
+                        var awayPoints = TeamScoring.AwayPoints(deduped);
                         var isHome = g.Key.HomeClub == club;
 
                         return new
@@ -263,13 +246,7 @@ public class TeamPennantController : ControllerBase
                             OpponentPoints = isHome ? awayPoints : homePoints,
                         };
                     })
-                    .OrderBy(r =>
-                    {
-                        if (r.Round == "Final") return 999;
-                        if (r.Round == "Semi Final") return 998;
-                        var m = System.Text.RegularExpressions.Regex.Match(r.Round, @"\d+");
-                        return m.Success ? int.Parse(m.Value) : 0;
-                    })
+                    .OrderBy(r => PennantRounds.SortKey(r.Round))
                     .ToList();
 
                 return rounds;
@@ -328,13 +305,13 @@ public class TeamPennantController : ControllerBase
                     .GroupBy(m => new { m.Round, m.HomeClub, m.AwayClub })
                     .Select(g =>
                     {
-                        var deduped = g.OrderBy(m => m.Id).Where((m, i) => i % 2 == 0).ToList();
+                        var deduped = TeamScoring.Dedupe(g);
                         return new
                         {
                             g.Key.HomeClub,
                             g.Key.AwayClub,
-                            HomePoints = deduped.Sum(m => m.PlayerWon == true ? 1.0 : m.PlayerWon == null ? 0.5 : 0.0),
-                            AwayPoints = deduped.Sum(m => m.PlayerWon == false ? 1.0 : m.PlayerWon == null ? 0.5 : 0.0),
+                            HomePoints = TeamScoring.HomePoints(deduped),
+                            AwayPoints = TeamScoring.AwayPoints(deduped),
                         };
                     }).ToList();
 

@@ -610,7 +610,8 @@ public class GolfboxSyncService
                 if (!roundProp.Value.TryGetProperty("TeamMatches", out var teamMatches)) continue;
                 var roundNumber = int.TryParse(roundProp.Name, out var rn) ? rn : 1;
                 var roundName = GetRoundName(roundNumber, isFinals, totalRounds);
-                await ProcessUnsettledRoundAsync(matches, roundStatuses, year, isFinals, isSenior, division, poolName, competitionId, roundName, roundNumber, teamMatches, totalRounds);
+                await ProcessUnsettledRoundAsync(matches, roundStatuses, year, isFinals, isSenior, division, poolName, competitionId,
+                    roundName, roundNumber, teamMatches.EnumerateObject().ToList(), totalRounds);
             }
         }
         else if (firstClass.TryGetProperty("TeamMatches", out var teamMatchesDirect))
@@ -627,7 +628,7 @@ public class GolfboxSyncService
             {
                 var roundNumber = roundGroup.Key;
                 var roundName = GetRoundName(roundNumber, isFinals, totalRounds);
-                await ProcessUnsettledRoundFromListAsync(matches, roundStatuses, year, isFinals, isSenior, division, poolName, competitionId,
+                await ProcessUnsettledRoundAsync(matches, roundStatuses, year, isFinals, isSenior, division, poolName, competitionId,
                     roundName, roundNumber, roundGroup.ToList(), totalRounds);
             }
         }
@@ -642,79 +643,7 @@ public class GolfboxSyncService
         IRoundStatusRepository roundStatuses,
         int year, bool isFinals, bool isSenior, string division, string poolName,
         long competitionId, string roundName, int roundNumber,
-        JsonElement teamMatches, int totalRounds)
-    {
-        var roundStatus = await roundStatuses.GetAsync(year, poolName, roundName);
-
-        if (roundStatus?.IsSettled == true)
-        {
-            var allMatches = await matches.GetByYearAndPoolAndRoundAsync(year, poolName, roundName);
-            var hasData = allMatches.Any(m => m.IsSenior == isSenior);
-            if (hasData)
-            {
-                _logger.LogDebug("Skipping {Pool} {Round} — already settled", poolName, roundName);
-                return;
-            }
-            _logger.LogInformation("Re-syncing {Pool} {Round} — marked settled but no data found", poolName, roundName);
-        }
-
-        var teamMatchList = teamMatches.EnumerateObject().ToList();
-        if (!teamMatchList.Any()) return;
-
-        var allSettled = teamMatchList.All(tm => tm.Value.GetProperty("IsSettled").GetBoolean());
-        var anySettled = teamMatchList.Any(tm => tm.Value.GetProperty("IsSettled").GetBoolean());
-
-        _logger.LogDebug("Pool={Pool} Round={Round} TeamMatches={Count} AnySettled={AnySettled} AllSettled={AllSettled}",
-            poolName, roundName, teamMatchList.Count, anySettled, allSettled);
-
-        if (!anySettled) return;
-
-        await matches.DeleteByYearPoolRoundAsync(year, poolName, roundName, isSenior);
-        await matches.SaveChangesAsync();
-
-        var newMatches = new List<PennantMatch>();
-        foreach (var tm in teamMatchList)
-        {
-            var tmVal = tm.Value;
-            if (tmVal.GetProperty("IsBye").GetBoolean()) continue;
-            if (!tmVal.GetProperty("IsSettled").GetBoolean()) continue;
-
-            var teamMatchId = tmVal.GetProperty("TeamMatchID").GetInt64();
-            var startTime = tmVal.GetProperty("StartTime").GetString() ?? "";
-
-            var tmMatches = await GetTeamMatchAsync(competitionId, teamMatchId, year, isFinals, isSenior, division, poolName, roundNumber, startTime, totalRounds);
-            tmMatches = tmMatches.Where(m => !(m.Result == "" && m.PlayerWon == null)).ToList();
-            newMatches.AddRange(tmMatches);
-            await Task.Delay(100);
-        }
-
-        await matches.AddRangeAsync(newMatches);
-
-        if (roundStatus == null)
-        {
-            roundStatus = new RoundStatus { Year = year, Pool = poolName, Round = roundName };
-            await roundStatuses.AddAsync(roundStatus);
-        }
-
-        roundStatus.LastChecked = DateTime.UtcNow;
-        if (allSettled)
-        {
-            roundStatus.IsSettled = true;
-            roundStatus.SettledAt = DateTime.UtcNow;
-            _logger.LogInformation("{Pool} {Round} is now fully settled.", poolName, roundName);
-        }
-
-        await roundStatuses.SaveChangesAsync();
-        if (newMatches.Count > 0)
-            _logger.LogInformation("Synced {Count} matches for {Pool} {Round}", newMatches.Count, poolName, roundName);
-    }
-
-    private async Task ProcessUnsettledRoundFromListAsync(
-        IPennantMatchRepository matches,
-        IRoundStatusRepository roundStatuses,
-        int year, bool isFinals, bool isSenior, string division, string poolName,
-        long competitionId, string roundName, int roundNumber,
-        List<System.Text.Json.JsonProperty> teamMatchList, int totalRounds)
+        List<JsonProperty> teamMatchList, int totalRounds)
     {
         var roundStatus = await roundStatuses.GetAsync(year, poolName, roundName);
 
@@ -779,4 +708,5 @@ public class GolfboxSyncService
         if (newMatches.Count > 0)
             _logger.LogInformation("Synced {Count} matches for {Pool} {Round}", newMatches.Count, poolName, roundName);
     }
+
 }
