@@ -203,6 +203,17 @@ public class PennantMatchRepository : EfRepository<PennantMatch>, IPennantMatchR
             .ToListAsync();
     }
 
+    public async Task DeleteByYearPoolAsync(int year, string pool, bool isFinals, bool isSenior)
+    {
+        var matches = await _dbSet
+            .Where(m => m.Year == year &&
+                        m.Pool == pool &&
+                        m.IsFinals == isFinals &&
+                        m.IsSenior == isSenior)
+            .ToListAsync();
+        _dbSet.RemoveRange(matches);
+    }
+
     public async Task DeleteFinalsByYearPoolAsync(int year, string pool, bool isSenior)
     {
         var matches = await _dbSet

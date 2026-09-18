@@ -11,6 +11,15 @@ public class GolfboxSyncService
     private readonly ILogger<GolfboxSyncService> _logger;
     private readonly DataCacheService _dataCache;
     private const string BASE_URL = "https://scores.golfbox.dk/Handlers";
+
+    /// Golfbox serves these endpoints to golf.com.au's browser front end, so
+    /// present as that page rather than as a bare .NET client.
+    public static void ConfigureHttpClient(HttpClient client)
+    {
+        client.DefaultRequestHeaders.Add("User-Agent",
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36");
+        client.DefaultRequestHeaders.Add("Referer", "https://golf.com.au/");
+    }
     private static readonly SemaphoreSlim _syncLock = new SemaphoreSlim(1, 1);
 
     public GolfboxSyncService(
@@ -311,6 +320,14 @@ public class GolfboxSyncService
                 year, isFinals ? "Finals" : "Regular", isSenior ? "Senior " : "", division, poolName);
             return;
         }
+
+        if (newMatches.Count == 0) return;
+
+        // Replace rather than append, so syncing a pool twice is idempotent.
+        // Deliberately after the fetch and the empty check: a failed or empty
+        // Golfbox response must never clear rows we already hold.
+        await matches.DeleteByYearPoolAsync(year, poolName, isFinals, isSenior);
+        await matches.SaveChangesAsync();
 
         _logger.LogInformation("Saved {Count} matches for {Year} {Type} {Senior}{Division} {Pool}",
             newMatches.Count, year, isFinals ? "Finals" : "Regular", isSenior ? "Senior " : "", division, poolName);

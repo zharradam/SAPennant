@@ -30,12 +30,10 @@ builder.Services.Configure<TelemetryConfiguration>(config =>
 builder.Services.AddDatabase(builder.Configuration);
 builder.Services.AddRepositories();
 
-builder.Services.AddHttpClient<GolfboxSyncService>(client =>
-{
-    client.DefaultRequestHeaders.Add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36");
-    client.DefaultRequestHeaders.Add("Referer", "https://golf.com.au/");
-});
-builder.Services.AddScoped<GolfboxSyncService>();
+// Registers GolfboxSyncService as a typed client. Do not also register it with
+// AddScoped: a later registration for the same type wins, and the service would
+// then be built with an unconfigured HttpClient, silently dropping the headers.
+builder.Services.AddHttpClient<GolfboxSyncService>(GolfboxSyncService.ConfigureHttpClient);
 builder.Services.AddHostedService<PennantSyncBackgroundService>();
 builder.Services.AddScoped<SettingsService>();
 
