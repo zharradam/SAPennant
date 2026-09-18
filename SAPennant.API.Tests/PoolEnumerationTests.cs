@@ -34,8 +34,9 @@ public class PoolEnumerationTests
     }
     """;
 
-    private static List<(string Division, string Pool, long CompetitionId)> Enumerate(string json) =>
-        GolfboxSyncService.EnumeratePlayablePools(JsonSerializer.Deserialize<JsonElement>(json)).ToList();
+    private static List<(string Division, string Pool, long CompetitionId)> Enumerate(
+        string json, bool isSenior = true) =>
+        GolfboxSyncService.EnumeratePlayablePools(JsonSerializer.Deserialize<JsonElement>(json), isSenior).ToList();
 
     [Fact]
     public void SkipsPoolsWithoutACompetitionId()
@@ -44,7 +45,7 @@ public class PoolEnumerationTests
 
         Assert.Equal(2, pools.Count);
         Assert.All(pools, p => Assert.Equal("Senior Pennant", p.Division));
-        Assert.Equal(new[] { "Div 2", "Div 3" }, pools.Select(p => p.Pool));
+        Assert.Equal(new[] { "Senior Div 2", "Senior Div 3" }, pools.Select(p => p.Pool));
         Assert.Equal(new[] { 5827923L, 5829066L }, pools.Select(p => p.CompetitionId));
     }
 
@@ -63,7 +64,7 @@ public class PoolEnumerationTests
 
         var pool = Assert.Single(pools);
         Assert.Equal("Senior Pennant", pool.Division);
-        Assert.Equal("Div 2", pool.Pool);
+        Assert.Equal("Senior Div 2", pool.Pool);
     }
 
     [Fact]

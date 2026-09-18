@@ -4,19 +4,22 @@ namespace SAPennant.API.Domain;
 
 public static class PennantPools
 {
-    private static readonly Regex SeniorDivision =
-        new(@"^Division\s+(\d+)$", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+    private static readonly Regex DivisionNumber =
+        new(@"^(?:Senior\s+)?Div(?:ision)?\s+(\d+)$", RegexOptions.Compiled | RegexOptions.IgnoreCase);
 
     /// Golfbox labels the senior pools "Division N" in some seasons (2021-2024)
-    /// and "Div N" in others (2025+). A pool has to keep one identity across
-    /// seasons or the same division shows up twice in the pool list and its
-    /// ladder splits, so settle on the shorter form at ingest.
-    public static string Normalise(string pool)
+    /// and "Div N" in others (2025+), and neither form says which competition
+    /// it belongs to — unlike every other pool ("Junior Div 2", "Men's A2").
+    /// Normalise both to "Senior Div N" at ingest so a division keeps one
+    /// identity across seasons and reads unambiguously in the pool list.
+    public static string Normalise(string pool, bool isSenior)
     {
         if (string.IsNullOrWhiteSpace(pool)) return pool;
 
         var trimmed = pool.Trim();
-        var match = SeniorDivision.Match(trimmed);
-        return match.Success ? $"Div {match.Groups[1].Value}" : trimmed;
+        if (!isSenior) return trimmed;
+
+        var match = DivisionNumber.Match(trimmed);
+        return match.Success ? $"Senior Div {match.Groups[1].Value}" : trimmed;
     }
 }

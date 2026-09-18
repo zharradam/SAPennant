@@ -231,7 +231,7 @@ public class GolfboxSyncService
             $"{BASE_URL}/InterclubHandler/GetInterclubData/interclubID/{interclubId}/language/2057/");
         if (overview == null) return;
 
-        foreach (var (divisionName, poolName, competitionId) in EnumeratePlayablePools(overview.Value))
+        foreach (var (divisionName, poolName, competitionId) in EnumeratePlayablePools(overview.Value, isSenior))
         {
             await SyncPoolAsync(matches, year, isFinals, isSenior, divisionName, poolName, competitionId);
             await Task.Delay(200);
@@ -243,7 +243,7 @@ public class GolfboxSyncService
     /// (e.g. a Grand Final before the regular season finishes, or a division
     /// with no entries) and are skipped rather than throwing.
     internal static IEnumerable<(string Division, string Pool, long CompetitionId)> EnumeratePlayablePools(
-        JsonElement overview)
+        JsonElement overview, bool isSenior)
     {
         var divisions = overview
             .GetProperty("Tournament")
@@ -255,7 +255,7 @@ public class GolfboxSyncService
             var divisionName = (div.GetProperty("Name").GetString() ?? "").Trim();
             foreach (var pool in div.GetProperty("Pools").EnumerateArray())
             {
-                var poolName = PennantPools.Normalise(pool.GetProperty("Name").GetString() ?? "");
+                var poolName = PennantPools.Normalise(pool.GetProperty("Name").GetString() ?? "", isSenior);
                 var competitionId = pool.GetProperty("CompetitionID");
                 if (competitionId.ValueKind == JsonValueKind.Null) continue;
 
@@ -573,7 +573,7 @@ public class GolfboxSyncService
             var divisionName = (div.GetProperty("Name").GetString() ?? "").Trim();
             foreach (var pool in div.GetProperty("Pools").EnumerateArray())
             {
-                var poolName = PennantPools.Normalise(pool.GetProperty("Name").GetString() ?? "");
+                var poolName = PennantPools.Normalise(pool.GetProperty("Name").GetString() ?? "", isSenior);
 
                 // Skip pools with no competition ID
                 if (pool.GetProperty("CompetitionID").ValueKind == JsonValueKind.Null)
