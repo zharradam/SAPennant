@@ -23,7 +23,6 @@ export class HonourRollComponent implements OnInit {
   selectedYear: number | undefined = undefined;
   selectedClub = '';
 
-  years: number[] = [];
   groupBy: 'year' | 'pool' = 'year';
 
   constructor(
@@ -67,7 +66,6 @@ export class HonourRollComponent implements OnInit {
       club: this.selectedClub || undefined,
     }).subscribe({
       next: (data) => {
-        //this.logging.info(`Honour roll results: ${data.length} entries`, 'HonourRollComponent');
         this.results.set(data);
         this.isLoading.set(false);
       },
@@ -80,10 +78,6 @@ export class HonourRollComponent implements OnInit {
 
   get currentNarrative(): string {
     return this.narratives[this.selectedCompetition] ?? '';
-  }
-
-  get narrativeTitle(): string {
-    return `About ${this.selectedCompetition}'s Pennant`;
   }
 
   toggleNarrative(): void {
@@ -99,13 +93,6 @@ export class HonourRollComponent implements OnInit {
     return Array.from(map.entries())
       .map(([year, entries]) => ({ year, entries }))
       .sort((a, b) => b.year - a.year);
-  }
-
-  get uniqueYears(): number[] {
-    return [...new Set(this.results().map(r => r.year))].sort((a, b) => b - a);
-  }
-
-  onGroupByChange(): void {
   }
 
   get groupedByPool(): { pool: string; entries: any[] }[] {

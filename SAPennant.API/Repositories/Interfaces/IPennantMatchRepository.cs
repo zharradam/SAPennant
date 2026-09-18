@@ -9,13 +9,12 @@ public interface IPennantMatchRepository : IRepository<PennantMatch>
     Task<IEnumerable<PennantMatch>> GetByYearAndPoolAndRoundAsync(int year, string pool, string round);
     Task<bool> ExistsAsync(int year, bool isFinals, bool isSenior);
     Task<IEnumerable<string>> GetDistinctYearsAsync();
-    Task<IEnumerable<string>> GetDistinctPoolsAsync(int? year = null);
     Task DeleteByYearAsync(int year);
     Task DeleteByYearPoolRoundAsync(int year, string pool, string round, bool isSenior);
     Task DeleteFinalsByYearPoolAsync(int year, string pool, bool isSenior);
     Task<IEnumerable<PennantMatch>> SearchByPlayerNameAsync(string query);
     Task<IEnumerable<string>> GetPlayerSuggestionsAsync(string query);
-    Task<IEnumerable<PennantMatch>> GetLeaderboardDataAsync(int? year, string? division, string? pool, bool? isSenior);
+    Task<IEnumerable<PennantMatch>> GetLeaderboardDataAsync(int? year, string? pool, bool? isSenior);
     Task<IEnumerable<(string Pool, bool IsSenior)>> GetPoolDivisionsAsync(int? year);
     Task<IEnumerable<string>> GetClubSuggestionsAsync(string query);
     Task<IEnumerable<PennantMatch>> GetByClubAsync(string clubName);

@@ -195,63 +195,6 @@ public class GolfboxSyncService
         }
     }
 
-    public async Task<object> GetSeasonIdsAsync(int year)
-    {
-        using var scope = _scopeFactory.CreateScope();
-        var seasons = scope.ServiceProvider.GetRequiredService<ISeasonRepository>();
-
-        var season = await seasons.GetByYearAsync(year);
-        if (season == null)
-            return new { error = $"No season found for year {year}" };
-
-        var regularPools = await GetPoolIds(season.RegularId);
-        var finalsPools = season.FinalsId.HasValue
-            ? await GetPoolIds(season.FinalsId.Value)
-            : new List<object>();
-
-        return new
-        {
-            year,
-            regular = new { interclubId = season.RegularId, pools = regularPools },
-            finals = season.FinalsId.HasValue
-                ? new { interclubId = season.FinalsId.Value, pools = finalsPools }
-                : null
-        };
-    }
-
-    private async Task<List<object>> GetPoolIds(int interclubId)
-    {
-        var pools = new List<object>();
-        var overview = await GetJsonpAsync(
-            $"{BASE_URL}/InterclubHandler/GetInterclubData/interclubID/{interclubId}/language/2057/");
-
-        if (overview == null) return pools;
-
-        var divisions = overview.Value
-            .GetProperty("Tournament")
-            .GetProperty("Divisions")
-            .EnumerateArray();
-
-        foreach (var div in divisions)
-        {
-            var divisionName = (div.GetProperty("Name").GetString() ?? "").Trim();
-            foreach (var pool in div.GetProperty("Pools").EnumerateArray())
-            {
-                var competitionIdProp = pool.GetProperty("CompetitionID");
-                pools.Add(new
-                {
-                    division = divisionName,
-                    pool = pool.GetProperty("Name").GetString(),
-                    competitionId = competitionIdProp.ValueKind == JsonValueKind.Null
-                        ? (long?)null
-                        : competitionIdProp.GetInt64()
-                });
-            }
-        }
-
-        return pools;
-    }
-
     private async Task SyncSeasonIfNeededAsync(
         IPennantMatchRepository matches,
         int year, int interclubId, bool isFinals, bool isSenior = false)

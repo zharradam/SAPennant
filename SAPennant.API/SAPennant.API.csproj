@@ -11,6 +11,9 @@
 		<PackageReference Include="Microsoft.ApplicationInsights.AspNetCore" Version="3.1.0" />
 		<PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.7" />
 		<PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.7" />
+		<!-- Not used directly. Pins the version Application Insights pulls in
+		     transitively above 1.15.1, which has a known vulnerability
+		     (GHSA-g94r-2vxg-569j). -->
 		<PackageReference Include="OpenTelemetry.Api" Version="1.15.3" />
 		<PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="10.0.7" />
 		<PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="10.0.7">

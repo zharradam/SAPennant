@@ -1,4 +1,4 @@
-import { Component, signal, OnInit, ViewChild, ElementRef, AfterViewInit, OnDestroy } from '@angular/core';
+import { Component, signal, OnInit, ViewChild, ElementRef, AfterViewInit } from '@angular/core';
 import { PennantService } from './pennant.service';
 import { InsightsService } from './insights.service';
 import { retry, switchMap } from 'rxjs/operators';
@@ -18,7 +18,6 @@ const TAB_NAMES: readonly TabName[] = ['team', 'search', 'club', 'leaderboard', 
 })
 export class App implements OnInit, AfterViewInit {
   activeTab = signal<TabName>('team');
-  selectedPlayer = signal('');
   isLoadingApi = signal(true);
   menuOpen = signal(false);
   aboutOpen = signal(false);
@@ -37,7 +36,6 @@ export class App implements OnInit, AfterViewInit {
   ];
   private msgIndex = 0;
   private msgInterval: any;
-  private particleInterval: any;
   private barInterval: any;
   private barWidth = 0;
   private particles: { x: number; y: number; vx: number; vy: number; r: number; o: number }[] = [];

@@ -113,10 +113,6 @@ export class PlayerStatsComponent implements OnChanges {
     return PennantService.formatResult(m.result, m.playerWon);
   }
 
-  getClubLogoUrl(): string | null {
-    return getClubLogo(this.playerClub);
-  }
-
   async sharePlayer(): Promise<void> {
     this.logging.usage('share', `${this.playerName} (${this.playerClub})`);
 

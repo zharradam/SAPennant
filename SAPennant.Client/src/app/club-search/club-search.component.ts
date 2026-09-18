@@ -3,7 +3,7 @@ import { Subject } from 'rxjs';
 import { debounceTime, distinctUntilChanged, switchMap } from 'rxjs/operators';
 import { PennantService } from '../pennant.service';
 import { ClubPlayer } from '../models/pennant.models';
-import { CLUB_LOGOS } from '../data/club-logos';
+import { getClubLogo } from '../data/club-logos';
 import { InsightsService } from '../insights.service';
 import { LoggingService } from '../logging.service';
 
@@ -34,7 +34,6 @@ export class ClubSearchComponent {
   sortCol: 'playerName' | 'played' | 'wins' | 'losses' | 'halved' | 'winRate' = 'winRate';
   sortDir: 'asc' | 'desc' = 'desc';
 
-  private readonly clubLogos = CLUB_LOGOS;
   private suggestSubject = new Subject<string>();
 
   constructor(
@@ -90,7 +89,6 @@ export class ClubSearchComponent {
       next: players => {
         clearTimeout(this.slowTimeout);
         this.isSlowResponse.set(false);
-        //this.logging.info(`Club search results: "${this.selectedClub}" — ${players.length} players`, 'ClubSearchComponent');
         this.allPlayers = players;
         this.availableYears = [...new Set(players.map(p => p.year))].sort((a, b) => b - a);
         this.selectedYears = new Set(this.availableYears);
@@ -211,7 +209,6 @@ export class ClubSearchComponent {
   }
 
   getClubLogo(clubName: string): string | null {
-    const logo = this.clubLogos[clubName];
-    return logo || null;
+    return getClubLogo(clubName);
   }
 }

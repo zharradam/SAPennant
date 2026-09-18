@@ -1,20 +1,17 @@
 import { NgModule, provideBrowserGlobalErrorListeners, ErrorHandler } from '@angular/core';
 import { BrowserModule } from '@angular/platform-browser';
 import { FormsModule } from '@angular/forms';
-import { HttpClientModule, provideHttpClient, withInterceptors } from '@angular/common/http';
+import { provideHttpClient, withInterceptors } from '@angular/common/http';
 
 import { App } from './app.component';
 import { SearchComponent } from './search/search.component';
 import { LeaderboardComponent } from './leaderboard/leaderboard.component';
 import { AdminComponent } from './admin/admin.component';
-import { YearCountPipe } from './year-count.pipe';
-import { PoolCountPipe } from './pool-count.pipe';
 import { authInterceptor } from './auth.interceptor';
 import { ClubSearchComponent } from './club-search/club-search.component';
 import { HandicapComponent } from './handicap/handicap.component';
 import { TeamPennantComponent } from './team-pennant/team-pennant.component';
 import { HonourRollComponent } from './honour-roll/honour-roll.component';
-import { ScrollHintDirective } from './directives/scroll-hint.directive';
 import { GlobalErrorHandler } from './global-error-handler';
 import { PlayerStatsComponent } from './player-stats/player-stats.component';
 import { PlayerModalComponent } from './player-modal/player-modal.component';
@@ -25,20 +22,16 @@ import { PlayerModalComponent } from './player-modal/player-modal.component';
     SearchComponent,
     LeaderboardComponent,
     AdminComponent,
-    YearCountPipe,
-    PoolCountPipe,
     ClubSearchComponent,
     HandicapComponent,
     TeamPennantComponent,
     HonourRollComponent,
-    ScrollHintDirective,
     PlayerStatsComponent,
     PlayerModalComponent,
   ],
   imports: [
     BrowserModule,
     FormsModule,
-    HttpClientModule,
   ],
   providers: [
     { provide: ErrorHandler, useClass: GlobalErrorHandler },

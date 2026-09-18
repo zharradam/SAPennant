@@ -58,7 +58,7 @@ public class SearchController : ControllerBase
             {
                 bool? isSenior = division?.ToLower() == "senior" ? true : null;
 
-                var matches = await _matches.GetLeaderboardDataAsync(year, division, pool, isSenior);
+                var matches = await _matches.GetLeaderboardDataAsync(year, pool, isSenior);
 
                 // Division filtering in memory
                 if (!string.IsNullOrWhiteSpace(division))

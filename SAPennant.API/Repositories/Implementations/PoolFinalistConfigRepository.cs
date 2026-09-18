@@ -18,9 +18,4 @@ public class PoolFinalistConfigRepository : IPoolFinalistConfigRepository
     {
         return await _context.PoolFinalistConfigs.FindAsync(pool);
     }
-
-    public async Task<IEnumerable<PoolFinalistConfig>> GetAllAsync()
-    {
-        return await _context.PoolFinalistConfigs.ToListAsync();
-    }
 }

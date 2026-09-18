@@ -1,6 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
-
-namespace SAPennant.API.Models;
+﻿namespace SAPennant.API.Models;
 
 public class HonourRoll
 {

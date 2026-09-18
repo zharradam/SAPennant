@@ -1,4 +1,4 @@
-import { Component, OnInit, signal, ViewChild } from '@angular/core';
+import { Component, OnInit, signal } from '@angular/core';
 import { PennantService } from '../pennant.service';
 import { PlayerMatch } from '../models/pennant.models';
 import { Subject } from 'rxjs';
@@ -6,7 +6,6 @@ import { debounceTime, distinctUntilChanged, switchMap } from 'rxjs/operators';
 import { InsightsService } from '../insights.service';
 import { getClubLogo } from '../data/club-logos';
 import { LoggingService } from '../logging.service';
-import { PlayerStatsComponent } from '../player-stats/player-stats.component';
 
 @Component({
   selector: 'sa-pennant-search',
@@ -15,7 +14,6 @@ import { PlayerStatsComponent } from '../player-stats/player-stats.component';
   styleUrl: './search.component.scss',
 })
 export class SearchComponent implements OnInit {
-  @ViewChild('statsRef') statsRef!: PlayerStatsComponent;
 
   query = '';
   allResults: PlayerMatch[] = [];

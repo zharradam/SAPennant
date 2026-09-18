@@ -50,18 +50,6 @@ public class PennantMatchRepository : EfRepository<PennantMatch>, IPennantMatchR
             .ToListAsync();
     }
 
-    public async Task<IEnumerable<string>> GetDistinctPoolsAsync(int? year = null)
-    {
-        var query = _dbSet.AsQueryable();
-        if (year.HasValue)
-            query = query.Where(m => m.Year == year.Value);
-        return await query
-            .Select(m => m.Pool)
-            .Distinct()
-            .OrderBy(p => p)
-            .ToListAsync();
-    }
-
     public async Task DeleteByYearAsync(int year)
     {
         var matches = await _dbSet.Where(m => m.Year == year).ToListAsync();
@@ -110,8 +98,10 @@ public class PennantMatchRepository : EfRepository<PennantMatch>, IPennantMatchR
             .Take(10);
     }
 
+    // Division filtering happens in memory in SearchController — the division
+    // names are derived from Pool/IsSenior rather than stored.
     public async Task<IEnumerable<PennantMatch>> GetLeaderboardDataAsync(
-        int? year, string? division, string? pool, bool? isSenior)
+        int? year, string? pool, bool? isSenior)
     {
         var query = _dbSet.AsQueryable();
 

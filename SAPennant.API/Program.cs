@@ -27,14 +27,6 @@ builder.Services.Configure<TelemetryConfiguration>(config =>
         config.DisableTelemetry = true;
 });
 
-if (builder.Environment.IsDevelopment())
-{
-    builder.Services.AddSwaggerGen(c =>
-    {
-        c.SwaggerDoc("v1", new() { Title = "SAPennant API", Version = "v1" });
-    });
-}
-
 builder.Services.AddDatabase(builder.Configuration);
 builder.Services.AddRepositories();
 

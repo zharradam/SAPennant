@@ -10,7 +10,6 @@ public class TeamPennantController : ControllerBase
 {
     private readonly IPennantMatchRepository _matches;
     private readonly IRoundStatusRepository _roundStatuses;
-    private readonly ILogger<TeamPennantController> _logger;
     private readonly IPoolFinalistConfigRepository _poolFinalistConfigs;
     private readonly DataCacheService _cache;
 
@@ -18,13 +17,11 @@ public class TeamPennantController : ControllerBase
         IPennantMatchRepository matches,
         IRoundStatusRepository roundStatuses,
         IPoolFinalistConfigRepository poolFinalistConfigs,
-        ILogger<TeamPennantController> logger,
         DataCacheService cache)
     {
         _matches = matches;
         _roundStatuses = roundStatuses;
         _poolFinalistConfigs = poolFinalistConfigs;
-        _logger = logger;
         _cache = cache;
     }
 

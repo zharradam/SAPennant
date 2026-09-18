@@ -23,13 +23,6 @@ public class RoundStatusRepository : EfRepository<RoundStatus>, IRoundStatusRepo
         return await _dbSet.Where(r => r.Year == year).ToListAsync();
     }
 
-    public async Task<IEnumerable<RoundStatus>> GetUnsettledAsync(int year)
-    {
-        return await _dbSet
-            .Where(r => r.Year == year && !r.IsSettled)
-            .ToListAsync();
-    }
-
     public async Task DeleteByYearAsync(int year)
     {
         var statuses = await _dbSet.Where(r => r.Year == year).ToListAsync();

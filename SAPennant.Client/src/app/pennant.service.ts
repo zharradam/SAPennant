@@ -11,7 +11,6 @@ export class PennantService {
   private readonly API_URL = environment.apiUrl;
   pendingSearch = signal('');
   lastUpdated = signal('');
-  searchMode = signal<'player' | 'club'>('player');
 
   constructor(private http: HttpClient) {}
 
@@ -70,10 +69,6 @@ export class PennantService {
 
   syncAll(): Observable<any> {
     return this.http.post<any>(`${this.API_URL}/sync/run`, {});
-  }
-
-  login(username: string, password: string): Observable<{ token: string }> {
-    return this.http.post<{ token: string }>(`${this.API_URL}/auth/login`, { username, password });
   }
 
   getClubSuggestions(query: string): Observable<string[]> {

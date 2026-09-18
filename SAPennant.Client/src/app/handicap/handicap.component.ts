@@ -47,7 +47,7 @@ export class HandicapComponent implements OnInit {
       this.sortDir = this.sortDir === 'asc' ? 'desc' : 'asc';
     } else {
       this.sortCol = col;
-      this.sortDir = col === 'playerName' || col === 'club' ? 'asc' : 'asc';
+      this.sortDir = 'asc';
     }
   }
 
@@ -68,7 +68,6 @@ export class HandicapComponent implements OnInit {
     this.historyLoading.set(true);
     this.pennant.getHandicapHistory(player.playerName).subscribe({
       next: history => {
-        //this.logging.info(`Handicap history loaded: "${player.playerName}" — ${history.length} data points`, 'HandicapComponent');
         this.history = history;
         this.historyLoading.set(false);
       },
@@ -80,9 +79,6 @@ export class HandicapComponent implements OnInit {
   }
 
   closeModal(): void {
-    if (this.selectedPlayer) {
-      //this.logging.info(`Handicap history closed: "${this.selectedPlayer.playerName}"`, 'HandicapComponent');
-    }
     this.selectedPlayer = null;
     this.history = [];
   }
