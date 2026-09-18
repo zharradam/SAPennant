@@ -237,11 +237,14 @@ public class GolfboxSyncService
             var divisionName = (div.GetProperty("Name").GetString() ?? "").Trim();
             foreach (var pool in div.GetProperty("Pools").EnumerateArray())
             {
+                var competitionIdProp = pool.GetProperty("CompetitionID");
                 pools.Add(new
                 {
                     division = divisionName,
                     pool = pool.GetProperty("Name").GetString(),
-                    competitionId = pool.GetProperty("CompetitionID").GetInt64()
+                    competitionId = competitionIdProp.ValueKind == JsonValueKind.Null
+                        ? (long?)null
+                        : competitionIdProp.GetInt64()
                 });
             }
         }
@@ -275,7 +278,21 @@ public class GolfboxSyncService
             $"{BASE_URL}/InterclubHandler/GetInterclubData/interclubID/{interclubId}/language/2057/");
         if (overview == null) return;
 
-        var divisions = overview.Value
+        foreach (var (divisionName, poolName, competitionId) in EnumeratePlayablePools(overview.Value))
+        {
+            await SyncPoolAsync(matches, year, isFinals, isSenior, divisionName, poolName, competitionId);
+            await Task.Delay(200);
+        }
+    }
+
+    /// Flattens the tournament overview into the pools that can actually be
+    /// fetched. Pools that haven't been drawn yet carry a null CompetitionID
+    /// (e.g. a Grand Final before the regular season finishes, or a division
+    /// with no entries) and are skipped rather than throwing.
+    internal static IEnumerable<(string Division, string Pool, long CompetitionId)> EnumeratePlayablePools(
+        JsonElement overview)
+    {
+        var divisions = overview
             .GetProperty("Tournament")
             .GetProperty("Divisions")
             .EnumerateArray();
@@ -286,9 +303,10 @@ public class GolfboxSyncService
             foreach (var pool in div.GetProperty("Pools").EnumerateArray())
             {
                 var poolName = (pool.GetProperty("Name").GetString() ?? "").Trim();
-                var competitionId = pool.GetProperty("CompetitionID").GetInt64();
-                await SyncPoolAsync(matches, year, isFinals, isSenior, divisionName, poolName, competitionId);
-                await Task.Delay(200);
+                var competitionId = pool.GetProperty("CompetitionID");
+                if (competitionId.ValueKind == JsonValueKind.Null) continue;
+
+                yield return (divisionName, poolName, competitionId.GetInt64());
             }
         }
     }
