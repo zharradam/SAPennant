@@ -19,7 +19,7 @@
   }
 
   // Below this the two columns get too narrow for the select labels.
-  @media (max-width: 380px) {
+  @media (max-width: 360px) {
     grid-template-columns: minmax(0, 1fr);
   }
   background: #1a2f5a;
