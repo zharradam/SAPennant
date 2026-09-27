@@ -264,7 +264,9 @@ public class GolfboxSyncService
         }
     }
 
-    private async Task SyncPoolAsync(
+    /// Returns true when the pool's rows were saved and Golfbox reports the
+    /// competition completed (only brackets are checked for this by callers).
+    private async Task<bool> SyncPoolAsync(
         IPennantMatchRepository matches,
         int year, bool isFinals, bool isSenior, string division, string poolName, long competitionId)
     {
@@ -277,14 +279,14 @@ public class GolfboxSyncService
         {
             _logger.LogWarning("Skipping {Year} {Type} {Senior}{Division} {Pool} — no data returned",
                 year, isFinals ? "Finals" : "Regular", isSenior ? "Senior " : "", division, poolName);
-            return;
+            return false;
         }
 
         if (!data.Value.TryGetProperty("Matchplay", out var matchplay))
         {
             _logger.LogWarning("Skipping {Year} {Type} {Senior}{Division} {Pool} — no Matchplay key",
                 year, isFinals ? "Finals" : "Regular", isSenior ? "Senior " : "", division, poolName);
-            return;
+            return false;
         }
 
         var firstClassProp = matchplay.EnumerateObject().FirstOrDefault();
@@ -292,7 +294,7 @@ public class GolfboxSyncService
         {
             _logger.LogWarning("Skipping {Year} {Type} {Senior}{Division} {Pool} — Matchplay is empty",
                 year, isFinals ? "Finals" : "Regular", isSenior ? "Senior " : "", division, poolName);
-            return;
+            return false;
         }
 
         var firstClass = firstClassProp.Value;
@@ -319,10 +321,10 @@ public class GolfboxSyncService
         {
             _logger.LogWarning("Skipping {Year} {Type} {Senior}{Division} {Pool} — no TeamMatches or Rounds found",
                 year, isFinals ? "Finals" : "Regular", isSenior ? "Senior " : "", division, poolName);
-            return;
+            return false;
         }
 
-        if (newMatches.Count == 0) return;
+        if (newMatches.Count == 0) return false;
 
         // Replace rather than append, so syncing a pool twice is idempotent.
         // Deliberately after the fetch and the empty check: a failed or empty
@@ -334,6 +336,9 @@ public class GolfboxSyncService
             newMatches.Count, year, isFinals ? "Finals" : "Regular", isSenior ? "Senior " : "", division, poolName);
         await matches.AddRangeAsync(newMatches);
         await matches.SaveChangesAsync();
+
+        return firstClass.TryGetProperty("IsCompleted", out var isCompleted)
+            && isCompleted.ValueKind == JsonValueKind.True;
     }
 
     private async Task ProcessTeamMatches(
@@ -586,10 +591,7 @@ public class GolfboxSyncService
 
                 if (isFinals)
                 {
-                    // Finals use bracket format — delete and re-sync the whole pool
-                    await matches.DeleteFinalsByYearPoolAsync(year, poolName, isSenior);
-                    await matches.SaveChangesAsync();
-                    await SyncPoolAsync(matches, year, isFinals, isSenior, divisionName, poolName, competitionId);
+                    await SyncUnsettledFinalsPoolAsync(matches, roundStatuses, year, isSenior, divisionName, poolName, competitionId);
                 }
                 else
                 {
@@ -599,6 +601,45 @@ public class GolfboxSyncService
                 await Task.Delay(200);
             }
         }
+    }
+
+    /// Finals are brackets, so they're tracked per pool rather than per round:
+    /// a single RoundStatus row keyed by FinalsStatusRound, written only once
+    /// Golfbox reports the bracket completed.
+    private const string FinalsStatusRound = "Finals";
+
+    private async Task SyncUnsettledFinalsPoolAsync(
+        IPennantMatchRepository matches,
+        IRoundStatusRepository roundStatuses,
+        int year, bool isSenior, string division, string poolName, long competitionId)
+    {
+        var status = await roundStatuses.GetAsync(year, poolName, FinalsStatusRound);
+        if (status?.IsSettled == true)
+        {
+            var poolMatches = await matches.GetByYearAndPoolAsync(year, poolName);
+            if (poolMatches.Any(m => m.IsFinals && m.IsSenior == isSenior))
+            {
+                _logger.LogDebug("Skipping {Pool} finals — already completed", poolName);
+                return;
+            }
+            _logger.LogInformation("Re-syncing {Pool} finals — marked completed but no data found", poolName);
+        }
+
+        // SyncPoolAsync replaces the pool's rows only after a successful fetch,
+        // so a failed Golfbox call leaves existing finals data untouched.
+        var completed = await SyncPoolAsync(matches, year, true, isSenior, division, poolName, competitionId);
+        if (!completed) return;
+
+        if (status == null)
+        {
+            status = new RoundStatus { Year = year, Pool = poolName, Round = FinalsStatusRound };
+            await roundStatuses.AddAsync(status);
+        }
+        status.IsSettled = true;
+        status.SettledAt = DateTime.UtcNow;
+        status.LastChecked = DateTime.UtcNow;
+        await roundStatuses.SaveChangesAsync();
+        _logger.LogInformation("{Pool} finals are now completed.", poolName);
     }
 
     private async Task SyncUnsettledRoundsForPoolAsync(
