@@ -48,10 +48,7 @@ export class AdminComponent implements OnInit {
 
   ngOnInit(): void {
     if (this.auth.isAuthenticated()) {
-      this.loadSeasons();
-      this.pennant.refreshLastUpdated();
-      this.pennant.getSyncStatus().subscribe(s => this.isSyncEnabled.set(s.enabled));
-      this.pennant.getPollingInterval().subscribe(r => this.pollingInterval.set(r.minutes));
+      this.loadAdminData();
     }
 
     this.pennant.getMaintenance().subscribe({
@@ -118,8 +115,7 @@ export class AdminComponent implements OnInit {
     this.auth.login(this.usernameInput, this.passwordInput).subscribe({
       next: () => {
         this.logging.info(`Admin login successful: "${this.usernameInput}"`, 'AdminComponent');
-        this.loadSeasons();
-        this.pennant.refreshLastUpdated();
+        this.loadAdminData();
       },
       error: (err) => {
         this.logging.warn(`Admin login failed for "${this.usernameInput}": status ${err.status}`, 'AdminComponent');
@@ -132,6 +128,16 @@ export class AdminComponent implements OnInit {
         }
       }
     });
+  }
+
+  // Everything the admin screen needs once authenticated — called on init
+  // with a stored token and again after a fresh login, so the toggles show
+  // the server's saved state rather than their defaults.
+  private loadAdminData(): void {
+    this.loadSeasons();
+    this.pennant.refreshLastUpdated();
+    this.pennant.getSyncStatus().subscribe(s => this.isSyncEnabled.set(s.enabled));
+    this.pennant.getPollingInterval().subscribe(r => this.pollingInterval.set(r.minutes));
   }
 
   logout(): void {
