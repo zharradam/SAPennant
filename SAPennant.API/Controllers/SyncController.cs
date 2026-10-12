@@ -1,5 +1,4 @@
-﻿using Microsoft.ApplicationInsights;
-using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using SAPennant.API.Models;
 using SAPennant.API.Repositories.Interfaces;
@@ -17,45 +16,35 @@ public class SyncController : ControllerBase
     private readonly GolfboxSyncService _sync;
     private readonly ISeasonRepository _seasons;
     private readonly IAppSettingRepository _appSettings;
-    private readonly TelemetryClient _telemetry;
     private readonly SettingsService _settings;
 
     public SyncController(
         GolfboxSyncService sync,
         ISeasonRepository seasons,
         IAppSettingRepository appSettings,
-        TelemetryClient telemetry,
         SettingsService settings)
     {
         _sync = sync;
         _seasons = seasons;
         _appSettings = appSettings;
-        _telemetry = telemetry;
         _settings = settings;
     }
 
+    // A full sync or refresh takes minutes and Azure drops requests at ~230s,
+    // so these start the work and return. The service owns its own DI scope,
+    // logs its own failures and refuses to overlap with a running sync.
     [HttpPost("run")]
-    public async Task<IActionResult> Run()
+    public IActionResult Run()
     {
-        await _sync.SyncAllAsync();
-        _telemetry.TrackEvent("SyncCompleted", new Dictionary<string, string>
-        {
-            { "year", "all" },
-            { "type", "full" }
-        });
-        return Ok(new { message = "Sync complete" });
+        _ = _sync.SyncAllAsync();
+        return Accepted(new { message = "Full sync started" });
     }
 
     [HttpPost("refresh/{year}")]
-    public async Task<IActionResult> Refresh(int year)
+    public IActionResult Refresh(int year)
     {
-        await _sync.RefreshYearAsync(year);
-        _telemetry.TrackEvent("SyncCompleted", new Dictionary<string, string>
-        {
-            { "year", year.ToString() },
-            { "type", "refresh" }
-        });
-        return Ok(new { message = $"Refresh complete for {year}" });
+        _ = _sync.RefreshYearAsync(year);
+        return Accepted(new { message = $"Refresh of {year} started" });
     }
 
     [HttpGet("seasons")]

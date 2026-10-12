@@ -59,12 +59,17 @@ public class PennantSyncBackgroundService : BackgroundService
                 {
                     var syncService = scope.ServiceProvider.GetRequiredService<GolfboxSyncService>();
                     await syncService.SyncCurrentYearUnsettledAsync();
-                    lastSync = DateTime.UtcNow;
                     _logger.LogInformation("Sync complete. Next sync in {Minutes} minutes.", intervalMinutes);
                 }
                 catch (Exception ex)
                 {
                     _logger.LogError(ex, "Error during background sync.");
+                }
+                finally
+                {
+                    // Also on failure, so a bad Golfbox response waits a full
+                    // interval instead of retrying every 30 seconds.
+                    lastSync = DateTime.UtcNow;
                 }
             }
 

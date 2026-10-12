@@ -83,3 +83,51 @@ public class PoolEnumerationTests
         Assert.Empty(pools);
     }
 }
+
+public class RoundEnumerationTests
+{
+    private static List<GolfboxSyncService.PoolRound>? Rounds(string json, bool isFinals) =>
+        GolfboxSyncService.EnumerateRounds(JsonSerializer.Deserialize<JsonElement>(json), isFinals);
+
+    [Fact]
+    public void BracketRoundsAreNumberedFromTheirNumberProperty()
+    {
+        // Mirrors TeamMatchplayBracketHandler: keys are "R1"/"R2", not integers.
+        var rounds = Rounds("""
+        {
+          "IsCompleted": true,
+          "Rounds": {
+            "R1": { "Number": 1, "TeamMatches": { "TM1": { "IsBye": false }, "TM2": { "IsBye": false } } },
+            "R2": { "Number": 2, "TeamMatches": { "TM3": { "IsBye": false } } }
+          }
+        }
+        """, isFinals: true)!;
+
+        Assert.Equal(new[] { "Semi Final", "Final" }, rounds.Select(r => r.Name));
+        Assert.Equal(new[] { 2, 1 }, rounds.Select(r => r.TeamMatches.Count));
+        Assert.All(rounds, r => Assert.Equal(2, r.TotalRounds));
+    }
+
+    [Fact]
+    public void FlatTeamMatchesAreGroupedByInterclubRoundNumber()
+    {
+        var rounds = Rounds("""
+        {
+          "TeamMatches": {
+            "TM1": { "InterclubRoundNumber": 2 },
+            "TM2": { "InterclubRoundNumber": 1 },
+            "TM3": { "InterclubRoundNumber": 2 }
+          }
+        }
+        """, isFinals: false)!;
+
+        Assert.Equal(new[] { "Round 1", "Round 2" }, rounds.Select(r => r.Name));
+        Assert.Equal(new[] { 1, 2 }, rounds.Select(r => r.TeamMatches.Count));
+    }
+
+    [Fact]
+    public void NeitherShapeReturnsNull()
+    {
+        Assert.Null(Rounds("""{ "Name": "Simpson Cup" }""", isFinals: false));
+    }
+}

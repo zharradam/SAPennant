@@ -19,6 +19,10 @@ public class AuthController : ControllerBase
         _logger = logger;
     }
 
+    private static bool SameSecret(string? given, string expected) =>
+        given != null && System.Security.Cryptography.CryptographicOperations.FixedTimeEquals(
+            Encoding.UTF8.GetBytes(given), Encoding.UTF8.GetBytes(expected));
+
     [HttpPost("login")]
     public IActionResult Login([FromBody] LoginRequest request)
     {
@@ -29,7 +33,10 @@ public class AuthController : ControllerBase
         var validUsername = _config["Admin:Username"];
         var validPassword = _config["Admin:Password"];
 
-        if (request.Username != validUsername || request.Password != validPassword)
+        // Fail closed if the admin credentials aren't configured, otherwise an
+        // empty login would match the empty defaults.
+        var configured = !string.IsNullOrEmpty(validUsername) && !string.IsNullOrEmpty(validPassword);
+        if (!configured || !SameSecret(request.Username, validUsername!) || !SameSecret(request.Password, validPassword!))
         {
             _logger.LogWarning("Failed admin login attempt. Username: {Username} IP: {IP}",
                 request.Username, ip);

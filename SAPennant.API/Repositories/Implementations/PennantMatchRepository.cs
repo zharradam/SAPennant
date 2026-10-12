@@ -72,6 +72,7 @@ public class PennantMatchRepository : EfRepository<PennantMatch>, IPennantMatchR
     {
         return await _dbSet
             .Where(m => EF.Functions.Like(m.PlayerName.ToLower(), $"%{query.ToLower()}%"))
+            .Take(200) // "%" is a LIKE wildcard, so cap what a wildcard query can return
             .ToListAsync();
     }
 
@@ -121,11 +122,11 @@ public class PennantMatchRepository : EfRepository<PennantMatch>, IPennantMatchR
         if (year.HasValue)
             query = query.Where(m => m.Year == year.Value);
 
-        return await query
+        var rows = await query
             .Select(m => new { m.Pool, m.IsSenior })
             .Distinct()
-            .ToListAsync()
-            .ContinueWith(t => t.Result.Select(x => (x.Pool, x.IsSenior)));
+            .ToListAsync();
+        return rows.Select(x => (x.Pool, x.IsSenior));
     }
 
     public async Task<IEnumerable<string>> GetClubSuggestionsAsync(string query)
@@ -171,10 +172,10 @@ public class PennantMatchRepository : EfRepository<PennantMatch>, IPennantMatchR
             .ToListAsync();
     }
 
-    public async Task<IEnumerable<PennantMatch>> GetTeamMatchesAsync(int year, string pool, bool includeFinals = false)
+    public async Task<IEnumerable<PennantMatch>> GetTeamMatchesAsync(int year, string pool)
     {
         return await _dbSet
-            .Where(m => m.Year == year && m.Pool == pool && (includeFinals || !m.IsFinals))
+            .Where(m => m.Year == year && m.Pool == pool && !m.IsFinals)
             .ToListAsync();
     }
 
@@ -214,14 +215,4 @@ public class PennantMatchRepository : EfRepository<PennantMatch>, IPennantMatchR
         _dbSet.RemoveRange(matches);
     }
 
-    public async Task DeleteFinalsByYearPoolAsync(int year, string pool, bool isSenior)
-    {
-        var matches = await _dbSet
-            .Where(m => m.Year == year &&
-                        m.Pool == pool &&
-                        m.IsFinals == true &&
-                        m.IsSenior == isSenior)
-            .ToListAsync();
-        _dbSet.RemoveRange(matches);
-    }
 }

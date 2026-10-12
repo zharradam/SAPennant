@@ -138,6 +138,19 @@ public class ParseTeamMatchTests
             roundNumber: 3, startTime: "20260503T081500", totalRounds: 7);
 
     [Fact]
+    public void ByeFixtureProducesNoRows()
+    {
+        // Golfbox sometimes leaves IsBye false on bracket byes; the club name is the tell.
+        var bye = Fixture.Replace("\"Name\": \"Kooyonga\"", "\"Name\": \"BYE\"");
+        var rows = GolfboxSyncService.ParseTeamMatch(
+            JsonSerializer.Deserialize<JsonElement>(bye),
+            year: 2026, isFinals: true, isSenior: false,
+            division: "Men's", poolName: "Simpson Cup",
+            roundNumber: 1, startTime: "20260503T081500", totalRounds: 2);
+        Assert.Empty(rows);
+    }
+
+    [Fact]
     public void CreatesOneRowPerPlayerPerRubber()
     {
         // 2 rubbers × home + away perspective

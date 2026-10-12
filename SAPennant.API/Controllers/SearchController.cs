@@ -209,14 +209,12 @@ public class SearchController : ControllerBase
             async () =>
             {
                 var last = await _syncLogs.GetLatestAsync();
-                var localTime = last?.SyncedAt.ToLocalTime();
 
+                // UTC with an explicit kind so it serialises with a Z and the
+                // browser formats it in the visitor's own time zone.
                 return new
                 {
-                    lastUpdated = localTime,
-                    display = localTime != null
-                        ? localTime.Value.ToString("dd MMM yyyy h:mm tt")
-                        : "Never"
+                    lastUpdated = last == null ? (DateTime?)null : DateTime.SpecifyKind(last.SyncedAt, DateTimeKind.Utc)
                 };
             },
             ttl: TimeSpan.FromMinutes(1));

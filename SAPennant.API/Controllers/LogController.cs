@@ -1,3 +1,4 @@
+using System.ComponentModel.DataAnnotations;
 using System.Security.Cryptography;
 using System.Text;
 using Microsoft.AspNetCore.Mvc;
@@ -17,14 +18,19 @@ public class LogController : ControllerBase
 
     public class FrontendLogEntry
     {
+        [RegularExpression("^(?i)(usage|error|warn|info)$")]
         public string Level { get; set; } = "info";
+        [MaxLength(1000)]
         public string Message { get; set; } = "";
+        [MaxLength(100)]
         public string? Context { get; set; }
         public string? VisitorId { get; set; }
         public string? SessionId { get; set; }
     }
 
+    // Anonymous write endpoint: cap the body so it can't be used to flood Loki.
     [HttpPost]
+    [RequestSizeLimit(4096)]
     public IActionResult Log([FromBody] FrontendLogEntry entry)
     {
         // Prefer the browser-generated anonymous ids (stable per browser /

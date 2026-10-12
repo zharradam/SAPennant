@@ -11,7 +11,6 @@ public interface IPennantMatchRepository : IRepository<PennantMatch>
     Task<IEnumerable<string>> GetDistinctYearsAsync();
     Task DeleteByYearAsync(int year);
     Task DeleteByYearPoolRoundAsync(int year, string pool, string round, bool isSenior);
-    Task DeleteFinalsByYearPoolAsync(int year, string pool, bool isSenior);
     Task DeleteByYearPoolAsync(int year, string pool, bool isFinals, bool isSenior);
     Task<IEnumerable<PennantMatch>> SearchByPlayerNameAsync(string query);
     Task<IEnumerable<string>> GetPlayerSuggestionsAsync(string query);
@@ -21,7 +20,7 @@ public interface IPennantMatchRepository : IRepository<PennantMatch>
     Task<IEnumerable<PennantMatch>> GetByClubAsync(string clubName);
     Task<IEnumerable<PennantMatch>> GetHandicapDataAsync();
     Task<IEnumerable<PennantMatch>> GetHandicapHistoryAsync(string playerName);
-    Task<IEnumerable<PennantMatch>> GetTeamMatchesAsync(int year, string pool, bool includeFinals = false);
+    Task<IEnumerable<PennantMatch>> GetTeamMatchesAsync(int year, string pool);
     Task<IEnumerable<PennantMatch>> GetMatchAsync(int year, string pool, string round, string home, string away);
     Task<IEnumerable<string>> GetRoundsListAsync(int year, string pool);
     Task<IEnumerable<PennantMatch>> GetClubMatchesAsync(int year, string pool, string club);
