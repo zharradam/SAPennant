@@ -73,7 +73,10 @@ public class PennantSyncBackgroundService : BackgroundService
                 }
             }
 
-            await Task.Delay(TimeSpan.FromSeconds(30), stoppingToken);
+            // Sleep until the next sync is due, but wake at least every 5 minutes
+            // so admin changes to the interval or toggle still take effect soon.
+            var wait = lastSync.AddMinutes(intervalMinutes) - DateTime.UtcNow;
+            await Task.Delay(TimeSpan.FromMinutes(Math.Clamp(wait.TotalMinutes, 0.5, 5)), stoppingToken);
         }
     }
 

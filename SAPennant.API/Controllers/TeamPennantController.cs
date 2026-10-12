@@ -268,7 +268,10 @@ public class TeamPennantController : ControllerBase
                 var all = await _roundStatuses.GetByYearAsync(year);
                 var poolStatuses = all.Where(r => r.Pool == pool).ToList();
 
-                var activeRound = poolStatuses.FirstOrDefault(r => !r.IsSettled)?.Round;
+                // Earliest unsettled round; database order is not stable, so sort first.
+                var activeRound = poolStatuses
+                    .OrderBy(r => PennantRounds.SortKey(r.Round))
+                    .FirstOrDefault(r => !r.IsSettled)?.Round;
 
                 return new { activeRound };
             });
