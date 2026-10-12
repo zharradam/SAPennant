@@ -1,6 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using SAPennant.API.Data;
 using SAPennant.API.Domain;
+using SAPennant.API.Repositories.Interfaces;
 
 namespace SAPennant.API.Services;
 
@@ -28,7 +29,7 @@ public class PennantSyncBackgroundService : BackgroundService
 
         await Task.Delay(TimeSpan.FromMinutes(5), stoppingToken);
 
-        var lastSync = DateTime.UtcNow;
+        var lastSync = DateTime.MinValue;
         bool? wasEnabled = null;
 
         while (!stoppingToken.IsCancellationRequested)
@@ -37,6 +38,13 @@ public class PennantSyncBackgroundService : BackgroundService
             var settings = scope.ServiceProvider.GetRequiredService<SettingsService>();
             var isEnabled = await settings.GetBoolAsync("AutoSyncEnabled", true);
             var intervalMinutes = await settings.GetIntAsync("PollingIntervalMinutes", 60);
+
+            // The app is unloaded nightly, so the interval is measured from the
+            // last sync recorded in the database (manual ones included), not
+            // from process start.
+            var lastLogged = (await scope.ServiceProvider.GetRequiredService<ISyncLogRepository>().GetLatestAsync())?.SyncedAt;
+            if (lastLogged > lastSync) lastSync = lastLogged.Value;
+
             var nextSync = lastSync.AddMinutes(intervalMinutes);
 
             if (isEnabled != wasEnabled)
