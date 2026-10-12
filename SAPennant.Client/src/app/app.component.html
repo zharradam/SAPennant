@@ -26,7 +26,7 @@
         <button class="nav-tab" [class.active]="activeTab() === 'leaderboard'" (click)="selectTab('leaderboard')">Leaderboard</button>
         <button class="nav-tab" [class.active]="activeTab() === 'handicap'"    (click)="selectTab('handicap')">Handicap</button>
         <button class="nav-tab" [class.active]="activeTab() === 'honour-roll'" (click)="selectTab('honour-roll')">Honour Roll</button>
-        <button class="nav-tab" [class.active]="activeTab() === 'admin'"       (click)="selectTab('admin')">Admin</button>
+        <button class="nav-tab" *ngIf="auth.isAuthenticated()" [class.active]="activeTab() === 'admin'" (click)="selectTab('admin')">Admin</button>
       </div>
       <div class="nav-right">
         <div class="nav-updated">
@@ -65,7 +65,7 @@
     <button class="drawer-tab" [class.active]="activeTab() === 'honour-roll'" (click)="selectTab('honour-roll')">
       <span class="drawer-dot"></span>Honour Roll
     </button>
-    <button class="drawer-tab" [class.active]="activeTab() === 'admin'"       (click)="selectTab('admin')">
+    <button class="drawer-tab" *ngIf="auth.isAuthenticated()" [class.active]="activeTab() === 'admin'" (click)="selectTab('admin')">
       <span class="drawer-dot"></span>Admin
     </button>
   </div>

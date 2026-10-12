@@ -5,6 +5,7 @@ import { retry, switchMap } from 'rxjs/operators';
 import { interval } from 'rxjs';
 import { buildInfo } from '../environments/build-info';
 import { LoggingService } from './logging.service';
+import { AuthService } from './auth.service';
 
 type TabName = 'team' | 'search' | 'club' | 'leaderboard' | 'handicap' | 'honour-roll' | 'admin';
 
@@ -48,7 +49,8 @@ export class App implements OnInit, AfterViewInit {
   constructor(
     private pennant: PennantService,
     private insights: InsightsService,
-    private logging: LoggingService
+    private logging: LoggingService,
+    public auth: AuthService
   ) {}
 
   ngOnInit(): void {
