@@ -266,7 +266,7 @@ body {
   }
 
   .lbl {
-    font-size: 10px;
+    font-size: 11px;
     color: #aaa;
     text-transform: uppercase;
     letter-spacing: 0.06em;
@@ -380,7 +380,7 @@ body {
   }
 
   .sort-icon {
-    font-size: 10px;
+    font-size: 11px;
     opacity: 0.5;
     margin-left: 2px;
   }
@@ -501,7 +501,7 @@ body {
     h1 { font-size: 26px; letter-spacing: -0.5px; }
     p { font-size: 13px; margin-bottom: 1rem; }
 
-    &::before { font-size: 9px; margin-bottom: 8px; }
+    &::before { margin-bottom: 8px; }
   }
 
   .search-wrap {
