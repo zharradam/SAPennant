@@ -1,4 +1,4 @@
-import { Component, signal, OnInit, ViewChild, ElementRef, AfterViewInit } from '@angular/core';
+import { Component, signal, OnInit, ViewChild, ElementRef, AfterViewInit, HostListener } from '@angular/core';
 import { PennantService } from './pennant.service';
 import { InsightsService } from './insights.service';
 import { retry, switchMap } from 'rxjs/operators';
@@ -10,6 +10,22 @@ import { AuthService } from './auth.service';
 type TabName = 'team' | 'search' | 'club' | 'leaderboard' | 'handicap' | 'honour-roll' | 'admin';
 
 const TAB_NAMES: readonly TabName[] = ['team', 'search', 'club', 'leaderboard', 'handicap', 'honour-roll', 'admin'];
+
+// Keep in step with index.html and scripts/generate-static-routes.js.
+const TAB_TITLES: Record<TabName, string> = {
+  'team': 'SA Pennant Golf | South Australian Pennant Scores & Stats',
+  'search': 'Player Search | SA Pennant Golf',
+  'club': 'Club Search | SA Pennant Golf',
+  'leaderboard': 'Leaderboard | SA Pennant Golf',
+  'handicap': 'Handicap Tracker | SA Pennant Golf',
+  'honour-roll': 'Honour Roll | SA Pennant Golf',
+  'admin': 'Admin | SA Pennant Golf',
+};
+
+export function tabFromPath(pathname: string): TabName | null {
+  const segment = pathname.replace(/\/+$/, '').split('/').pop() ?? '';
+  return (TAB_NAMES as readonly string[]).includes(segment) ? (segment as TabName) : null;
+}
 
 @Component({
   selector: 'sa-pennant-root',
@@ -75,7 +91,7 @@ export class App implements OnInit, AfterViewInit {
 
     // Restore the tab from the URL path (shareable links), then let a
     // ?player= param force the search tab as before.
-    const initialTab = this.tabFromPath(window.location.pathname);
+    const initialTab = tabFromPath(window.location.pathname);
     if (initialTab) this.activeTab.set(initialTab);
 
     const params = new URLSearchParams(window.location.search);
@@ -84,7 +100,8 @@ export class App implements OnInit, AfterViewInit {
     }
 
     window.addEventListener('popstate', () => {
-      this.activeTab.set(this.tabFromPath(window.location.pathname) ?? 'team');
+      this.activeTab.set(tabFromPath(window.location.pathname) ?? 'team');
+      document.title = TAB_TITLES[this.activeTab()];
       this.menuOpen.set(false);
     });
 
@@ -168,9 +185,10 @@ export class App implements OnInit, AfterViewInit {
     this.selectTab('search');
   }
 
-  private tabFromPath(pathname: string): TabName | null {
-    const segment = pathname.replace(/\/+$/, '').split('/').pop() ?? '';
-    return (TAB_NAMES as readonly string[]).includes(segment) ? (segment as TabName) : null;
+  @HostListener('document:keydown.escape')
+  onEscape(): void {
+    if (this.aboutOpen()) this.closeAbout();
+    if (this.menuOpen()) this.menuOpen.set(false);
   }
 
   get lastUpdated() {
@@ -187,6 +205,8 @@ export class App implements OnInit, AfterViewInit {
     this.logging.usage('tab', tab);
     this.insights.trackTabView(tab);
     this.checkMaintenance();
+    document.title = TAB_TITLES[tab];
+    window.scrollTo(0, 0);
 
     const path = tab === 'team' ? '/' : `/${tab}`;
     if (window.location.pathname !== path) {

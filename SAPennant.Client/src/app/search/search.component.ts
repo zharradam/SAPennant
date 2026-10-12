@@ -1,8 +1,8 @@
 import { Component, OnInit, signal } from '@angular/core';
 import { PennantService } from '../pennant.service';
 import { PlayerMatch } from '../models/pennant.models';
-import { Subject } from 'rxjs';
-import { debounceTime, distinctUntilChanged, switchMap } from 'rxjs/operators';
+import { EMPTY, Subject } from 'rxjs';
+import { catchError, debounceTime, switchMap } from 'rxjs/operators';
 import { InsightsService } from '../insights.service';
 import { getClubLogo } from '../data/club-logos';
 import { LoggingService } from '../logging.service';
@@ -19,6 +19,7 @@ export class SearchComponent implements OnInit {
   allResults: PlayerMatch[] = [];
   isLoading = signal(false);
   isSlowResponse = signal(false);
+  loadError = signal(false);
   hasSearched = false;
   suggestions = signal<string[]>([]);
   showSuggestions = signal(false);
@@ -35,8 +36,6 @@ export class SearchComponent implements OnInit {
     private logging: LoggingService
   ) {
     this.searchSubject.pipe(
-      debounceTime(0),
-      distinctUntilChanged(),
       switchMap(q => {
         if (!q || q.length < 2) {
           this.allResults = [];
@@ -46,24 +45,28 @@ export class SearchComponent implements OnInit {
           return [];
         }
         this.isLoading.set(true);
+        this.loadError.set(false);
         this.isSlowResponse.set(false);
         clearTimeout(this.slowTimeout);
         this.slowTimeout = setTimeout(() => this.isSlowResponse.set(true), 2000);
         this.hasSearched = true;
-        return this.pennant.search(q, this.searchSource);
+        // Catch inside switchMap: an error reaching the outer subscribe would
+        // end it, leaving the search box dead until reload.
+        return this.pennant.search(q, this.searchSource).pipe(
+          catchError(err => {
+            clearTimeout(this.slowTimeout);
+            this.isSlowResponse.set(false);
+            this.logging.error(`Search failed for "${this.query}": ${err?.message ?? err}`, 'SearchComponent');
+            this.loadError.set(true);
+            this.isLoading.set(false);
+            return EMPTY;
+          })
+        );
       })
-    ).subscribe({
-      next: (data) => {
-        clearTimeout(this.slowTimeout);
-        this.isSlowResponse.set(false);
-        this.handleSearchResults(data);
-      },
-      error: (err) => {
-        clearTimeout(this.slowTimeout);
-        this.isSlowResponse.set(false);
-        this.logging.error(`Search failed for "${this.query}": ${err?.message ?? err}`, 'SearchComponent');
-        this.isLoading.set(false);
-      }
+    ).subscribe(data => {
+      clearTimeout(this.slowTimeout);
+      this.isSlowResponse.set(false);
+      this.handleSearchResults(data);
     });
 
     this.suggestSubject.pipe(
@@ -126,6 +129,10 @@ export class SearchComponent implements OnInit {
     setTimeout(() => this.showSuggestions.set(false), 200);
   }
 
+  retry(): void {
+    this.executeSearch(this.query, this.searchSource);
+  }
+
   get playerClub(): string {
     if (this.allResults.length === 0) return '';
     return [...this.allResults]
@@ -158,6 +165,7 @@ export class SearchComponent implements OnInit {
   private executeSearch(query: string, source: string = 'search'): void {
     this.searchSource = source;
     this.isLoading.set(true);
+    this.loadError.set(false);
     this.isSlowResponse.set(false);
     clearTimeout(this.slowTimeout);
     this.slowTimeout = setTimeout(() => this.isSlowResponse.set(true), 2000);
@@ -172,6 +180,7 @@ export class SearchComponent implements OnInit {
         clearTimeout(this.slowTimeout);
         this.isSlowResponse.set(false);
         this.logging.error(`Search failed for "${query}": ${err?.message ?? err}`, 'SearchComponent');
+        this.loadError.set(true);
         this.isLoading.set(false);
       }
     });

@@ -9,28 +9,28 @@
   <div class="content">
     <div class="filters">
       <div class="filter-group">
-        <label>Competition</label>
-        <select [(ngModel)]="selectedCompetition" (ngModelChange)="onCompetitionChange()">
+        <label for="hr-competition">Competition</label>
+        <select id="hr-competition" [(ngModel)]="selectedCompetition" (ngModelChange)="onCompetitionChange()">
           <option *ngFor="let c of competitions" [ngValue]="c">{{ c }} Pennant</option>
         </select>
       </div>
       <div class="filter-group">
-        <label>Pool</label>
-        <select [(ngModel)]="selectedPool" (ngModelChange)="load()">
+        <label for="hr-pool">Pool</label>
+        <select id="hr-pool" [(ngModel)]="selectedPool" (ngModelChange)="load()">
           <option value="">All pools</option>
           <option *ngFor="let p of pools" [ngValue]="p">{{ p }}</option>
         </select>
       </div>
       <div class="filter-group">
-        <label>Club</label>
-        <select [(ngModel)]="selectedClub" (ngModelChange)="load()">
+        <label for="hr-club">Club</label>
+        <select id="hr-club" [(ngModel)]="selectedClub" (ngModelChange)="load()">
           <option value="">All clubs</option>
           <option *ngFor="let c of clubs" [ngValue]="c">{{ c }}</option>
         </select>
       </div>
       <div class="filter-group">
-        <label>Group by</label>
-        <select [(ngModel)]="groupBy">
+        <label for="hr-group-by">Group by</label>
+        <select id="hr-group-by" [(ngModel)]="groupBy">
           <option value="year">Year</option>
           <option value="pool">Pool</option>
         </select>
@@ -47,11 +47,15 @@
       </div>
     </div>
 
-    <div class="status loading" *ngIf="isLoading()">
+    <div class="status loading" role="status" *ngIf="isLoading()">
       <span class="spinner"></span> Loading honour roll…
     </div>
 
-    <ng-container *ngIf="!isLoading()">
+    <div class="status" role="alert" *ngIf="loadError()">
+      Couldn't load results. <button type="button" class="link-btn" (click)="load()">Try again</button>
+    </div>
+
+    <ng-container *ngIf="!isLoading() && !loadError()">
       <div class="results-count">{{ results().length }} records</div>
 
       <!-- Group by year -->

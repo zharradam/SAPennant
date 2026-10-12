@@ -17,6 +17,8 @@ export class AuthService {
     const token = this.getToken();
     if (token && !this.isTokenExpired(token)) {
       this.isAuthenticated.set(true);
+    } else if (token) {
+      this.logout();
     }
   }
 

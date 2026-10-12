@@ -15,6 +15,7 @@
             (blur)="hideSuggestions()"
             (focus)="showSuggestions.set(suggestions().length > 0)"
             placeholder="Search by player name…"
+            aria-label="Player name"
             autocomplete="off"
           />
           <div class="suggestions" *ngIf="showSuggestions()">
@@ -34,8 +35,12 @@
 
   <div class="content">
 
-    <div class="status loading" *ngIf="isLoading()">
+    <div class="status loading" role="status" *ngIf="isLoading()">
       <span class="spinner"></span> {{ isSlowResponse() ? 'Almost there, API is waking up…' : 'Searching…' }}
+    </div>
+
+    <div class="status" role="alert" *ngIf="loadError()">
+      Couldn't load results. <button type="button" class="link-btn" (click)="retry()">Try again</button>
     </div>
 
     <ng-container *ngIf="!isLoading() && allResults.length > 0">
@@ -68,7 +73,7 @@
 
     </ng-container>
 
-    <div class="no-results" *ngIf="!isLoading() && hasSearched && allResults.length === 0">
+    <div class="no-results" *ngIf="!isLoading() && !loadError() && hasSearched && allResults.length === 0">
       <div class="empty-icon">
         <svg width="52" height="52" viewBox="0 0 52 52" fill="none" xmlns="http://www.w3.org/2000/svg" opacity="0.35">
           <circle cx="22" cy="22" r="13" stroke="#1a2f5a" stroke-width="2.5"/>

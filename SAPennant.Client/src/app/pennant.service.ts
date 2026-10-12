@@ -43,8 +43,8 @@ export class PennantService {
     return this.http.get<any[]>(`${this.API_URL}/search/leaderboard?${query.toString()}`);
   }
 
-  getLastUpdated(): Observable<{ lastUpdated: string; display: string }> {
-    return this.http.get<{ lastUpdated: string; display: string }>(`${this.API_URL}/search/last-updated`);
+  getLastUpdated(): Observable<{ lastUpdated: string }> {
+    return this.http.get<{ lastUpdated: string }>(`${this.API_URL}/search/last-updated`);
   }
 
   getAdminSeasons(): Observable<any[]> {
@@ -93,7 +93,12 @@ export class PennantService {
 
   refreshLastUpdated(): Observable<void> {
     return this.getLastUpdated().pipe(
-      tap(data => this.lastUpdated.set(data.display)),
+      // Format in the viewer's zone; "12 Oct 2026 3:45 pm" like the old server string.
+      tap(data => this.lastUpdated.set(
+        new Date(data.lastUpdated)
+          .toLocaleString('en-AU', { day: 'numeric', month: 'short', year: 'numeric', hour: 'numeric', minute: '2-digit' })
+          .replace(',', '')
+      )),
       map(() => void 0)
     );
   }

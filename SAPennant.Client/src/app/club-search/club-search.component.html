@@ -15,6 +15,7 @@
             (blur)="hideSuggestions()"
             (focus)="showSuggestions.set(suggestions().length > 0)"
             placeholder="Search by club name…"
+            aria-label="Club name"
             autocomplete="off"
           />
           <div class="suggestions" *ngIf="showSuggestions()">
@@ -34,9 +35,13 @@
 
   <div class="content">
 
-    <div class="status loading" *ngIf="isLoading()">
+    <div class="status loading" role="status" *ngIf="isLoading()">
       <span class="spinner"></span>
       {{ isSlowResponse() ? 'Almost there, API is waking up…' : 'Searching…' }}
+    </div>
+
+    <div class="status" role="alert" *ngIf="loadError()">
+      Couldn't load results. <button type="button" class="link-btn" (click)="doSearch()">Try again</button>
     </div>
 
     <ng-container *ngIf="!isLoading() && players.length > 0">
@@ -77,49 +82,53 @@
       </div>
 
       <div class="year-filter" *ngIf="availableYears.length > 1">
-        <div
+        <button
+          type="button"
           *ngFor="let year of availableYears"
           class="year-chip"
           [class.active]="selectedYears.has(year)"
+          [attr.aria-pressed]="selectedYears.has(year)"
           (click)="toggleYear(year)"
         >
           {{ year }}
           <span class="year-count">{{ yearCount(year) }}</span>
-        </div>
+        </button>
       </div>
 
       <div class="year-filter" *ngIf="availablePools.length > 1">
-        <div
+        <button
+          type="button"
           *ngFor="let pool of availablePools"
           class="pool-chip"
           [class.active]="selectedPools.has(pool)"
+          [attr.aria-pressed]="selectedPools.has(pool)"
           (click)="togglePool(pool)"
         >
           {{ pool }}
           <span class="year-count">{{ poolCount(pool) }}</span>
-        </div>
+        </button>
       </div>
 
       <table class="club-table">
         <thead>
           <tr>
-            <th class="sortable" (click)="setSort('playerName')" [class.sort-active]="sortCol === 'playerName'">
-              Player <span class="sort-icon">{{ sortCol === 'playerName' ? (sortDir === 'asc' ? '↑' : '↓') : '↕' }}</span>
+            <th class="sortable" [class.sort-active]="sortCol === 'playerName'" [attr.aria-sort]="ariaSort('playerName')">
+              <button type="button" class="link-btn" (click)="setSort('playerName')">Player <span class="sort-icon">{{ sortCol === 'playerName' ? (sortDir === 'asc' ? '↑' : '↓') : '↕' }}</span></button>
             </th>
-            <th class="sortable" (click)="setSort('played')" [class.sort-active]="sortCol === 'played'">
-              P <span class="sort-icon">{{ sortCol === 'played' ? (sortDir === 'asc' ? '↑' : '↓') : '↕' }}</span>
+            <th class="sortable" [class.sort-active]="sortCol === 'played'" [attr.aria-sort]="ariaSort('played')">
+              <button type="button" class="link-btn" (click)="setSort('played')">P <span class="sort-icon">{{ sortCol === 'played' ? (sortDir === 'asc' ? '↑' : '↓') : '↕' }}</span></button>
             </th>
-            <th class="sortable" (click)="setSort('wins')" [class.sort-active]="sortCol === 'wins'">
-              W <span class="sort-icon">{{ sortCol === 'wins' ? (sortDir === 'asc' ? '↑' : '↓') : '↕' }}</span>
+            <th class="sortable" [class.sort-active]="sortCol === 'wins'" [attr.aria-sort]="ariaSort('wins')">
+              <button type="button" class="link-btn" (click)="setSort('wins')">W <span class="sort-icon">{{ sortCol === 'wins' ? (sortDir === 'asc' ? '↑' : '↓') : '↕' }}</span></button>
             </th>
-            <th class="sortable" (click)="setSort('losses')" [class.sort-active]="sortCol === 'losses'">
-              L <span class="sort-icon">{{ sortCol === 'losses' ? (sortDir === 'asc' ? '↑' : '↓') : '↕' }}</span>
+            <th class="sortable" [class.sort-active]="sortCol === 'losses'" [attr.aria-sort]="ariaSort('losses')">
+              <button type="button" class="link-btn" (click)="setSort('losses')">L <span class="sort-icon">{{ sortCol === 'losses' ? (sortDir === 'asc' ? '↑' : '↓') : '↕' }}</span></button>
             </th>
-            <th class="sortable" (click)="setSort('halved')" [class.sort-active]="sortCol === 'halved'">
-              H <span class="sort-icon">{{ sortCol === 'halved' ? (sortDir === 'asc' ? '↑' : '↓') : '↕' }}</span>
+            <th class="sortable" [class.sort-active]="sortCol === 'halved'" [attr.aria-sort]="ariaSort('halved')">
+              <button type="button" class="link-btn" (click)="setSort('halved')">H <span class="sort-icon">{{ sortCol === 'halved' ? (sortDir === 'asc' ? '↑' : '↓') : '↕' }}</span></button>
             </th>
-            <th class="sortable" (click)="setSort('winRate')" [class.sort-active]="sortCol === 'winRate'">
-              Win % <span class="sort-icon">{{ sortCol === 'winRate' ? (sortDir === 'asc' ? '↑' : '↓') : '↕' }}</span>
+            <th class="sortable" [class.sort-active]="sortCol === 'winRate'" [attr.aria-sort]="ariaSort('winRate')">
+              <button type="button" class="link-btn" (click)="setSort('winRate')">Win % <span class="sort-icon">{{ sortCol === 'winRate' ? (sortDir === 'asc' ? '↑' : '↓') : '↕' }}</span></button>
             </th>
           </tr>
         </thead>
@@ -127,6 +136,10 @@
           <tr
             *ngFor="let p of players"
             (click)="goToPlayer(p.playerName)"
+            tabindex="0"
+            role="button"
+            (keydown.enter)="goToPlayer(p.playerName)"
+            (keydown.space)="goToPlayer(p.playerName); $event.preventDefault()"
             class="club-row"
             title="View {{ p.playerName }}'s match history"
           >
@@ -142,7 +155,7 @@
 
     </ng-container>
 
-    <div class="no-results" *ngIf="!isLoading() && hasSearched && players.length === 0">
+    <div class="no-results" *ngIf="!isLoading() && !loadError() && hasSearched && players.length === 0">
       <div class="empty-icon">
         <svg width="52" height="52" viewBox="0 0 52 52" fill="none" xmlns="http://www.w3.org/2000/svg" opacity="0.35">
           <circle cx="22" cy="22" r="13" stroke="#1a2f5a" stroke-width="2.5"/>

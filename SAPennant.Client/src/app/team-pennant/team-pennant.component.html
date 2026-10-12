@@ -9,30 +9,34 @@
   <div class="content">
     <div class="filters">
       <div class="filter-group">
-        <label>Year</label>
-        <select [(ngModel)]="selectedYear" (ngModelChange)="load()">
+        <label for="tp-year">Year</label>
+        <select id="tp-year" [(ngModel)]="selectedYear" (ngModelChange)="load()">
           <option *ngFor="let y of years" [ngValue]="y">{{ y }}</option>
         </select>
       </div>
       <div class="filter-group">
-        <label>Division</label>
-        <select [(ngModel)]="selectedDivision" (ngModelChange)="onDivisionChange()">
+        <label for="tp-division">Division</label>
+        <select id="tp-division" [(ngModel)]="selectedDivision" (ngModelChange)="onDivisionChange()">
           <option value="">All divisions</option>
           <option *ngFor="let d of divisions" [ngValue]="d">{{ d }}</option>
         </select>
       </div>
       <div class="filter-group">
-        <label>Pool</label>
-        <select [(ngModel)]="selectedPool" (ngModelChange)="load()">
+        <label for="tp-pool">Pool</label>
+        <select id="tp-pool" [(ngModel)]="selectedPool" (ngModelChange)="load()">
           <option *ngFor="let p of filteredPools" [ngValue]="p">{{ p }}</option>
         </select>
       </div>
       <div class="filter-group">
-        <label>Round</label>
-        <select [(ngModel)]="selectedRound" (ngModelChange)="loadRound()">
+        <label for="tp-round">Round</label>
+        <select id="tp-round" [(ngModel)]="selectedRound" (ngModelChange)="loadRound()">
           <option *ngFor="let r of rounds" [ngValue]="r">{{ r }}</option>
         </select>
       </div>
+    </div>
+
+    <div class="status" role="alert" *ngIf="loadError()">
+      Couldn't load results. <button type="button" class="link-btn" (click)="retry()">Try again</button>
     </div>
 
     <div class="champion-banner" *ngIf="champion()">
@@ -56,7 +60,7 @@
           Season Standings
           <span class="active-round-badge" *ngIf="activeRound()">{{ activeRound() }} in progress</span>
         </div>
-        <div class="status loading" *ngIf="isLoadingLeaderboard()">
+        <div class="status loading" role="status" *ngIf="isLoadingLeaderboard()">
           <span class="spinner"></span> Loading standings…
         </div>
 
@@ -76,7 +80,12 @@
             </thead>
             <tbody>
               <ng-container *ngFor="let row of leaderboard(); let i = index">
-                <tr (click)="toggleClub(row.club)" 
+                <tr (click)="toggleClub(row.club)"
+                    tabindex="0"
+                    role="button"
+                    [attr.aria-expanded]="isClubExpanded(row.club)"
+                    (keydown.enter)="toggleClub(row.club)"
+                    (keydown.space)="toggleClub(row.club); $event.preventDefault()"
                     style="cursor: pointer;">
                   <td class="rank">
                     <span class="rank-badge"
@@ -113,14 +122,19 @@
 
                 <tr *ngIf="isClubExpanded(row.club)">
                   <td colspan="8" class="club-rounds-cell">
-                    <div class="status loading" *ngIf="isLoadingClubRounds()">
+                    <div class="status loading" role="status" *ngIf="isLoadingClubRounds()">
                       <span class="spinner"></span> Loading rounds…
                     </div>
                     <table class="club-rounds-table" *ngIf="!isLoadingClubRounds()">
                       <tbody>
-                        <tr *ngFor="let r of expandedClubRounds()" (click)="navigateToRound(r.round, r.opponent, r.isHome)" style="cursor: pointer;">
+                        <tr *ngFor="let r of expandedClubRounds()"
+                            (click)="navigateToRound(r.round, r.opponent, r.isHome)"
+                            tabindex="0"
+                            role="button"
+                            (keydown.enter)="navigateToRound(r.round, r.opponent, r.isHome)"
+                            (keydown.space)="navigateToRound(r.round, r.opponent, r.isHome); $event.preventDefault()"
+                            style="cursor: pointer;">
                           <td class="club-round-round">{{ r.round }}</td>
-                          <td class="club-round-score-cell">
                           <td class="club-round-score-cell">
                             <div class="club-score-area">
                               <div class="club-arrow-spacer left">
@@ -165,12 +179,17 @@
             </span>
           </div>
 
-        <div class="status loading" *ngIf="isLoadingRound()">
+        <div class="status loading" role="status" *ngIf="isLoadingRound()">
           <span class="spinner"></span> Loading round…
         </div>
 
         <ng-container *ngIf="!isLoadingRound()">
-          <div class="match-card" *ngFor="let match of roundMatches()" (click)="toggleMatch(match)">
+          <div class="match-card" *ngFor="let match of roundMatches()" (click)="toggleMatch(match)"
+               tabindex="0"
+               role="button"
+               [attr.aria-expanded]="isExpanded(match)"
+               (keydown.enter)="onCardKey($event, match)"
+               (keydown.space)="onCardKey($event, match)">
             <div class="match-header">
               <div class="match-team">
                 <span [class.team-name-win]="getMatchResult(match.homePoints, match.awayPoints) === 'home'"
@@ -209,7 +228,7 @@
             </div>
 
             <div class="match-detail" *ngIf="isExpanded(match)">
-              <div class="status loading" *ngIf="isLoadingMatch()">
+              <div class="status loading" role="status" *ngIf="isLoadingMatch()">
                 <span class="spinner"></span> Loading match…
               </div>
               <div class="detail-table-wrap">
@@ -223,21 +242,19 @@
                   </thead>
                   <tbody>
                     <tr *ngFor="let p of expandedMatchPlayers()">
-                      <td class="player-name" 
-                          [class.won]="p.playerWon === true" 
-                          [class.lost]="p.playerWon === false" 
-                          [class.halved]="p.playerWon === null"
-                          (click)="openPlayerModal(p.playerName); $event.stopPropagation()">
-                        {{ p.playerName }}
+                      <td class="player-name"
+                          [class.won]="p.playerWon === true"
+                          [class.lost]="p.playerWon === false"
+                          [class.halved]="p.playerWon === null">
+                        <button type="button" class="link-btn" (click)="openPlayerModal(p.playerName); $event.stopPropagation()">{{ p.playerName }}</button>
                       </td>
                       <td class="num result-cell">
                         <span class="result-badge" [class.badge-won]="p.playerWon === true" [class.badge-lost]="p.playerWon === false" [class.badge-halved]="p.playerWon === null">
                           {{ formatResult(p.result, p.playerWon) }}
                         </span>
                       </td>
-                      <td class="opponent-name" 
-                          (click)="openPlayerModal(p.opponentName); $event.stopPropagation()">
-                        {{ p.opponentName }}
+                      <td class="opponent-name">
+                        <button type="button" class="link-btn" (click)="openPlayerModal(p.opponentName); $event.stopPropagation()">{{ p.opponentName }}</button>
                       </td>
                     </tr>
                   </tbody>

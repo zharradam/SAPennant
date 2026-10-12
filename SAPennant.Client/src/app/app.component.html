@@ -20,13 +20,13 @@
         <div class="nav-brand-sub">South Australia</div>
       </div>
       <div class="nav-tabs">
-        <button class="nav-tab" [class.active]="activeTab() === 'team'"        (click)="selectTab('team')">Team Results</button>
-        <button class="nav-tab" [class.active]="activeTab() === 'search'"      (click)="selectTab('search')">Player Search</button>
-        <button class="nav-tab" [class.active]="activeTab() === 'club'"        (click)="selectTab('club')">Club Search</button>
-        <button class="nav-tab" [class.active]="activeTab() === 'leaderboard'" (click)="selectTab('leaderboard')">Leaderboard</button>
-        <button class="nav-tab" [class.active]="activeTab() === 'handicap'"    (click)="selectTab('handicap')">Handicap</button>
-        <button class="nav-tab" [class.active]="activeTab() === 'honour-roll'" (click)="selectTab('honour-roll')">Honour Roll</button>
-        <button class="nav-tab" *ngIf="auth.isAuthenticated()" [class.active]="activeTab() === 'admin'" (click)="selectTab('admin')">Admin</button>
+        <button class="nav-tab" [class.active]="activeTab() === 'team'"        [attr.aria-current]="activeTab() === 'team' ? 'page' : null"        (click)="selectTab('team')">Team Results</button>
+        <button class="nav-tab" [class.active]="activeTab() === 'search'"      [attr.aria-current]="activeTab() === 'search' ? 'page' : null"      (click)="selectTab('search')">Player Search</button>
+        <button class="nav-tab" [class.active]="activeTab() === 'club'"        [attr.aria-current]="activeTab() === 'club' ? 'page' : null"        (click)="selectTab('club')">Club Search</button>
+        <button class="nav-tab" [class.active]="activeTab() === 'leaderboard'" [attr.aria-current]="activeTab() === 'leaderboard' ? 'page' : null" (click)="selectTab('leaderboard')">Leaderboard</button>
+        <button class="nav-tab" [class.active]="activeTab() === 'handicap'"    [attr.aria-current]="activeTab() === 'handicap' ? 'page' : null"    (click)="selectTab('handicap')">Handicap</button>
+        <button class="nav-tab" [class.active]="activeTab() === 'honour-roll'" [attr.aria-current]="activeTab() === 'honour-roll' ? 'page' : null" (click)="selectTab('honour-roll')">Honour Roll</button>
+        <button class="nav-tab" *ngIf="auth.isAuthenticated()" [class.active]="activeTab() === 'admin'" [attr.aria-current]="activeTab() === 'admin' ? 'page' : null" (click)="selectTab('admin')">Admin</button>
       </div>
       <div class="nav-right">
         <div class="nav-updated">
@@ -37,7 +37,7 @@
             Updated {{ lastUpdated() }}
           </ng-container>
         </div>
-        <button class="hamburger" (click)="toggleMenu()" aria-label="Menu">
+        <button class="hamburger" (click)="toggleMenu()" aria-label="Menu" [attr.aria-expanded]="menuOpen()" aria-controls="nav-drawer">
           <span class="ham-line" [class.open1]="menuOpen()"></span>
           <span class="ham-line" [class.open2]="menuOpen()"></span>
           <span class="ham-line" [class.open3]="menuOpen()"></span>
@@ -46,26 +46,26 @@
     </div>
   </nav>
 
-  <div class="nav-drawer" [class.open]="menuOpen()">
-    <button class="drawer-tab" [class.active]="activeTab() === 'team'" (click)="selectTab('team')">
+  <div class="nav-drawer" id="nav-drawer" [class.open]="menuOpen()" [attr.inert]="menuOpen() ? null : ''">
+    <button class="drawer-tab" [class.active]="activeTab() === 'team'" [attr.aria-current]="activeTab() === 'team' ? 'page' : null" (click)="selectTab('team')">
       <span class="drawer-dot"></span>Team Results
     </button>
-    <button class="drawer-tab" [class.active]="activeTab() === 'search'"      (click)="selectTab('search')">
+    <button class="drawer-tab" [class.active]="activeTab() === 'search'" [attr.aria-current]="activeTab() === 'search' ? 'page' : null" (click)="selectTab('search')">
       <span class="drawer-dot"></span>Player Search
     </button>
-    <button class="drawer-tab" [class.active]="activeTab() === 'club'"        (click)="selectTab('club')">
+    <button class="drawer-tab" [class.active]="activeTab() === 'club'" [attr.aria-current]="activeTab() === 'club' ? 'page' : null" (click)="selectTab('club')">
       <span class="drawer-dot"></span>Club Search
     </button>
-    <button class="drawer-tab" [class.active]="activeTab() === 'leaderboard'" (click)="selectTab('leaderboard')">
+    <button class="drawer-tab" [class.active]="activeTab() === 'leaderboard'" [attr.aria-current]="activeTab() === 'leaderboard' ? 'page' : null" (click)="selectTab('leaderboard')">
       <span class="drawer-dot"></span>Leaderboard
     </button>
-    <button class="drawer-tab" [class.active]="activeTab() === 'handicap'" (click)="selectTab('handicap')">
+    <button class="drawer-tab" [class.active]="activeTab() === 'handicap'" [attr.aria-current]="activeTab() === 'handicap' ? 'page' : null" (click)="selectTab('handicap')">
       <span class="drawer-dot"></span>Handicap
     </button>
-    <button class="drawer-tab" [class.active]="activeTab() === 'honour-roll'" (click)="selectTab('honour-roll')">
+    <button class="drawer-tab" [class.active]="activeTab() === 'honour-roll'" [attr.aria-current]="activeTab() === 'honour-roll' ? 'page' : null" (click)="selectTab('honour-roll')">
       <span class="drawer-dot"></span>Honour Roll
     </button>
-    <button class="drawer-tab" *ngIf="auth.isAuthenticated()" [class.active]="activeTab() === 'admin'" (click)="selectTab('admin')">
+    <button class="drawer-tab" *ngIf="auth.isAuthenticated()" [class.active]="activeTab() === 'admin'" [attr.aria-current]="activeTab() === 'admin' ? 'page' : null" (click)="selectTab('admin')">
       <span class="drawer-dot"></span>Admin
     </button>
   </div>
@@ -78,7 +78,7 @@
   <sa-pennant-honour-roll *ngIf="activeTab() === 'honour-roll'"></sa-pennant-honour-roll>
   <sa-pennant-admin       *ngIf="activeTab() === 'admin'"></sa-pennant-admin>
 
-  <div class="maintenance-overlay" *ngIf="maintenanceMode() && activeTab() !== 'admin'">
+  <div class="maintenance-overlay" role="alert" *ngIf="maintenanceMode() && activeTab() !== 'admin'">
     <div class="maintenance-box">
       <div class="maintenance-icon">🔧</div>
       <h2>System Maintenance</h2>
@@ -99,8 +99,8 @@
   </footer>
 
   <div class="about-overlay" *ngIf="aboutOpen()" (click)="closeAbout()">
-    <div class="about-modal" (click)="$event.stopPropagation()">
-      <button class="about-close" (click)="closeAbout()">✕</button>
+    <div class="about-modal" role="dialog" aria-modal="true" aria-label="About" (click)="$event.stopPropagation()">
+      <button class="about-close" (click)="closeAbout()" aria-label="Close">✕</button>
       <div class="about-title">SA Pennant</div>
       <div class="about-body">
         <p>An unofficial player and club search tool for the South Australian Golf Pennant competition, covering the 2021–2026 season. Built for the SA golf community.</p>
@@ -117,7 +117,7 @@
         <strong>Install this app</strong>
         <span>Tap <span class="ios-share-icon">⬆</span> then <em>Add to Home Screen</em></span>
       </div>
-      <button class="ios-banner-close" (click)="dismissIosBanner()">✕</button>
+      <button class="ios-banner-close" (click)="dismissIosBanner()" aria-label="Close">✕</button>
     </div>
   </div>
 </div>

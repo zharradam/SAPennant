@@ -713,7 +713,7 @@
   }
 }
 
-.player-name, .opponent-name {
-  cursor: pointer;
+.player-name .link-btn, .opponent-name .link-btn {
+  text-decoration: underline dotted;
   &:hover { text-decoration: underline; }
 }

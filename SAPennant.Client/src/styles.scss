@@ -421,6 +421,7 @@ body {
   padding: 5px 14px;
   font-size: 13px;
   font-weight: 500;
+  font-family: inherit;
   border: 1.5px solid #d0d0ce;
   border-radius: 99px;
   background: #fff;
@@ -544,6 +545,25 @@ body {
 
   .footer-centre,
   .footer-right { position: static; transform: none; }
+}
+
+/* Text that acts as a button: real <button> for keyboard/screen readers,
+   styled to look exactly like the surrounding text. */
+.link-btn {
+  background: none;
+  border: 0;
+  padding: 0;
+  margin: 0;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+  text-align: inherit;
+}
+
+/* iOS Safari zooms the page when a focused field is under 16px; !important
+   beats the component-scoped 14–15px rules. */
+@media (max-width: 768px) {
+  input, select, textarea { font-size: 16px !important; }
 }
 
 /* ── Browser surfaces ── */

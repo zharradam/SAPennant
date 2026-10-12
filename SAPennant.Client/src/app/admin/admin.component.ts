@@ -114,11 +114,9 @@ export class AdminComponent implements OnInit {
     this.authError.set(null);
     this.auth.login(this.usernameInput, this.passwordInput).subscribe({
       next: () => {
-        this.logging.info(`Admin login successful: "${this.usernameInput}"`, 'AdminComponent');
         this.loadAdminData();
       },
       error: (err) => {
-        this.logging.warn(`Admin login failed for "${this.usernameInput}": status ${err.status}`, 'AdminComponent');
         if (err.status === 429) {
           this.authError.set('Too many login attempts. Please wait before trying again.');
         } else if (err.status === 401) {

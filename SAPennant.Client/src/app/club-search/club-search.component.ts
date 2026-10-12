@@ -24,6 +24,7 @@ export class ClubSearchComponent {
   suggestions = signal<string[]>([]);
   showSuggestions = signal(false);
   isSlowResponse = signal(false);
+  loadError = signal(false);
   slowTimeout: any = null;
 
   availableYears: number[] = [];
@@ -81,6 +82,7 @@ export class ClubSearchComponent {
     this.logging.usage('club', this.selectedClub);
     this.insights.trackEvent('ClubSearch', { club: this.selectedClub });
     this.isLoading.set(true);
+    this.loadError.set(false);
     this.isSlowResponse.set(false);
     clearTimeout(this.slowTimeout);
     this.slowTimeout = setTimeout(() => this.isSlowResponse.set(true), 2000);
@@ -100,6 +102,7 @@ export class ClubSearchComponent {
         clearTimeout(this.slowTimeout);
         this.isSlowResponse.set(false);
         this.logging.error(`Club search failed for "${this.selectedClub}": ${err?.message ?? err}`, 'ClubSearchComponent');
+        this.loadError.set(true);
         this.isLoading.set(false);
       }
     });
@@ -132,6 +135,10 @@ export class ClubSearchComponent {
       this.sortCol = col;
       this.sortDir = col === 'playerName' ? 'asc' : 'desc';
     }
+  }
+
+  ariaSort(col: string): string | null {
+    return this.sortCol === col ? (this.sortDir === 'asc' ? 'ascending' : 'descending') : null;
   }
 
   get players(): ClubPlayer[] {

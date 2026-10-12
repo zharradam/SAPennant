@@ -11,6 +11,8 @@ export class TeamPennantComponent implements OnInit {
   isLoadingLeaderboard = signal(false);
   isLoadingRound = signal(false);
   isLoadingMatch = signal(false);
+  loadError = signal(false);
+  private loadSeq = 0;
 
   leaderboard = signal<any[]>([]);
   roundMatches = signal<any[]>([]);
@@ -41,8 +43,11 @@ export class TeamPennantComponent implements OnInit {
   constructor(private pennant: PennantService) {}
 
   ngOnInit(): void {
+    const seq = ++this.loadSeq;
+    this.loadError.set(false);
     this.pennant.getFilters(new Date().getFullYear()).subscribe({
       next: filters => {
+        if (seq !== this.loadSeq) return;
         this.years = filters.years;
         this.divisions = filters.divisions;
         this.divisionPools = filters.divisionPools;
@@ -59,80 +64,97 @@ export class TeamPennantComponent implements OnInit {
           this.selectedPool = this.filteredPools.includes('Simpson Cup') 
             ? 'Simpson Cup' 
             : this.filteredPools[0];
-          this.loadRoundsList();
+          this.loadRoundsList(seq);
         }
       },
-      error: () => {
-        setTimeout(() => this.ngOnInit(), 3000);
-      }
+      error: () => this.loadError.set(true)
     });
   }
 
+  retry(): void {
+    if (this.selectedPool) this.load(); else this.ngOnInit();
+  }
+
+  // Each user-triggered load bumps loadSeq; responses from an older sequence
+  // are dropped so a slow earlier request can't overwrite a newer selection.
+  // Chained loads pass the parent's seq so they stay in the same generation.
   load(): void {
     if (!this.selectedYear || !this.selectedPool) return;
+    const seq = ++this.loadSeq;
+    this.loadError.set(false);
     this.expandedMatch.set(null);
     this.expandedMatchPlayers.set([]);
     this.expandedClub.set(null);
     this.expandedClubRounds.set([]);
-    this.pennant.getFilters(this.selectedYear).subscribe(filters => {
-      this.pools = filters.pools;
-      this.divisionPools = filters.divisionPools;
-      this.divisions = filters.divisions;
+    this.pennant.getFilters(this.selectedYear).subscribe({
+      next: filters => {
+        if (seq !== this.loadSeq) return;
+        this.pools = filters.pools;
+        this.divisionPools = filters.divisionPools;
+        this.divisions = filters.divisions;
 
-      // Reset division if it no longer exists for the selected year
-      if (this.selectedDivision && !this.divisions.includes(this.selectedDivision)) {
-        this.selectedDivision = '';
-      }
+        // Reset division if it no longer exists for the selected year
+        if (this.selectedDivision && !this.divisions.includes(this.selectedDivision)) {
+          this.selectedDivision = '';
+        }
 
-      this.filteredPools = this.selectedDivision
-        ? (this.divisionPools[this.selectedDivision] ?? filters.pools)
-        : filters.pools;
-      if (!this.filteredPools.includes(this.selectedPool)) {
-        this.selectedPool = this.filteredPools.includes('Simpson Cup') ? 'Simpson Cup' : this.filteredPools[0];
-      }
-      this.loadRoundsList();
+        this.filteredPools = this.selectedDivision
+          ? (this.divisionPools[this.selectedDivision] ?? filters.pools)
+          : filters.pools;
+        if (!this.filteredPools.includes(this.selectedPool)) {
+          this.selectedPool = this.filteredPools.includes('Simpson Cup') ? 'Simpson Cup' : this.filteredPools[0];
+        }
+        this.loadRoundsList(seq);
+      },
+      error: () => { if (seq === this.loadSeq) this.loadError.set(true); }
     });
   }
 
-  loadRoundsList(): void {
+  loadRoundsList(seq = ++this.loadSeq): void {
     this.pennant.getTeamRoundsList(this.selectedYear, this.selectedPool).subscribe({
       next: (rounds) => {
+        if (seq !== this.loadSeq) return;
         this.rounds = rounds;
         this.selectedRound = rounds.length > 0 ? rounds[0] : '';
-        this.loadLeaderboard();
-        this.loadRound();
+        this.loadLeaderboard(seq);
+        this.loadRound(seq);
         this.pennant.getTeamChampion(this.selectedYear, this.selectedPool).subscribe({
-          next: (data) => this.champion.set(data),
+          next: (data) => { if (seq === this.loadSeq) this.champion.set(data); },
           error: () => this.champion.set(null)
         });
       },
-      error: () => {}
+      error: () => { if (seq === this.loadSeq) this.loadError.set(true); }
     });
 
     this.pennant.getActiveRound(this.selectedYear, this.selectedPool).subscribe({
-      next: (data) => this.activeRound.set(data.activeRound),
+      next: (data) => { if (seq === this.loadSeq) this.activeRound.set(data.activeRound); },
       error: () => this.activeRound.set(null)
     });
   }
 
-  loadLeaderboard(): void {
+  loadLeaderboard(seq = ++this.loadSeq): void {
     this.isLoadingLeaderboard.set(true);
     this.pennant.getTeamLeaderboard(this.selectedYear, this.selectedPool).subscribe({
       next: (data) => {
+        if (seq !== this.loadSeq) return;
         this.leaderboard.set(data);
         this.isLoadingLeaderboard.set(false);
       },
-      error: () => this.isLoadingLeaderboard.set(false)
+      error: () => {
+        if (seq !== this.loadSeq) return;
+        this.loadError.set(true);
+        this.isLoadingLeaderboard.set(false);
+      }
     });
 
     // Load finalists
     this.pennant.getFinalists(this.selectedYear, this.selectedPool).subscribe({
-      next: (data) => this.finalists.set(data.finalists),
+      next: (data) => { if (seq === this.loadSeq) this.finalists.set(data.finalists); },
       error: () => this.finalists.set([])
     });
   }
 
-  loadRound(): void {
+  loadRound(seq = ++this.loadSeq): void {
     if (!this.selectedRound) return;
     this.isLoadingRound.set(true);
     this.expandedMatch.set(null);
@@ -140,10 +162,15 @@ export class TeamPennantComponent implements OnInit {
     this.expandedClubRounds.set([]);
     this.pennant.getTeamRound(this.selectedYear, this.selectedPool, this.selectedRound).subscribe({
       next: (data) => {
+        if (seq !== this.loadSeq) return;
         this.roundMatches.set(data);
         this.isLoadingRound.set(false);
       },
-      error: () => this.isLoadingRound.set(false)
+      error: () => {
+        if (seq !== this.loadSeq) return;
+        this.loadError.set(true);
+        this.isLoadingRound.set(false);
+      }
     });
   }
 
@@ -158,14 +185,25 @@ export class TeamPennantComponent implements OnInit {
     this.expandedMatch.set(match);
     this.expandedMatchPlayers.set([]);
     this.isLoadingMatch.set(true);
+    this.loadError.set(false);
 
     this.pennant.getTeamMatch(this.selectedYear, this.selectedPool, this.selectedRound, match.homeClub, match.awayClub).subscribe({
       next: (data) => {
         this.expandedMatchPlayers.set(data);
         this.isLoadingMatch.set(false);
       },
-      error: () => this.isLoadingMatch.set(false)
+      error: () => {
+        this.loadError.set(true);
+        this.isLoadingMatch.set(false);
+      }
     });
+  }
+
+  // Enter/Space on the card itself; ignore keys bubbling from the name buttons inside.
+  onCardKey(event: Event, match: any): void {
+    if (event.target !== event.currentTarget) return;
+    event.preventDefault();
+    this.toggleMatch(match);
   }
 
   isExpanded(match: any): boolean {
@@ -206,12 +244,16 @@ export class TeamPennantComponent implements OnInit {
     this.expandedClub.set(club);
     this.expandedClubRounds.set([]);
     this.isLoadingClubRounds.set(true);
+    this.loadError.set(false);
     this.pennant.getClubRounds(this.selectedYear, this.selectedPool, club).subscribe({
       next: (data) => {
         this.expandedClubRounds.set(data);
         this.isLoadingClubRounds.set(false);
       },
-      error: () => this.isLoadingClubRounds.set(false)
+      error: () => {
+        this.loadError.set(true);
+        this.isLoadingClubRounds.set(false);
+      }
     });
   }
 
@@ -227,9 +269,11 @@ export class TeamPennantComponent implements OnInit {
   }
 
   navigateToRound(round: string, opponent: string, isHome: boolean): void {
+    const seq = ++this.loadSeq;
     this.selectedRound = round;
     this.pennant.getTeamRound(this.selectedYear, this.selectedPool, round).subscribe({
       next: (data) => {
+        if (seq !== this.loadSeq) return;
         this.roundMatches.set(data);
         this.isLoadingRound.set(false);
         // find and expand the relevant match
@@ -240,7 +284,11 @@ export class TeamPennantComponent implements OnInit {
           this.toggleMatch(match);
         }
       },
-      error: () => this.isLoadingRound.set(false)
+      error: () => {
+        if (seq !== this.loadSeq) return;
+        this.loadError.set(true);
+        this.isLoadingRound.set(false);
+      }
     });
     this.isLoadingRound.set(true);
     this.expandedMatch.set(null);

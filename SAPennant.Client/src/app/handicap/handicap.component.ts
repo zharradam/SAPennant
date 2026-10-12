@@ -1,4 +1,4 @@
-import { Component, OnInit, signal } from '@angular/core';
+import { Component, HostListener, OnInit, signal } from '@angular/core';
 import { PennantService } from '../pennant.service';
 import { HandicapPlayer, HandicapDataPoint } from '../models/pennant.models';
 import { getClubLogo } from '../data/club-logos';
@@ -15,9 +15,11 @@ export class HandicapComponent implements OnInit {
   players: HandicapPlayer[] = [];
   searchQuery = '';
   isLoading = signal(true);
+  loadError = signal(false);
   selectedPlayer: HandicapPlayer | null = null;
   history: HandicapDataPoint[] = [];
   historyLoading = signal(false);
+  historyError = signal(false);
   tooltip: { x: number; y: number; text: string } | null = null;
 
   sortCol: 'playerName' | 'lowestHandicap' | 'currentHandicap' | 'club' = 'lowestHandicap';
@@ -30,6 +32,8 @@ export class HandicapComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
+    this.isLoading.set(true);
+    this.loadError.set(false);
     this.pennant.getHandicapLeaderboard().subscribe({
       next: players => {
         this.players = players;
@@ -37,9 +41,15 @@ export class HandicapComponent implements OnInit {
       },
       error: err => {
         this.logging.error(`Handicap leaderboard load failed: ${err?.message ?? err}`, 'HandicapComponent');
+        this.loadError.set(true);
         this.isLoading.set(false);
       }
     });
+  }
+
+  @HostListener('document:keydown.escape')
+  onEscape(): void {
+    if (this.selectedPlayer) this.closeModal();
   }
 
   setSort(col: typeof this.sortCol): void {
@@ -49,6 +59,10 @@ export class HandicapComponent implements OnInit {
       this.sortCol = col;
       this.sortDir = 'asc';
     }
+  }
+
+  ariaSort(col: string): string | null {
+    return this.sortCol === col ? (this.sortDir === 'asc' ? 'ascending' : 'descending') : null;
   }
 
   get sortedPlayers(): HandicapPlayer[] {
@@ -66,6 +80,7 @@ export class HandicapComponent implements OnInit {
     this.logging.usage('handicap', `${player.playerName} (${player.club})`);
     this.insights.trackEvent('HandicapSearch', { player: this.selectedPlayer.playerName });
     this.historyLoading.set(true);
+    this.historyError.set(false);
     this.pennant.getHandicapHistory(player.playerName).subscribe({
       next: history => {
         this.history = history;
@@ -73,6 +88,7 @@ export class HandicapComponent implements OnInit {
       },
       error: err => {
         this.logging.error(`Handicap history load failed for "${player.playerName}": ${err?.message ?? err}`, 'HandicapComponent');
+        this.historyError.set(true);
         this.historyLoading.set(false);
       }
     });
@@ -137,7 +153,7 @@ export class HandicapComponent implements OnInit {
     return rounded.toString();
   }
 
-  showTooltip(event: MouseEvent, h: HandicapDataPoint, i: number): void {
+  showTooltip(event: Event, h: HandicapDataPoint, i: number): void {
     const svg = (event.target as SVGElement).closest('svg')!.getBoundingClientRect();
     const dot = (event.target as SVGElement).getBoundingClientRect();
     this.tooltip = {

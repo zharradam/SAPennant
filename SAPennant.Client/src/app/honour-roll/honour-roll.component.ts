@@ -10,7 +10,9 @@ import { LoggingService } from '../logging.service';
 })
 export class HonourRollComponent implements OnInit {
   isLoading = signal(false);
+  loadError = signal(false);
   results = signal<any[]>([]);
+  private loadSeq = 0;
   narratives: Record<string, string> = {};
   narrativeExpanded = false;
 
@@ -35,11 +37,14 @@ export class HonourRollComponent implements OnInit {
       data.forEach(n => this.narratives[n.competition] = n.narrative);
     });
 
-    this.pennant.getHonourRollFilters().subscribe(filters => {
-      this.competitions = filters.competitions;
-      this.clubs = filters.clubs;
-      this.loadFiltersForCompetition();
-      this.load();
+    this.pennant.getHonourRollFilters().subscribe({
+      next: filters => {
+        this.competitions = filters.competitions;
+        this.clubs = filters.clubs;
+        this.loadFiltersForCompetition();
+        this.load();
+      },
+      error: () => this.loadError.set(true)
     });
   }
 
@@ -58,7 +63,9 @@ export class HonourRollComponent implements OnInit {
   }
 
   load(): void {
+    const seq = ++this.loadSeq;
     this.isLoading.set(true);
+    this.loadError.set(false);
     this.pennant.getHonourRoll({
       competition: this.selectedCompetition || undefined,
       pool: this.selectedPool || undefined,
@@ -66,11 +73,14 @@ export class HonourRollComponent implements OnInit {
       club: this.selectedClub || undefined,
     }).subscribe({
       next: (data) => {
+        if (seq !== this.loadSeq) return;
         this.results.set(data);
         this.isLoading.set(false);
       },
       error: (err) => {
+        if (seq !== this.loadSeq) return;
         this.logging.error(`Honour roll load failed: ${err?.message ?? err}`, 'HonourRollComponent');
+        this.loadError.set(true);
         this.isLoading.set(false);
       }
     });

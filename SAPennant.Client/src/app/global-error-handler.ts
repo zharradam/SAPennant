@@ -56,6 +56,7 @@ export class GlobalErrorHandler implements ErrorHandler {
     ].filter(Boolean).join(' | ');
 
     this.logging.error(fullMessage, 'GlobalErrorHandler');
-    console.error(error);
+    // console.error is monkey-patched to ship to the API; debug keeps it devtools-only.
+    console.debug(error);
   }
 }

@@ -7,11 +7,15 @@
   </div>
 
   <div class="content">
-    <div class="status loading" *ngIf="isLoading()">
+    <div class="status loading" role="status" *ngIf="isLoading()">
       <span class="spinner"></span> Loading handicaps…
     </div>
 
-    <ng-container *ngIf="!isLoading()">
+    <div class="status" role="alert" *ngIf="loadError()">
+      Couldn't load results. <button type="button" class="link-btn" (click)="ngOnInit()">Try again</button>
+    </div>
+
+    <ng-container *ngIf="!isLoading() && !loadError()">
       <div class="results-count">{{ players.length }} players</div>
 
       <div class="search-filter">
@@ -19,9 +23,10 @@
           type="text"
           [(ngModel)]="searchQuery"
           placeholder="Filter by player or club…"
+          aria-label="Filter by player or club"
           autocomplete="off"
         />
-        <button *ngIf="searchQuery" (click)="searchQuery = ''">✕</button>
+        <button *ngIf="searchQuery" (click)="searchQuery = ''" aria-label="Clear filter">✕</button>
       </div>
 
       <div class="table-wrap">
@@ -29,17 +34,17 @@
           <thead>
             <tr>
               <th class="rank">#</th>
-              <th class="sortable" (click)="setSort('playerName')">
-                Player <span class="sort-icon">{{ sortCol === 'playerName' ? (sortDir === 'asc' ? '↑' : '↓') : '↕' }}</span>
+              <th class="sortable" [attr.aria-sort]="ariaSort('playerName')">
+                <button type="button" class="link-btn" (click)="setSort('playerName')">Player <span class="sort-icon">{{ sortCol === 'playerName' ? (sortDir === 'asc' ? '↑' : '↓') : '↕' }}</span></button>
               </th>
-              <th class="sortable" (click)="setSort('club')">
-                Club <span class="sort-icon">{{ sortCol === 'club' ? (sortDir === 'asc' ? '↑' : '↓') : '↕' }}</span>
+              <th class="sortable" [attr.aria-sort]="ariaSort('club')">
+                <button type="button" class="link-btn" (click)="setSort('club')">Club <span class="sort-icon">{{ sortCol === 'club' ? (sortDir === 'asc' ? '↑' : '↓') : '↕' }}</span></button>
               </th>
-              <th class="num sortable" (click)="setSort('lowestHandicap')">
-                Best HCP <span class="sort-icon">{{ sortCol === 'lowestHandicap' ? (sortDir === 'asc' ? '↑' : '↓') : '↕' }}</span>
+              <th class="num sortable" [attr.aria-sort]="ariaSort('lowestHandicap')">
+                <button type="button" class="link-btn" (click)="setSort('lowestHandicap')">Best HCP <span class="sort-icon">{{ sortCol === 'lowestHandicap' ? (sortDir === 'asc' ? '↑' : '↓') : '↕' }}</span></button>
               </th>
-              <th class="num sortable" (click)="setSort('currentHandicap')">
-                Last Known HCP <span class="sort-icon">{{ sortCol === 'currentHandicap' ? (sortDir === 'asc' ? '↑' : '↓') : '↕' }}</span>
+              <th class="num sortable" [attr.aria-sort]="ariaSort('currentHandicap')">
+                <button type="button" class="link-btn" (click)="setSort('currentHandicap')">Last Known HCP <span class="sort-icon">{{ sortCol === 'currentHandicap' ? (sortDir === 'asc' ? '↑' : '↓') : '↕' }}</span></button>
               </th>
               <th class="num">Data Points</th>
             </tr>
@@ -54,7 +59,7 @@
                   {{ i + 1 }}
                 </span>
               </td>
-              <td class="player-name clickable" (click)="openModal(p)">{{ p.playerName }}</td>
+              <td class="player-name"><button type="button" class="link-btn clickable" (click)="openModal(p)">{{ p.playerName }}</button></td>
               <td class="club">{{ p.club }}</td>
               <td class="num best-hcp">{{ displayHandicap(p.lowestHandicap) }}</td>
               <td class="num">{{ displayHandicap(p.currentHandicap) }}</td>
@@ -69,7 +74,7 @@
 
 <!-- Modal -->
 <div class="modal-overlay" *ngIf="selectedPlayer" (click)="onOverlayClick($event)">
-  <div class="modal">
+  <div class="modal" role="dialog" aria-modal="true" aria-label="Handicap history">
    <div class="modal-header">
       <img
         *ngIf="getClubLogo(selectedPlayer.club)"
@@ -84,7 +89,7 @@
         <div class="modal-title">{{ selectedPlayer.playerName }}</div>
         <div class="modal-sub">{{ selectedPlayer.club }}</div>
       </div>
-      <button class="modal-close" (click)="closeModal()">✕</button>
+      <button class="modal-close" (click)="closeModal()" aria-label="Close">✕</button>
     </div>
 
     <div class="modal-stats">
@@ -102,8 +107,12 @@
       </div>
     </div>
 
-    <div class="status loading" *ngIf="historyLoading()">
+    <div class="status loading" role="status" *ngIf="historyLoading()">
       <span class="spinner"></span> Loading history…
+    </div>
+
+    <div class="status" role="alert" *ngIf="historyError()">
+      Couldn't load history. <button type="button" class="link-btn" (click)="openModal(selectedPlayer)">Try again</button>
     </div>
 
     <div class="chart-wrap" *ngIf="!historyLoading() && history.length > 1" style="position: relative;">
@@ -115,7 +124,9 @@
         {{ tooltip.text }}
       </div>
 
-      <svg [attr.viewBox]="'0 0 ' + chartMeta.width + ' ' + (chartMeta.height + 30)" width="100%">
+      <svg [attr.viewBox]="'0 0 ' + chartMeta.width + ' ' + (chartMeta.height + 30)" width="100%"
+        role="img"
+        [attr.aria-label]="'Handicap history for ' + selectedPlayer.playerName + ', ' + history.length + ' points from ' + history[0].date + ' to ' + history[history.length - 1].date">
         <defs>
           <linearGradient id="areaGrad" x1="0" y1="0" x2="0" y2="1">
             <stop offset="0%" stop-color="#3b82f6" stop-opacity="0.15"/>
@@ -185,6 +196,16 @@
 
         <!-- Dots -->
         <ng-container *ngFor="let h of history; let i = index">
+          <!-- Bigger tap target; drawn first so the visible dot still takes the pointer. -->
+          <circle
+            [attr.cx]="chartMeta.padding + (i / (history.length - 1)) * (chartMeta.width - chartMeta.padding * 2)"
+            [attr.cy]="chartMeta.padding + ((h.handicap - chartMeta.minH) / (chartMeta.maxH - chartMeta.minH)) * (chartMeta.height - chartMeta.padding * 2)"
+            r="14"
+            fill="transparent"
+            style="cursor: pointer;"
+            (mouseenter)="showTooltip($event, h, i)"
+            (click)="showTooltip($event, h, i)"
+            (mouseleave)="hideTooltip()"/>
           <circle
             [attr.cx]="chartMeta.padding + (i / (history.length - 1)) * (chartMeta.width - chartMeta.padding * 2)"
             [attr.cy]="chartMeta.padding + ((h.handicap - chartMeta.minH) / (chartMeta.maxH - chartMeta.minH)) * (chartMeta.height - chartMeta.padding * 2)"
@@ -193,7 +214,8 @@
             stroke="none"
             style="cursor: pointer;"
             (mouseenter)="showTooltip($event, h, i)"
-            (mouseleave)="hideTooltip()"/>
+            (click)="showTooltip($event, h, i)"
+            (mouseleave)="hideTooltip()"><title>{{ h.date }} · {{ displayHandicap(h.handicap) }}</title></circle>
         </ng-container>
 
         <!-- X axis labels -->
@@ -213,7 +235,7 @@
       <div class="chart-note">Time axis not to scale</div>
     </div>
 
-    <div class="no-results" *ngIf="!historyLoading() && history.length <= 1">
+    <div class="no-results" *ngIf="!historyLoading() && !historyError() && history.length <= 1">
       <p>Not enough data points to show a graph</p>
     </div>
   </div>

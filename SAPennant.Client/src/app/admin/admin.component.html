@@ -15,8 +15,9 @@
         <p>Sign in to manage SA Pennant data</p>
         <div class="login-fields">
           <div class="field-wrap">
-            <label>Username</label>
+            <label for="admin-username">Username</label>
             <input
+              id="admin-username"
               type="text"
               [(ngModel)]="usernameInput"
               placeholder="Enter username"
@@ -25,8 +26,9 @@
             />
           </div>
           <div class="field-wrap">
-            <label>Password</label>
+            <label for="admin-password">Password</label>
             <input
+              id="admin-password"
               type="password"
               [(ngModel)]="passwordInput"
               placeholder="Enter password"
@@ -78,8 +80,9 @@
         </div>
         <div class="section-footer">
           <div class="interval-wrap">
-            <label>Poll every</label>
+            <label for="admin-poll-interval">Poll every</label>
             <input
+              id="admin-poll-interval"
               type="number"
               [ngModel]="pollingInterval()"
               (ngModelChange)="pollingInterval.set($event)"

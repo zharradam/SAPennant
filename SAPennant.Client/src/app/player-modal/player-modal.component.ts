@@ -1,4 +1,4 @@
-import { Component, Input, Output, EventEmitter, OnChanges, SimpleChanges, signal, ViewChild } from '@angular/core';
+import { Component, Input, Output, EventEmitter, HostListener, OnChanges, SimpleChanges, signal, ViewChild } from '@angular/core';
 import { PennantService } from '../pennant.service';
 import { PlayerMatch } from '../models/pennant.models';
 import { LoggingService } from '../logging.service';
@@ -20,6 +20,7 @@ export class PlayerModalComponent implements OnChanges {
   matches = signal<PlayerMatch[]>([]);
   resolvedName = '';
   resolvedClub = '';
+  private loadSeq = 0;
 
   get shareStateValue(): 'idle' | 'sharing' | 'copied' {
     return this.statsRef?.shareState() ?? 'idle';
@@ -34,11 +35,13 @@ export class PlayerModalComponent implements OnChanges {
   }
 
   load(name: string): void {
+    const seq = ++this.loadSeq;
     this.isLoading.set(true);
     this.matches.set([]);
     this.logging.usage('player', `${name} (via team results)`);
     this.pennant.search(name, 'team-results-modal').subscribe({
       next: (data) => {
+        if (seq !== this.loadSeq) return;
         this.matches.set(data);
         this.resolvedName = this.resolveName(data, name);
         this.resolvedClub = data.length > 0
@@ -47,6 +50,7 @@ export class PlayerModalComponent implements OnChanges {
         this.isLoading.set(false);
       },
       error: (err) => {
+        if (seq !== this.loadSeq) return;
         this.logging.error(`Player modal load failed for "${name}": ${err?.message ?? err}`, 'PlayerModalComponent');
         this.isLoading.set(false);
       }
@@ -55,6 +59,12 @@ export class PlayerModalComponent implements OnChanges {
 
   close(): void {
     this.closed.emit();
+  }
+
+  // Rendered only while open, so Escape always closes.
+  @HostListener('document:keydown.escape')
+  onEscape(): void {
+    this.close();
   }
 
   onOverlayClick(event: MouseEvent): void {

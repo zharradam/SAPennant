@@ -11,7 +11,9 @@ import { LoggingService } from '../logging.service';
 })
 export class LeaderboardComponent implements OnInit {
   isLoading = signal(false);
+  loadError = signal(false);
   leaderboard = signal<any[]>([]);
+  private loadSeq = 0;
 
   years: number[] = [];
   divisions: string[] = [];
@@ -64,6 +66,10 @@ export class LeaderboardComponent implements OnInit {
     this.currentPage = 0;
   }
 
+  ariaSort(column: string): string | null {
+    return this.sortColumn === column ? (this.sortDirection === 'asc' ? 'ascending' : 'descending') : null;
+  }
+
   get sortedLeaderboard(): any[] {
     return [...this.leaderboard()].sort((a, b) => {
       const aVal = a[this.sortColumn];
@@ -107,7 +113,9 @@ export class LeaderboardComponent implements OnInit {
       division: this.selectedDivision || 'all',
       pool: this.selectedPool || 'all'
     });
+    const seq = ++this.loadSeq;
     this.isLoading.set(true);
+    this.loadError.set(false);
     this.currentPage = 0;
     this.pennant.getLeaderboard({
       year: this.selectedYear,
@@ -116,11 +124,14 @@ export class LeaderboardComponent implements OnInit {
       minGames: this.minGames,
     }).subscribe({
       next: (data) => {
+        if (seq !== this.loadSeq) return;
         this.leaderboard.set(data);
         this.isLoading.set(false);
       },
       error: (err) => {
+        if (seq !== this.loadSeq) return;
         this.logging.error(`Leaderboard load failed: ${err?.message ?? err}`, 'LeaderboardComponent');
+        this.loadError.set(true);
         this.isLoading.set(false);
       }
     });

@@ -28,25 +28,29 @@
 </div>
 
 <div class="year-filter">
-  <div
+  <button
+    type="button"
     *ngFor="let year of availableYears"
     class="year-chip"
     [class.active]="selectedYears.has(year)"
+    [attr.aria-pressed]="selectedYears.has(year)"
     (click)="toggleYear(year)"
   >
     {{ year }}
-  </div>
+  </button>
 </div>
 
 <div class="pool-filter" *ngIf="availablePools.length > 1">
-  <div
+  <button
+    type="button"
     *ngFor="let pool of availablePools"
     class="pool-chip"
     [class.active]="selectedPools.has(pool)"
+    [attr.aria-pressed]="selectedPools.has(pool)"
     (click)="togglePool(pool)"
   >
     {{ pool }}
-  </div>
+  </button>
 </div>
 
 <ng-container *ngFor="let group of groupedResults">
