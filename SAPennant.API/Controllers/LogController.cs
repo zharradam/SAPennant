@@ -115,6 +115,8 @@ public class LogController : ControllerBase
             {
                 At = now,
                 Day = UsageEvents.AdelaideDay(now),
+                Hour = UsageEvents.AdelaideHour(now),
+                IsMobile = UsageEvents.IsMobile(Request.Headers.UserAgent.ToString()),
                 Event = ev.Length > 40 ? ev[..40] : ev,
                 Detail = entry.Message,
                 VisitorId = visitorId,

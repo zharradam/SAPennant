@@ -18,6 +18,8 @@ export class LoggingService {
   private readonly visitor = LoggingService.stableId(() => localStorage, 'sapennant_visitor', 6);
   private readonly session = LoggingService.stableId(() => sessionStorage, 'sapennant_session', 4);
 
+  get visitorId(): string { return this.visitor.id; }
+
   constructor(private http: HttpClient) {}
 
   get visitType(): 'first visit' | 'return' | 'reload' {

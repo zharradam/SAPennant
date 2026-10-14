@@ -182,21 +182,46 @@
         <div class="message error" *ngIf="usageError()">⚠ Couldn't load usage</div>
         <ng-container *ngIf="usage() as u">
           <div class="usage-stats">
-            <div class="summary-stat"><div class="val">{{ u.visits }}</div><div class="lbl">visits</div></div>
-            <div class="summary-stat"><div class="val">{{ u.visitors }}</div><div class="lbl">visitors</div></div>
-            <div class="summary-stat"><div class="val">{{ u.events }}</div><div class="lbl">actions</div></div>
+            <div class="summary-stat">
+              <div class="val">{{ u.visits }}</div><div class="lbl">visits</div>
+              <div class="delta" *ngIf="delta(u.visits, u.previous?.visits) as d">{{ d }}</div>
+            </div>
+            <div class="summary-stat">
+              <div class="val">{{ u.visitors }}</div><div class="lbl">visitors</div>
+              <div class="delta" *ngIf="delta(u.visitors, u.previous?.visitors) as d">{{ d }}</div>
+            </div>
+            <div class="summary-stat"><div class="val">{{ u.newVisitors }}</div><div class="lbl">new visitors</div></div>
+            <div class="summary-stat">
+              <div class="val">{{ u.events }}</div><div class="lbl">actions</div>
+              <div class="delta" *ngIf="delta(u.events, u.previous?.events) as d">{{ d }}</div>
+            </div>
+            <div class="summary-stat" *ngIf="mobileShare() as m"><div class="val">{{ m }}</div><div class="lbl">on phones</div></div>
           </div>
-          <svg *ngIf="usageChart() as c" [attr.viewBox]="'0 0 ' + c.width + ' ' + c.height" width="100%" class="usage-chart"
-            role="img" [attr.aria-label]="'Visits per day over ' + c.bars.length + ' days, peak ' + c.max">
-            <line [attr.x1]="c.left" [attr.x2]="c.width" [attr.y1]="c.base" [attr.y2]="c.base" stroke="#e8edf5"/>
-            <text [attr.x]="c.left - 6" y="24" text-anchor="end" font-size="11" fill="#666">{{ c.max }}</text>
-            <text [attr.x]="c.left - 6" [attr.y]="c.base" text-anchor="end" font-size="11" fill="#666">0</text>
-            <rect *ngFor="let b of c.bars" [attr.x]="b.x" [attr.y]="b.y" [attr.width]="b.w" [attr.height]="b.h" fill="#2a4a8a" rx="1">
-              <title>{{ b.day }}: {{ b.visits }} visits, {{ b.visitors }} visitors</title>
-            </rect>
-            <text [attr.x]="c.left" [attr.y]="c.height - 4" font-size="11" fill="#666">{{ c.bars[0].day }}</text>
-            <text [attr.x]="c.width" [attr.y]="c.height - 4" text-anchor="end" font-size="11" fill="#666">{{ c.bars[c.bars.length - 1].day }}</text>
-          </svg>
+
+          <ng-template #barChart let-c let-title="title">
+            <h3 class="usage-chart-title">{{ title }}</h3>
+            <svg [attr.viewBox]="'0 0 ' + c.width + ' ' + c.height" width="100%" class="usage-chart"
+              role="img" [attr.aria-label]="title + ', peak ' + c.max">
+              <line [attr.x1]="c.left" [attr.x2]="c.width" [attr.y1]="c.base" [attr.y2]="c.base" stroke="#e8edf5"/>
+              <text [attr.x]="c.left - 6" y="24" text-anchor="end" font-size="11" fill="#666">{{ c.max }}</text>
+              <text [attr.x]="c.left - 6" [attr.y]="c.base" text-anchor="end" font-size="11" fill="#666">0</text>
+              <ng-container *ngFor="let b of c.bars; let i = index">
+                <rect [attr.x]="b.x" [attr.y]="b.y" [attr.width]="b.w" [attr.height]="b.h" fill="#2a4a8a" rx="1">
+                  <title>{{ b.title }}</title>
+                </rect>
+                <text *ngIf="b.tick" [attr.x]="b.x + b.w / 2" [attr.y]="c.height - 4" font-size="11" fill="#666"
+                  [attr.text-anchor]="i === 0 ? 'start' : i === c.bars.length - 1 ? 'end' : 'middle'">{{ b.label }}</text>
+              </ng-container>
+            </svg>
+          </ng-template>
+
+          <ng-container *ngIf="usageChart() as c">
+            <ng-container *ngTemplateOutlet="barChart; context: { $implicit: c, title: 'Visits per day' }"></ng-container>
+          </ng-container>
+          <div class="usage-charts">
+            <div *ngIf="hourChart() as c"><ng-container *ngTemplateOutlet="barChart; context: { $implicit: c, title: 'Visits by hour' }"></ng-container></div>
+            <div *ngIf="weekdayChart() as c"><ng-container *ngTemplateOutlet="barChart; context: { $implicit: c, title: 'Visits by weekday' }"></ng-container></div>
+          </div>
           <div class="usage-grid">
             <div class="usage-list" *ngFor="let list of usageLists()">
               <h3>{{ list.title }}</h3>

@@ -4,6 +4,18 @@ import { PennantService } from '../pennant.service';
 import { AuthService } from '../auth.service';
 import { LoggingService } from '../logging.service';
 
+// Bars for a plain SVG chart; `tick` marks the bars that get an axis label.
+function barChart(points: { label: string; value: number; title: string; tick: boolean }[], height = 170) {
+  const width = 600, left = 30, top = 20, base = height - 20;
+  const max = Math.max(1, ...points.map(p => p.value));
+  const w = (width - left) / Math.max(1, points.length);
+  const bars = points.map((p, i) => {
+    const h = (p.value / max) * (base - top);
+    return { ...p, x: left + i * w, y: base - h, w: Math.max(1, w - 1), h };
+  });
+  return { width, height, left, base, max, bars };
+}
+
 function isoDay(d: Date): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
@@ -54,26 +66,47 @@ export class AdminComponent implements OnInit {
     const days = this.usageDays();
     const first = days > 0 ? new Date(today.getFullYear(), today.getMonth(), today.getDate() - (days - 1))
       : u.days.length ? new Date(u.days[0].day) : today;
-    const width = 600, height = 170, left = 30, top = 20, base = height - 20;
     const labels: string[] = [];
     for (const d = new Date(first); d <= today; d.setDate(d.getDate() + 1)) labels.push(isoDay(d));
-    const max = Math.max(1, ...labels.map(l => byDay.get(l)?.visits ?? 0));
-    const w = (width - left) / labels.length;
-    const bars = labels.map((day, i) => {
+    return barChart(labels.map((day, i) => {
       const row = byDay.get(day);
-      const h = ((row?.visits ?? 0) / max) * (base - top);
-      return { day, visits: row?.visits ?? 0, visitors: row?.visitors ?? 0, x: left + i * w, y: base - h, w: Math.max(1, w - 1), h };
-    });
-    return { width, height, left, base, max, bars };
+      return { label: day, value: row?.visits ?? 0, title: `${day}: ${row?.visits ?? 0} visits, ${row?.visitors ?? 0} visitors`,
+               tick: i === 0 || i === labels.length - 1 };
+    }));
   });
+
+  hourChart = computed(() => {
+    const u = this.usage();
+    return u && barChart(u.byHour.map((v, h) => ({ label: `${h}:00`, value: v, title: `${h}:00–${h}:59: ${v} visits`, tick: h % 6 === 0 })), 90);
+  });
+
+  weekdayChart = computed(() => {
+    const u = this.usage();
+    const names = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+    return u && barChart(u.byWeekday.map((v, i) => ({ label: names[i], value: v, title: `${names[i]}: ${v} visits`, tick: true })), 90);
+  });
+
+  // "+12% vs previous 30 days", or null when there is nothing to compare to.
+  delta(now: number, prev: number | undefined): string | null {
+    if (prev === undefined || prev === 0 || this.usageDays() === 0) return null;
+    const pct = Math.round(((now - prev) / prev) * 100);
+    return `${pct >= 0 ? '+' : '−'}${Math.abs(pct)}% vs previous ${this.usageDays()} days`;
+  }
+
+  mobileShare(): string | null {
+    const u = this.usage();
+    return u && u.knownDeviceVisits > 0 ? `${Math.round((u.mobileVisits / u.knownDeviceVisits) * 100)}%` : null;
+  }
 
   usageLists = computed(() => {
     const u = this.usage();
     return u ? [
       { title: 'Actions', rows: u.byEvent },
       { title: 'Top searches', rows: u.topSearches },
+      { title: 'Searches with no results', rows: u.topMisses },
       { title: 'Top players', rows: u.topPlayers },
       { title: 'Top clubs', rows: u.topClubs },
+      { title: 'Came from', rows: u.topReferrers },
     ] : [];
   });
   isMaintenanceMode = signal(false);
@@ -153,7 +186,7 @@ export class AdminComponent implements OnInit {
 
   login(): void {
     this.authError.set(null);
-    this.auth.login(this.usernameInput, this.passwordInput).subscribe({
+    this.auth.login(this.usernameInput, this.passwordInput, this.logging.visitorId).subscribe({
       next: () => {
         this.loadAdminData();
       },

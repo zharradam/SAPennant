@@ -283,6 +283,12 @@ namespace SAPennant.API.Migrations.SqlServer
                         .HasMaxLength(40)
                         .HasColumnType("nvarchar(40)");
 
+                    b.Property<int>("Hour")
+                        .HasColumnType("int");
+
+                    b.Property<bool?>("IsMobile")
+                        .HasColumnType("bit");
+
                     b.Property<string>("SessionId")
                         .HasMaxLength(12)
                         .HasColumnType("nvarchar(12)");

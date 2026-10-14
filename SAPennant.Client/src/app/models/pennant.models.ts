@@ -57,9 +57,17 @@ export interface UsageSummary {
   visits: number;
   visitors: number;
   events: number;
+  newVisitors: number;
+  mobileVisits: number;
+  knownDeviceVisits: number;
+  previous: { visits: number; visitors: number; events: number } | null;
   days: UsageDay[];
+  byHour: number[];
+  byWeekday: number[];
   byEvent: UsageCount[];
   topSearches: UsageCount[];
+  topMisses: UsageCount[];
   topPlayers: UsageCount[];
   topClubs: UsageCount[];
+  topReferrers: UsageCount[];
 }

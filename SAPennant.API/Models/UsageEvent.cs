@@ -17,4 +17,8 @@ public class UsageEvent
     public string? VisitorId { get; set; }
     [MaxLength(12)]
     public string? SessionId { get; set; }
+    /// Hour of day in Adelaide time (0-23).
+    public int Hour { get; set; }
+    /// From the User-Agent; null for rows backfilled from Loki.
+    public bool? IsMobile { get; set; }
 }

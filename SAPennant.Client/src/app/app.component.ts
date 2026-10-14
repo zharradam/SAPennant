@@ -22,6 +22,16 @@ const TAB_TITLES: Record<TabName, string> = {
   'admin': 'Admin | SA Pennant Golf',
 };
 
+// Where this visit came from, as a bare hostname; empty for direct or same-site.
+function referrerHost(): string {
+  try {
+    const host = new URL(document.referrer).hostname;
+    return host && host !== window.location.hostname ? host : '';
+  } catch {
+    return '';
+  }
+}
+
 export function tabFromPath(pathname: string): TabName | null {
   const segment = pathname.replace(/\/+$/, '').split('/').pop() ?? '';
   return (TAB_NAMES as readonly string[]).includes(segment) ? (segment as TabName) : null;
@@ -86,8 +96,9 @@ export class App implements OnInit, AfterViewInit {
       this.logging.warn(args.map(a => String(a)).join(' '), 'console');
     };
 
+    const ref = referrerHost();
     this.logging.usage('visit',
-      `${window.location.pathname}${window.location.search} (${this.logging.visitType})`);
+      `${window.location.pathname}${window.location.search} (${this.logging.visitType})${ref ? ' ← ' + ref : ''}`);
 
     // Restore the tab from the URL path (shareable links), then let a
     // ?player= param force the search tab as before.

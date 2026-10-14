@@ -108,6 +108,31 @@ public class UsageEventsTests
         Assert.Equal(expected, SAPennant.API.Domain.UsageEvents.NormaliseDetail(eventName, detail));
     }
 
+    [Theory]
+    [InlineData("Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 Mobile/15E148 Safari/604.1", true)]
+    [InlineData("Mozilla/5.0 (Linux; Android 14; SM-X710) AppleWebKit/537.36 Safari/537.36", true)]
+    [InlineData("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120.0 Safari/537.36", false)]
+    [InlineData(null, false)]
+    public void IsMobileReadsTheUserAgent(string? ua, bool expected)
+    {
+        Assert.Equal(expected, SAPennant.API.Domain.UsageEvents.IsMobile(ua));
+    }
+
+    [Theory]
+    [InlineData("/search?player=x (first visit) ← www.google.com", "www.google.com")]
+    [InlineData("/ (returning visitor)", null)]
+    public void ReferrerIsTheTrailingHost(string detail, string? expected)
+    {
+        Assert.Equal(expected, SAPennant.API.Domain.UsageEvents.Referrer(detail));
+    }
+
+    [Fact]
+    public void SearchMissIsZeroResults()
+    {
+        Assert.True(SAPennant.API.Domain.UsageEvents.IsSearchMiss("\"Smyth\" → 0 results"));
+        Assert.False(SAPennant.API.Domain.UsageEvents.IsSearchMiss("\"Smith\" → 10 results"));
+    }
+
     [Fact]
     public void AdelaideDayRollsOverAtLocalMidnight()
     {

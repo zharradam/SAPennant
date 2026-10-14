@@ -22,8 +22,9 @@ export class AuthService {
     }
   }
 
-  login(username: string, password: string): Observable<{ token: string }> {
-    return this.http.post<{ token: string }>(`${this.API_URL}/auth/login`, { username, password })
+  // visitorId lets the server leave the admin's own browsing out of usage stats.
+  login(username: string, password: string, visitorId: string): Observable<{ token: string }> {
+    return this.http.post<{ token: string }>(`${this.API_URL}/auth/login`, { username, password, visitorId })
       .pipe(
         tap(response => {
           localStorage.setItem(this.TOKEN_KEY, response.token);

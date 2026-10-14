@@ -8,6 +8,12 @@ public class SettingsService
 
     public SettingsService(IAppSettingRepository appSettings) => _appSettings = appSettings;
 
+    public async Task<string?> GetStringAsync(string key) =>
+        (await _appSettings.GetAsync(key))?.Value;
+
+    public Task SetStringAsync(string key, string value) =>
+        _appSettings.SetAsync(key, value);
+
     public async Task<bool> GetBoolAsync(string key, bool defaultValue = true)
     {
         var setting = await _appSettings.GetAsync(key);

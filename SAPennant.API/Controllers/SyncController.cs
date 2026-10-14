@@ -125,7 +125,10 @@ public class SyncController : ControllerBase
     {
         var today = UsageEvents.AdelaideDay(DateTime.UtcNow);
         var from = days <= 0 ? DateOnly.MinValue : today.AddDays(-(days - 1));
-        return Ok(await _usage.GetSummaryAsync(from));
+        var previousFrom = days <= 0 ? (DateOnly?)null : from.AddDays(-days);
+        var adminIds = (await _settings.GetStringAsync(AuthController.AdminVisitorIdsKey) ?? "")
+            .Split(',', StringSplitOptions.RemoveEmptyEntries);
+        return Ok(await _usage.GetSummaryAsync(from, previousFrom, adminIds));
     }
 
     [HttpGet("maintenance")]
