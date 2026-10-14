@@ -207,12 +207,12 @@
       <div class="tab-panel" role="tabpanel" aria-labelledby="admin-tab-usage" *ngIf="adminTab() === 'usage'">
 
         <div class="section-card usage-card" [class.is-loading]="usageLoading()">
-          <div class="section-header">
+          <div class="usage-head">
             <div>
               <h2>Usage</h2>
               <p>{{ rangeLabel() }}</p>
             </div>
-            <div class="segmented" role="group" aria-label="Time window">
+            <div class="segmented on-dark" role="group" aria-label="Time window">
               <button type="button" *ngFor="let w of windowOptions"
                 [class.active]="usageDays() === w.days"
                 [attr.aria-pressed]="usageDays() === w.days"
@@ -233,26 +233,26 @@
 
           <ng-container *ngIf="usage() as u">
             <div class="usage-stats">
-              <div class="stat">
+              <div class="stat stat-visits">
                 <div class="stat-val">{{ u.visits | number }}</div>
                 <div class="stat-lbl">Visits</div>
                 <div class="stat-delta" *ngIf="delta(u.visits, u.previous?.visits) as d" [class]="'stat-delta ' + d.dir">{{ d.text }}</div>
               </div>
-              <div class="stat">
+              <div class="stat stat-visitors">
                 <div class="stat-val">{{ u.visitors | number }}</div>
                 <div class="stat-lbl">Visitors</div>
                 <div class="stat-delta" *ngIf="delta(u.visitors, u.previous?.visitors) as d" [class]="'stat-delta ' + d.dir">{{ d.text }}</div>
               </div>
-              <div class="stat">
+              <div class="stat stat-new">
                 <div class="stat-val">{{ u.newVisitors | number }}</div>
                 <div class="stat-lbl">New visitors</div>
               </div>
-              <div class="stat">
+              <div class="stat stat-actions">
                 <div class="stat-val">{{ u.events | number }}</div>
                 <div class="stat-lbl">Actions</div>
                 <div class="stat-delta" *ngIf="delta(u.events, u.previous?.events) as d" [class]="'stat-delta ' + d.dir">{{ d.text }}</div>
               </div>
-              <div class="stat">
+              <div class="stat stat-phones">
                 <div class="stat-val">{{ mobileShare() ?? '–' }}</div>
                 <div class="stat-lbl">On phones</div>
               </div>
@@ -263,13 +263,23 @@
               <h3 class="usage-h3">{{ title }}</h3>
               <svg [attr.viewBox]="'0 0 ' + c.width + ' ' + c.height" width="100%" class="usage-chart"
                 role="img" [attr.aria-label]="title + ', peak ' + c.max">
+                <defs>
+                  <linearGradient id="usageBar" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stop-color="#3b82f6"/>
+                    <stop offset="100%" stop-color="#1e3a8a"/>
+                  </linearGradient>
+                </defs>
                 <line [attr.x1]="c.left" [attr.x2]="c.width" [attr.y1]="c.base" [attr.y2]="c.base" class="axis"/>
                 <text [attr.x]="c.left - 8" y="24" text-anchor="end" class="tick">{{ c.max }}</text>
                 <text [attr.x]="c.left - 8" [attr.y]="c.base" text-anchor="end" class="tick">0</text>
                 <ng-container *ngFor="let b of c.bars; let i = index">
-                  <rect class="bar" [attr.x]="b.x" [attr.y]="b.y" [attr.width]="b.w" [attr.height]="b.h" rx="1.5">
+                  <rect class="bar" [class.peak]="c.max > 0 && b.value === c.max"
+                    [attr.x]="b.x" [attr.y]="b.y" [attr.width]="b.w" [attr.height]="b.h" rx="1.5">
                     <title>{{ b.title }}</title>
                   </rect>
+                  <text *ngIf="c.max > 0 && b.value === c.max" class="peak-label"
+                    [attr.x]="b.x + b.w / 2" [attr.y]="b.y - 5"
+                    [attr.text-anchor]="i === 0 ? 'start' : i === c.bars.length - 1 ? 'end' : 'middle'">{{ b.value }}</text>
                   <text *ngIf="b.tick" class="tick" [attr.x]="b.x + b.w / 2" [attr.y]="c.height - 4"
                     [attr.text-anchor]="i === 0 ? 'start' : i === c.bars.length - 1 ? 'end' : 'middle'">{{ b.label }}</text>
                 </ng-container>
@@ -285,7 +295,7 @@
             </div>
 
             <div class="usage-grid">
-              <div class="usage-list" *ngFor="let list of usageLists()">
+              <div class="usage-list" *ngFor="let list of usageLists()" [class.attention]="list.attention">
                 <h3 class="usage-h3">{{ list.title }}</h3>
                 <ol *ngIf="list.rows.length" class="usage-rows">
                   <li class="usage-row" *ngFor="let r of list.rows">

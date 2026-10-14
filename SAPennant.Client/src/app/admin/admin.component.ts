@@ -140,12 +140,13 @@ export class AdminComponent implements OnInit, OnDestroy {
   usageLists = computed(() => {
     const u = this.usage();
     if (!u) return [];
-    const list = (title: string, rows: { name: string; count: number }[], empty: string) =>
-      ({ title, rows, empty, max: Math.max(1, ...rows.map(r => r.count)) });
+    const list = (title: string, rows: { name: string; count: number }[], empty: string, attention = false) =>
+      ({ title, rows, empty, attention, max: Math.max(1, ...rows.map(r => r.count)) });
     return [
       list('What people do', u.byEvent, 'No activity yet'),
       list('Top searches', u.topSearches, 'No searches yet'),
-      list('Searches with no results', u.topMisses, 'Every search found something'),
+      // Misses are the one list that asks for action, so it gets the warning tint.
+      list('Searches with no results', u.topMisses, 'Every search found something', true),
       list('Top players', u.topPlayers, 'No player lookups yet'),
       list('Top clubs', u.topClubs, 'No club lookups yet'),
       list('Came from', u.topReferrers, 'Direct visits only'),
