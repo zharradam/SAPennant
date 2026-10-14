@@ -1,16 +1,19 @@
-import { Component, OnInit, computed, signal } from '@angular/core';
+import { Component, OnDestroy, OnInit, computed, signal } from '@angular/core';
 import { UsageSummary } from '../models/pennant.models';
 import { PennantService } from '../pennant.service';
 import { AuthService } from '../auth.service';
 import { LoggingService } from '../logging.service';
 
 // Bars for a plain SVG chart; `tick` marks the bars that get an axis label.
-function barChart(points: { label: string; value: number; title: string; tick: boolean }[], height = 170) {
-  const width = 600, left = 30, top = 20, base = height - 20;
-  const max = Math.max(1, ...points.map(p => p.value));
+// Text in an SVG scales with the viewBox, so charts drawn at half the card's
+// width get a half-width viewBox to keep their labels legible.
+function barChart(points: { label: string; value: number; title: string; tick: boolean }[], height = 170, width = 600) {
+  const left = 30, top = 20, base = height - 20;
+  const max = Math.max(0, ...points.map(p => p.value));
+  const scale = Math.max(1, max); // avoid dividing by zero on an empty window
   const w = (width - left) / Math.max(1, points.length);
   const bars = points.map((p, i) => {
-    const h = (p.value / max) * (base - top);
+    const h = (p.value / scale) * (base - top);
     return { ...p, x: left + i * w, y: base - h, w: Math.max(1, w - 1), h };
   });
   return { width, height, left, base, max, bars };
@@ -18,6 +21,13 @@ function barChart(points: { label: string; value: number; title: string; tick: b
 
 function isoDay(d: Date): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
+type AdminTab = 'sync' | 'usage';
+const TAB_KEY = 'sapennant_admin_tab';
+
+function storedTab(): AdminTab {
+  try { return sessionStorage.getItem(TAB_KEY) === 'usage' ? 'usage' : 'sync'; } catch { return 'sync'; }
 }
 
 interface SyncStatus {
@@ -37,7 +47,11 @@ interface SyncStatus {
   templateUrl: './admin.component.html',
   styleUrl: './admin.component.scss',
 })
-export class AdminComponent implements OnInit {
+export class AdminComponent implements OnInit, OnDestroy {
+  ngOnDestroy(): void {
+    this.mq.removeEventListener('change', this.onMq);
+  }
+
   newFinalsId: { [year: number]: number | null } = {};
   newSeniorRegularId: { [year: number]: number | null } = {};
   newSeniorFinalsId: { [year: number]: number | null } = {};
@@ -52,10 +66,35 @@ export class AdminComponent implements OnInit {
   authError = signal<string | null>(null);
   isSyncingUnsettled = signal(false);
   isSyncEnabled = signal(false);
+  // Which admin tab is open; remembered for the session so a reload after a
+  // sync lands back on the same view.
+  adminTab = signal<AdminTab>(storedTab());
   usage = signal<UsageSummary | null>(null);
   usageDays = signal(30);
   usageError = signal(false);
-  readonly usageWindows = [7, 30, 90, 365, 0]; // 0 = everything
+  usageLoading = signal(false);
+  readonly windowOptions = [
+    { days: 7, label: '7d', name: 'Last 7 days' },
+    { days: 30, label: '30d', name: 'Last 30 days' },
+    { days: 90, label: '90d', name: 'Last 90 days' },
+    { days: 365, label: '1y', name: 'Last year' },
+    { days: 0, label: 'All', name: 'All time' },
+  ];
+
+  // "Last 30 days · 15 Sep – 14 Oct"
+  rangeLabel = computed(() => {
+    const name = this.windowOptions.find(w => w.days === this.usageDays())?.name ?? '';
+    const c = this.usageChart();
+    if (!c || c.bars.length < 2) return name;
+    const fmt = (iso: string) => new Date(iso + 'T00:00').toLocaleDateString('en-AU', { day: 'numeric', month: 'short' });
+    return `${name} · ${fmt(c.bars[0].label)} – ${fmt(c.bars[c.bars.length - 1].label)}`;
+  });
+
+  // Phones draw every chart at full card width, which is about half a
+  // desktop card, so they get the narrow viewBox too.
+  private narrow = signal(window.matchMedia('(max-width: 768px)').matches);
+  private readonly mq = window.matchMedia('(max-width: 768px)');
+  private readonly onMq = (e: MediaQueryListEvent) => this.narrow.set(e.matches);
 
   // Visits-per-day bars with the empty days filled in, sized for the SVG.
   usageChart = computed(() => {
@@ -72,25 +111,25 @@ export class AdminComponent implements OnInit {
       const row = byDay.get(day);
       return { label: day, value: row?.visits ?? 0, title: `${day}: ${row?.visits ?? 0} visits, ${row?.visitors ?? 0} visitors`,
                tick: i === 0 || i === labels.length - 1 };
-    }));
+    }), this.narrow() ? 140 : 170, this.narrow() ? 300 : 600);
   });
 
   hourChart = computed(() => {
     const u = this.usage();
-    return u && barChart(u.byHour.map((v, h) => ({ label: `${h}:00`, value: v, title: `${h}:00–${h}:59: ${v} visits`, tick: h % 6 === 0 })), 90);
+    return u && barChart(u.byHour.map((v, h) => ({ label: `${h}:00`, value: v, title: `${h}:00–${h}:59: ${v} visits`, tick: h % 6 === 0 })), 110, 300);
   });
 
   weekdayChart = computed(() => {
     const u = this.usage();
     const names = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-    return u && barChart(u.byWeekday.map((v, i) => ({ label: names[i], value: v, title: `${names[i]}: ${v} visits`, tick: true })), 90);
+    return u && barChart(u.byWeekday.map((v, i) => ({ label: names[i], value: v, title: `${names[i]}: ${v} visits`, tick: true })), 110, 300);
   });
 
-  // "+12% vs previous 30 days", or null when there is nothing to compare to.
-  delta(now: number, prev: number | undefined): string | null {
+  // "+12%" against the previous window, or null when there is nothing to compare to.
+  delta(now: number, prev: number | undefined): { text: string; dir: 'up' | 'down' | 'flat' } | null {
     if (prev === undefined || prev === 0 || this.usageDays() === 0) return null;
     const pct = Math.round(((now - prev) / prev) * 100);
-    return `${pct >= 0 ? '+' : '−'}${Math.abs(pct)}% vs previous ${this.usageDays()} days`;
+    return { text: `${pct > 0 ? '+' : pct < 0 ? '−' : ''}${Math.abs(pct)}%`, dir: pct > 0 ? 'up' : pct < 0 ? 'down' : 'flat' };
   }
 
   mobileShare(): string | null {
@@ -100,14 +139,17 @@ export class AdminComponent implements OnInit {
 
   usageLists = computed(() => {
     const u = this.usage();
-    return u ? [
-      { title: 'Actions', rows: u.byEvent },
-      { title: 'Top searches', rows: u.topSearches },
-      { title: 'Searches with no results', rows: u.topMisses },
-      { title: 'Top players', rows: u.topPlayers },
-      { title: 'Top clubs', rows: u.topClubs },
-      { title: 'Came from', rows: u.topReferrers },
-    ] : [];
+    if (!u) return [];
+    const list = (title: string, rows: { name: string; count: number }[], empty: string) =>
+      ({ title, rows, empty, max: Math.max(1, ...rows.map(r => r.count)) });
+    return [
+      list('What people do', u.byEvent, 'No activity yet'),
+      list('Top searches', u.topSearches, 'No searches yet'),
+      list('Searches with no results', u.topMisses, 'Every search found something'),
+      list('Top players', u.topPlayers, 'No player lookups yet'),
+      list('Top clubs', u.topClubs, 'No club lookups yet'),
+      list('Came from', u.topReferrers, 'Direct visits only'),
+    ];
   });
   isMaintenanceMode = signal(false);
   intervalError = signal<string | null>(null);
@@ -121,6 +163,7 @@ export class AdminComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
+    this.mq.addEventListener('change', this.onMq);
     if (this.auth.isAuthenticated()) {
       this.loadAdminData();
     }
@@ -213,16 +256,34 @@ export class AdminComponent implements OnInit {
     this.pennant.getPollingInterval().subscribe(r => this.pollingInterval.set(r.minutes));
   }
 
+  selectTab(tab: AdminTab): void {
+    this.adminTab.set(tab);
+    try { sessionStorage.setItem(TAB_KEY, tab); } catch { /* storage unavailable */ }
+    // Arrow keys move the selection; keep keyboard focus on the selected tab.
+    queueMicrotask(() => document.getElementById('admin-tab-' + tab)?.focus());
+  }
+
   setUsageDays(days: number): void {
+    if (days === this.usageDays()) return;
     this.usageDays.set(days);
     this.loadUsage();
   }
 
-  private loadUsage(): void {
+  loadUsage(): void {
+    const days = this.usageDays();
     this.usageError.set(false);
-    this.pennant.getUsage(this.usageDays()).subscribe({
-      next: u => this.usage.set(u),
-      error: () => this.usageError.set(true),
+    this.usageLoading.set(true);
+    this.pennant.getUsage(days).subscribe({
+      next: u => {
+        if (days !== this.usageDays()) return; // a newer window was picked meanwhile
+        this.usage.set(u);
+        this.usageLoading.set(false);
+      },
+      error: () => {
+        if (days !== this.usageDays()) return;
+        this.usageError.set(true);
+        this.usageLoading.set(false);
+      },
     });
   }
 

@@ -2,7 +2,7 @@
   <div class="hero" style="background-image: url('assets/hero-bg.jpg')">
     <div class="hero-inner">
       <h1>Admin</h1>
-      <p>Manage data sync and season configuration</p>
+      <p>Manage data sync, seasons and site usage</p>
     </div>
   </div>
 
@@ -45,207 +45,261 @@
 
     <ng-container *ngIf="auth.isAuthenticated()">
 
-      <div class="section-card">
-        <div class="section-header">
-          <div>
-            <h2>Sync Missing Seasons</h2>
-            <p>Fetch any seasons not yet in the database</p>
-          </div>
-          <div class="header-right">
-            <span class="last-updated" *ngIf="pennant.lastUpdated()">Last updated: {{ pennant.lastUpdated() }}</span>
-            <button class="btn-primary" (click)="syncAll()" [disabled]="isSyncingAll()">
-              <span *ngIf="isSyncingAll()">⏳ Syncing...</span>
-              <span *ngIf="!isSyncingAll()">Sync all</span>
-            </button>
-          </div>
-        </div>
+      <div class="admin-tabs" role="tablist" aria-label="Admin sections">
+        <button type="button" role="tab" id="admin-tab-sync" class="admin-tab"
+          [class.active]="adminTab() === 'sync'"
+          [attr.aria-selected]="adminTab() === 'sync'"
+          [attr.tabindex]="adminTab() === 'sync' ? 0 : -1"
+          (click)="selectTab('sync')"
+          (keydown.arrowright)="selectTab('usage')" (keydown.arrowleft)="selectTab('usage')">
+          Sync &amp; seasons
+        </button>
+        <button type="button" role="tab" id="admin-tab-usage" class="admin-tab"
+          [class.active]="adminTab() === 'usage'"
+          [attr.aria-selected]="adminTab() === 'usage'"
+          [attr.tabindex]="adminTab() === 'usage' ? 0 : -1"
+          (click)="selectTab('usage')"
+          (keydown.arrowright)="selectTab('sync')" (keydown.arrowleft)="selectTab('sync')">
+          Usage
+        </button>
       </div>
 
-      <div class="section-card">
-        <div class="section-header">
-          <div>
-            <h2>Sync Unsettled Rounds</h2>
-            <p>Check Golf SA for any unsettled rounds in the current year and update them</p>
-          </div>
-          <div class="header-right">
-            <label class="toggle-label">
-              <input type="checkbox" [checked]="isSyncEnabled()" (change)="toggleSync()">
-              Auto sync {{ isSyncEnabled() ? 'enabled' : 'disabled' }}
-            </label>
-            <button class="btn-primary" (click)="syncUnsettled()" [disabled]="isSyncingUnsettled()">
-              <span *ngIf="isSyncingUnsettled()">⏳ Syncing...</span>
-              <span *ngIf="!isSyncingUnsettled()">Sync unsettled</span>
-            </button>
-          </div>
-        </div>
-        <div class="section-footer">
-          <div class="interval-wrap">
-            <label for="admin-poll-interval">Poll every</label>
-            <input
-              id="admin-poll-interval"
-              type="number"
-              [ngModel]="pollingInterval()"
-              (ngModelChange)="pollingInterval.set($event)"
-              min="1"
-              max="1440"
-              class="interval-input"
-            />
-            <span>min</span>
-            <button class="btn-primary" (click)="savePollingInterval()" [disabled]="isSavingInterval()">
-              {{ isSavingInterval() ? 'Saving...' : 'Save interval' }}
-            </button>
-            <span class="interval-badge success" *ngIf="intervalSaved()">✓ Saved</span>
-            <span class="interval-badge error" *ngIf="intervalError()">⚠ {{ intervalError() }}</span>
-          </div>
-        </div>
-      </div>
+      <div class="tab-panel" role="tabpanel" aria-labelledby="admin-tab-sync" *ngIf="adminTab() === 'sync'">
 
-      <div class="section-card">
-        <div class="section-header">
-          <div>
-            <h2>Maintenance Mode</h2>
-            <p>Show a maintenance overlay to all users across the site</p>
-          </div>
-          <div class="header-right">
-            <label class="toggle-label">
-              <input type="checkbox" [checked]="isMaintenanceMode()" (change)="toggleMaintenance()">
-              Maintenance {{ isMaintenanceMode() ? 'enabled' : 'disabled' }}
-            </label>
-          </div>
-        </div>
-      </div>
-
-      <div class="section-card">
-        <h2>Seasons</h2>
-        <p class="section-desc">Refresh a specific year or update the finals ID when available</p>
-
-        <div class="season-list">
-          <div class="season-row" *ngFor="let s of seasons()">
-            <div class="season-info">
-              <div class="season-year">{{ s.year }}</div>
-              <div class="season-ids">
-                <span class="id-badge">Regular: {{ s.regularId }}</span>
-                <span class="id-badge finals" *ngIf="s.finalsId">Finals: {{ s.finalsId }}</span>
-                <span class="id-badge missing" *ngIf="!s.finalsId">No finals ID</span>
-                <span class="id-badge senior" *ngIf="s.seniorRegularId">Senior: {{ s.seniorRegularId }}</span>
-                <span class="id-badge missing" *ngIf="!s.seniorRegularId">No senior ID</span>
-                <span class="id-badge senior-finals" *ngIf="s.seniorFinalsId">Senior Finals: {{ s.seniorFinalsId }}</span>
-              </div>
+        <div class="section-card">
+          <div class="section-header">
+            <div>
+              <h2>Sync Missing Seasons</h2>
+              <p>Fetch any seasons not yet in the database</p>
             </div>
-
-            <div class="season-finals-id" *ngIf="!s.finalsId">
-              <input type="number" [(ngModel)]="newFinalsId[s.year]" placeholder="Finals ID" />
-              <button class="btn-secondary" (click)="updateFinalsId(s)" [disabled]="!newFinalsId[s.year]">Save</button>
-            </div>
-
-            <div class="season-finals-id" *ngIf="!s.seniorRegularId">
-              <input type="number" [(ngModel)]="newSeniorRegularId[s.year]" placeholder="Senior regular ID" />
-              <button class="btn-secondary" (click)="updateSeniorRegularId(s)" [disabled]="!newSeniorRegularId[s.year]">Save</button>
-            </div>
-
-            <div class="season-finals-id" *ngIf="s.seniorRegularId && !s.seniorFinalsId">
-              <input type="number" [(ngModel)]="newSeniorFinalsId[s.year]" placeholder="Senior finals ID" />
-              <button class="btn-secondary" (click)="updateSeniorFinalsId(s)" [disabled]="!newSeniorFinalsId[s.year]">Save</button>
-            </div>
-
-            <div class="season-actions">
-              <span class="message"
-                [class.success]="s.messageType === 'success'"
-                [class.error]="s.messageType === 'error'"
-                [class.info]="s.messageType === 'info'"
-                *ngIf="s.message">
-                {{ s.message }}
-              </span>
-              <button class="btn-primary" (click)="refreshYear(s)" [disabled]="s.isSyncing">
-                <span *ngIf="s.isSyncing">⏳ Syncing...</span>
-                <span *ngIf="!s.isSyncing">Refresh {{ s.year }}</span>
+            <div class="header-right">
+              <span class="last-updated" *ngIf="pennant.lastUpdated()">Last updated: {{ pennant.lastUpdated() }}</span>
+              <button class="btn-primary" (click)="syncAll()" [disabled]="isSyncingAll()">
+                <span *ngIf="isSyncingAll()">⏳ Syncing...</span>
+                <span *ngIf="!isSyncingAll()">Sync all</span>
               </button>
             </div>
           </div>
         </div>
-      </div>
 
-      <div class="section-card">
-        <div class="section-header">
-          <div>
-            <h2>Usage</h2>
-            <p>How often the site is used and what people look at</p>
+        <div class="section-card">
+          <div class="section-header">
+            <div>
+              <h2>Sync Unsettled Rounds</h2>
+              <p>Check Golf SA for any unsettled rounds in the current year and update them</p>
+            </div>
+            <div class="header-right">
+              <label class="toggle-label">
+                <input type="checkbox" [checked]="isSyncEnabled()" (change)="toggleSync()">
+                Auto sync {{ isSyncEnabled() ? 'enabled' : 'disabled' }}
+              </label>
+              <button class="btn-primary" (click)="syncUnsettled()" [disabled]="isSyncingUnsettled()">
+                <span *ngIf="isSyncingUnsettled()">⏳ Syncing...</span>
+                <span *ngIf="!isSyncingUnsettled()">Sync unsettled</span>
+              </button>
+            </div>
           </div>
-          <div class="header-right">
-            <label class="toggle-label">Show
-              <select [ngModel]="usageDays()" (ngModelChange)="setUsageDays($event)">
-                <option *ngFor="let w of usageWindows" [ngValue]="w">{{ w ? 'last ' + w + ' days' : 'everything' }}</option>
-              </select>
-            </label>
+          <div class="section-footer">
+            <div class="interval-wrap">
+              <label for="admin-poll-interval">Poll every</label>
+              <input
+                id="admin-poll-interval"
+                type="number"
+                [ngModel]="pollingInterval()"
+                (ngModelChange)="pollingInterval.set($event)"
+                min="1"
+                max="1440"
+                class="interval-input"
+              />
+              <span>min</span>
+              <button class="btn-primary" (click)="savePollingInterval()" [disabled]="isSavingInterval()">
+                {{ isSavingInterval() ? 'Saving...' : 'Save interval' }}
+              </button>
+              <span class="interval-badge success" *ngIf="intervalSaved()">✓ Saved</span>
+              <span class="interval-badge error" *ngIf="intervalError()">⚠ {{ intervalError() }}</span>
+            </div>
           </div>
         </div>
-        <div class="message error" *ngIf="usageError()">⚠ Couldn't load usage</div>
-        <ng-container *ngIf="usage() as u">
-          <div class="usage-stats">
-            <div class="summary-stat">
-              <div class="val">{{ u.visits }}</div><div class="lbl">visits</div>
-              <div class="delta" *ngIf="delta(u.visits, u.previous?.visits) as d">{{ d }}</div>
+
+        <div class="section-card">
+          <div class="section-header">
+            <div>
+              <h2>Maintenance Mode</h2>
+              <p>Show a maintenance overlay to all users across the site</p>
             </div>
-            <div class="summary-stat">
-              <div class="val">{{ u.visitors }}</div><div class="lbl">visitors</div>
-              <div class="delta" *ngIf="delta(u.visitors, u.previous?.visitors) as d">{{ d }}</div>
+            <div class="header-right">
+              <label class="toggle-label">
+                <input type="checkbox" [checked]="isMaintenanceMode()" (change)="toggleMaintenance()">
+                Maintenance {{ isMaintenanceMode() ? 'enabled' : 'disabled' }}
+              </label>
             </div>
-            <div class="summary-stat"><div class="val">{{ u.newVisitors }}</div><div class="lbl">new visitors</div></div>
-            <div class="summary-stat">
-              <div class="val">{{ u.events }}</div><div class="lbl">actions</div>
-              <div class="delta" *ngIf="delta(u.events, u.previous?.events) as d">{{ d }}</div>
+          </div>
+        </div>
+
+        <div class="section-card">
+          <h2>Seasons</h2>
+          <p class="section-desc">Refresh a specific year or update the finals ID when available</p>
+
+          <div class="season-list">
+            <div class="season-row" *ngFor="let s of seasons()">
+              <div class="season-info">
+                <div class="season-year">{{ s.year }}</div>
+                <div class="season-ids">
+                  <span class="id-badge">Regular: {{ s.regularId }}</span>
+                  <span class="id-badge finals" *ngIf="s.finalsId">Finals: {{ s.finalsId }}</span>
+                  <span class="id-badge missing" *ngIf="!s.finalsId">No finals ID</span>
+                  <span class="id-badge senior" *ngIf="s.seniorRegularId">Senior: {{ s.seniorRegularId }}</span>
+                  <span class="id-badge missing" *ngIf="!s.seniorRegularId">No senior ID</span>
+                  <span class="id-badge senior-finals" *ngIf="s.seniorFinalsId">Senior Finals: {{ s.seniorFinalsId }}</span>
+                </div>
+              </div>
+
+              <div class="season-finals-id" *ngIf="!s.finalsId">
+                <input type="number" [(ngModel)]="newFinalsId[s.year]" placeholder="Finals ID" />
+                <button class="btn-secondary" (click)="updateFinalsId(s)" [disabled]="!newFinalsId[s.year]">Save</button>
+              </div>
+
+              <div class="season-finals-id" *ngIf="!s.seniorRegularId">
+                <input type="number" [(ngModel)]="newSeniorRegularId[s.year]" placeholder="Senior regular ID" />
+                <button class="btn-secondary" (click)="updateSeniorRegularId(s)" [disabled]="!newSeniorRegularId[s.year]">Save</button>
+              </div>
+
+              <div class="season-finals-id" *ngIf="s.seniorRegularId && !s.seniorFinalsId">
+                <input type="number" [(ngModel)]="newSeniorFinalsId[s.year]" placeholder="Senior finals ID" />
+                <button class="btn-secondary" (click)="updateSeniorFinalsId(s)" [disabled]="!newSeniorFinalsId[s.year]">Save</button>
+              </div>
+
+              <div class="season-actions">
+                <span class="message"
+                  [class.success]="s.messageType === 'success'"
+                  [class.error]="s.messageType === 'error'"
+                  [class.info]="s.messageType === 'info'"
+                  *ngIf="s.message">
+                  {{ s.message }}
+                </span>
+                <button class="btn-primary" (click)="refreshYear(s)" [disabled]="s.isSyncing">
+                  <span *ngIf="s.isSyncing">⏳ Syncing...</span>
+                  <span *ngIf="!s.isSyncing">Refresh {{ s.year }}</span>
+                </button>
+              </div>
             </div>
-            <div class="summary-stat" *ngIf="mobileShare() as m"><div class="val">{{ m }}</div><div class="lbl">on phones</div></div>
+          </div>
+        </div>
+
+        <div class="section-card">
+          <div class="section-header">
+            <div>
+              <h2>Database Backup</h2>
+              <p>Download every table as CSV in a single zip</p>
+            </div>
+            <div class="header-right">
+              <span class="message error" *ngIf="backupError()">⚠ {{ backupError() }}</span>
+              <button class="btn-primary" (click)="downloadBackup()" [disabled]="isBackingUp()">
+                <span *ngIf="isBackingUp()">⏳ Preparing...</span>
+                <span *ngIf="!isBackingUp()">Download backup</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="tab-panel" role="tabpanel" aria-labelledby="admin-tab-usage" *ngIf="adminTab() === 'usage'">
+
+        <div class="section-card usage-card" [class.is-loading]="usageLoading()">
+          <div class="section-header">
+            <div>
+              <h2>Usage</h2>
+              <p>{{ rangeLabel() }}</p>
+            </div>
+            <div class="segmented" role="group" aria-label="Time window">
+              <button type="button" *ngFor="let w of windowOptions"
+                [class.active]="usageDays() === w.days"
+                [attr.aria-pressed]="usageDays() === w.days"
+                [attr.aria-label]="w.name"
+                (click)="setUsageDays(w.days)">{{ w.label }}</button>
+            </div>
           </div>
 
-          <ng-template #barChart let-c let-title="title">
-            <h3 class="usage-chart-title">{{ title }}</h3>
-            <svg [attr.viewBox]="'0 0 ' + c.width + ' ' + c.height" width="100%" class="usage-chart"
-              role="img" [attr.aria-label]="title + ', peak ' + c.max">
-              <line [attr.x1]="c.left" [attr.x2]="c.width" [attr.y1]="c.base" [attr.y2]="c.base" stroke="#e8edf5"/>
-              <text [attr.x]="c.left - 6" y="24" text-anchor="end" font-size="11" fill="#666">{{ c.max }}</text>
-              <text [attr.x]="c.left - 6" [attr.y]="c.base" text-anchor="end" font-size="11" fill="#666">0</text>
-              <ng-container *ngFor="let b of c.bars; let i = index">
-                <rect [attr.x]="b.x" [attr.y]="b.y" [attr.width]="b.w" [attr.height]="b.h" fill="#2a4a8a" rx="1">
-                  <title>{{ b.title }}</title>
-                </rect>
-                <text *ngIf="b.tick" [attr.x]="b.x + b.w / 2" [attr.y]="c.height - 4" font-size="11" fill="#666"
-                  [attr.text-anchor]="i === 0 ? 'start' : i === c.bars.length - 1 ? 'end' : 'middle'">{{ b.label }}</text>
-              </ng-container>
-            </svg>
-          </ng-template>
+          <div class="usage-status error" role="alert" *ngIf="usageError()">
+            Couldn't load usage. <button type="button" class="link-btn" (click)="loadUsage()">Try again</button>
+          </div>
 
-          <ng-container *ngIf="usageChart() as c">
-            <ng-container *ngTemplateOutlet="barChart; context: { $implicit: c, title: 'Visits per day' }"></ng-container>
+          <div class="usage-skeleton" *ngIf="!usage() && !usageError()" aria-hidden="true">
+            <div class="sk sk-stats"></div>
+            <div class="sk sk-chart"></div>
+            <div class="sk sk-lists"></div>
+          </div>
+
+          <ng-container *ngIf="usage() as u">
+            <div class="usage-stats">
+              <div class="stat">
+                <div class="stat-val">{{ u.visits | number }}</div>
+                <div class="stat-lbl">Visits</div>
+                <div class="stat-delta" *ngIf="delta(u.visits, u.previous?.visits) as d" [class]="'stat-delta ' + d.dir">{{ d.text }}</div>
+              </div>
+              <div class="stat">
+                <div class="stat-val">{{ u.visitors | number }}</div>
+                <div class="stat-lbl">Visitors</div>
+                <div class="stat-delta" *ngIf="delta(u.visitors, u.previous?.visitors) as d" [class]="'stat-delta ' + d.dir">{{ d.text }}</div>
+              </div>
+              <div class="stat">
+                <div class="stat-val">{{ u.newVisitors | number }}</div>
+                <div class="stat-lbl">New visitors</div>
+              </div>
+              <div class="stat">
+                <div class="stat-val">{{ u.events | number }}</div>
+                <div class="stat-lbl">Actions</div>
+                <div class="stat-delta" *ngIf="delta(u.events, u.previous?.events) as d" [class]="'stat-delta ' + d.dir">{{ d.text }}</div>
+              </div>
+              <div class="stat">
+                <div class="stat-val">{{ mobileShare() ?? '–' }}</div>
+                <div class="stat-lbl">On phones</div>
+              </div>
+            </div>
+            <p class="usage-compare" *ngIf="u.previous && usageDays() > 0">Change is against the previous {{ usageDays() }} days.</p>
+
+            <ng-template #barChart let-c let-title="title">
+              <h3 class="usage-h3">{{ title }}</h3>
+              <svg [attr.viewBox]="'0 0 ' + c.width + ' ' + c.height" width="100%" class="usage-chart"
+                role="img" [attr.aria-label]="title + ', peak ' + c.max">
+                <line [attr.x1]="c.left" [attr.x2]="c.width" [attr.y1]="c.base" [attr.y2]="c.base" class="axis"/>
+                <text [attr.x]="c.left - 8" y="24" text-anchor="end" class="tick">{{ c.max }}</text>
+                <text [attr.x]="c.left - 8" [attr.y]="c.base" text-anchor="end" class="tick">0</text>
+                <ng-container *ngFor="let b of c.bars; let i = index">
+                  <rect class="bar" [attr.x]="b.x" [attr.y]="b.y" [attr.width]="b.w" [attr.height]="b.h" rx="1.5">
+                    <title>{{ b.title }}</title>
+                  </rect>
+                  <text *ngIf="b.tick" class="tick" [attr.x]="b.x + b.w / 2" [attr.y]="c.height - 4"
+                    [attr.text-anchor]="i === 0 ? 'start' : i === c.bars.length - 1 ? 'end' : 'middle'">{{ b.label }}</text>
+                </ng-container>
+              </svg>
+            </ng-template>
+
+            <ng-container *ngIf="usageChart() as c">
+              <ng-container *ngTemplateOutlet="barChart; context: { $implicit: c, title: 'Visits per day' }"></ng-container>
+            </ng-container>
+            <div class="usage-charts">
+              <div *ngIf="hourChart() as c"><ng-container *ngTemplateOutlet="barChart; context: { $implicit: c, title: 'By hour of day' }"></ng-container></div>
+              <div *ngIf="weekdayChart() as c"><ng-container *ngTemplateOutlet="barChart; context: { $implicit: c, title: 'By day of week' }"></ng-container></div>
+            </div>
+
+            <div class="usage-grid">
+              <div class="usage-list" *ngFor="let list of usageLists()">
+                <h3 class="usage-h3">{{ list.title }}</h3>
+                <ol *ngIf="list.rows.length" class="usage-rows">
+                  <li class="usage-row" *ngFor="let r of list.rows">
+                    <span class="usage-bar" [style.width.%]="(r.count / list.max) * 100" aria-hidden="true"></span>
+                    <span class="usage-name">{{ r.name }}</span>
+                    <span class="usage-count">{{ r.count | number }}</span>
+                  </li>
+                </ol>
+                <p class="usage-empty" *ngIf="!list.rows.length">{{ list.empty }}</p>
+              </div>
+            </div>
           </ng-container>
-          <div class="usage-charts">
-            <div *ngIf="hourChart() as c"><ng-container *ngTemplateOutlet="barChart; context: { $implicit: c, title: 'Visits by hour' }"></ng-container></div>
-            <div *ngIf="weekdayChart() as c"><ng-container *ngTemplateOutlet="barChart; context: { $implicit: c, title: 'Visits by weekday' }"></ng-container></div>
-          </div>
-          <div class="usage-grid">
-            <div class="usage-list" *ngFor="let list of usageLists()">
-              <h3>{{ list.title }}</h3>
-              <div class="usage-row" *ngFor="let r of list.rows"><span>{{ r.name }}</span><span>{{ r.count }}</span></div>
-              <div class="usage-row empty" *ngIf="!list.rows.length">Nothing yet</div>
-            </div>
-          </div>
-        </ng-container>
-      </div>
-
-      <div class="section-card">
-        <div class="section-header">
-          <div>
-            <h2>Database Backup</h2>
-            <p>Download every table as CSV in a single zip</p>
-          </div>
-          <div class="header-right">
-            <span class="message error" *ngIf="backupError()">⚠ {{ backupError() }}</span>
-            <button class="btn-primary" (click)="downloadBackup()" [disabled]="isBackingUp()">
-              <span *ngIf="isBackingUp()">⏳ Preparing...</span>
-              <span *ngIf="!isBackingUp()">Download backup</span>
-            </button>
-          </div>
         </div>
+
       </div>
 
       <div class="logout-wrap">
