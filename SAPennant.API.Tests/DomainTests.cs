@@ -94,3 +94,25 @@ public class ResultParserTests
         Assert.Equal(expected, ResultParser.ExtractMargin(result));
     }
 }
+
+public class UsageEventsTests
+{
+    [Theory]
+    [InlineData("search", "\"Smith\" → 5 results", "smith")]
+    [InlineData("search", "\"Smith\" → 6 results", "smith")]
+    [InlineData("player", "John Smith (via club Grange)", "John Smith")]
+    [InlineData("player", "John Smith (via leaderboard)", "John Smith")]
+    [InlineData("club", "Grange", "Grange")]
+    public void NormaliseDetailCollapsesVariants(string eventName, string detail, string expected)
+    {
+        Assert.Equal(expected, SAPennant.API.Domain.UsageEvents.NormaliseDetail(eventName, detail));
+    }
+
+    [Fact]
+    public void AdelaideDayRollsOverAtLocalMidnight()
+    {
+        // 14:00 UTC on 13 Oct is 00:30 on 14 Oct in Adelaide (ACDT, +10:30).
+        Assert.Equal(new DateOnly(2026, 10, 14),
+            SAPennant.API.Domain.UsageEvents.AdelaideDay(new DateTime(2026, 10, 13, 14, 0, 0, DateTimeKind.Utc)));
+    }
+}

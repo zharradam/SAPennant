@@ -168,6 +168,48 @@
       <div class="section-card">
         <div class="section-header">
           <div>
+            <h2>Usage</h2>
+            <p>How often the site is used and what people look at</p>
+          </div>
+          <div class="header-right">
+            <label class="toggle-label">Show
+              <select [ngModel]="usageDays()" (ngModelChange)="setUsageDays($event)">
+                <option *ngFor="let w of usageWindows" [ngValue]="w">{{ w ? 'last ' + w + ' days' : 'everything' }}</option>
+              </select>
+            </label>
+          </div>
+        </div>
+        <div class="message error" *ngIf="usageError()">⚠ Couldn't load usage</div>
+        <ng-container *ngIf="usage() as u">
+          <div class="usage-stats">
+            <div class="summary-stat"><div class="val">{{ u.visits }}</div><div class="lbl">visits</div></div>
+            <div class="summary-stat"><div class="val">{{ u.visitors }}</div><div class="lbl">visitors</div></div>
+            <div class="summary-stat"><div class="val">{{ u.events }}</div><div class="lbl">actions</div></div>
+          </div>
+          <svg *ngIf="usageChart() as c" [attr.viewBox]="'0 0 ' + c.width + ' ' + c.height" width="100%" class="usage-chart"
+            role="img" [attr.aria-label]="'Visits per day over ' + c.bars.length + ' days, peak ' + c.max">
+            <line [attr.x1]="c.left" [attr.x2]="c.width" [attr.y1]="c.base" [attr.y2]="c.base" stroke="#e8edf5"/>
+            <text [attr.x]="c.left - 6" y="24" text-anchor="end" font-size="11" fill="#666">{{ c.max }}</text>
+            <text [attr.x]="c.left - 6" [attr.y]="c.base" text-anchor="end" font-size="11" fill="#666">0</text>
+            <rect *ngFor="let b of c.bars" [attr.x]="b.x" [attr.y]="b.y" [attr.width]="b.w" [attr.height]="b.h" fill="#2a4a8a" rx="1">
+              <title>{{ b.day }}: {{ b.visits }} visits, {{ b.visitors }} visitors</title>
+            </rect>
+            <text [attr.x]="c.left" [attr.y]="c.height - 4" font-size="11" fill="#666">{{ c.bars[0].day }}</text>
+            <text [attr.x]="c.width" [attr.y]="c.height - 4" text-anchor="end" font-size="11" fill="#666">{{ c.bars[c.bars.length - 1].day }}</text>
+          </svg>
+          <div class="usage-grid">
+            <div class="usage-list" *ngFor="let list of usageLists()">
+              <h3>{{ list.title }}</h3>
+              <div class="usage-row" *ngFor="let r of list.rows"><span>{{ r.name }}</span><span>{{ r.count }}</span></div>
+              <div class="usage-row empty" *ngIf="!list.rows.length">Nothing yet</div>
+            </div>
+          </div>
+        </ng-container>
+      </div>
+
+      <div class="section-card">
+        <div class="section-header">
+          <div>
             <h2>Database Backup</h2>
             <p>Download every table as CSV in a single zip</p>
           </div>

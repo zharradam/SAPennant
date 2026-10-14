@@ -44,6 +44,7 @@ public static class DatabaseProviderFactory
         services.AddScoped<IAppSettingRepository, AppSettingRepository>();
         services.AddScoped<IHonourRollRepository, HonourRollRepository>();
         services.AddScoped<IPoolFinalistConfigRepository, PoolFinalistConfigRepository>();
+        services.AddScoped<IUsageEventRepository, UsageEventRepository>();
 
         return services;
     }

@@ -50,3 +50,16 @@ export interface HandicapDataPoint {
   pool: string;
   year: number;
 }
+
+export interface UsageCount { name: string; count: number; }
+export interface UsageDay { day: string; visits: number; visitors: number; events: number; }
+export interface UsageSummary {
+  visits: number;
+  visitors: number;
+  events: number;
+  days: UsageDay[];
+  byEvent: UsageCount[];
+  topSearches: UsageCount[];
+  topPlayers: UsageCount[];
+  topClubs: UsageCount[];
+}

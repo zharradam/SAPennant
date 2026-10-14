@@ -17,7 +17,7 @@ namespace SAPennant.API.Migrations.SqlServer
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "10.0.5")
+                .HasAnnotation("ProductVersion", "10.0.7")
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
@@ -204,6 +204,19 @@ namespace SAPennant.API.Migrations.SqlServer
                     b.ToTable("PennantMatches");
                 });
 
+            modelBuilder.Entity("SAPennant.API.Models.PoolFinalistConfig", b =>
+                {
+                    b.Property<string>("Pool")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<int>("FinalistCount")
+                        .HasColumnType("int");
+
+                    b.HasKey("Pool");
+
+                    b.ToTable("PoolFinalistConfigs");
+                });
+
             modelBuilder.Entity("SAPennant.API.Models.Season", b =>
                 {
                     b.Property<int>("Year")
@@ -244,6 +257,45 @@ namespace SAPennant.API.Migrations.SqlServer
                     b.HasKey("Id");
 
                     b.ToTable("SyncLogs");
+                });
+
+            modelBuilder.Entity("SAPennant.API.Models.UsageEvent", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("At")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateOnly>("Day")
+                        .HasColumnType("date");
+
+                    b.Property<string>("Detail")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<string>("Event")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("nvarchar(40)");
+
+                    b.Property<string>("SessionId")
+                        .HasMaxLength(12)
+                        .HasColumnType("nvarchar(12)");
+
+                    b.Property<string>("VisitorId")
+                        .HasMaxLength(12)
+                        .HasColumnType("nvarchar(12)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Day");
+
+                    b.ToTable("UsageEvents");
                 });
 #pragma warning restore 612, 618
         }

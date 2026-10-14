@@ -17,6 +17,7 @@ public class AppDbContext : DbContext
     public DbSet<HonourRoll> HonourRoll { get; set; }
     public DbSet<HonourRollNarrative> HonourRollNarratives { get; set; }
     public DbSet<PoolFinalistConfig> PoolFinalistConfigs { get; set; }
+    public DbSet<UsageEvent> UsageEvents { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -39,6 +40,11 @@ public class AppDbContext : DbContext
         modelBuilder.Entity<AppSetting>(entity =>
         {
             entity.HasKey(e => e.Key);
+        });
+
+        modelBuilder.Entity<UsageEvent>(entity =>
+        {
+            entity.HasIndex(e => e.Day);
         });
     }
 }

@@ -500,3 +500,46 @@
     border: 1px solid #f5b8b8;
   }
 }
+
+.usage-stats {
+  display: flex;
+  gap: 2rem;
+  margin: 1rem 0;
+}
+
+.usage-chart {
+  display: block;
+  margin: 0.5rem 0 1rem;
+}
+
+.usage-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1.5rem;
+}
+
+.usage-list h3 {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #666;
+  margin: 0 0 6px;
+}
+
+.usage-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 4px 0;
+  border-bottom: 1px solid #eef1f5;
+  font-size: 14px;
+
+  span:first-child {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  &.empty { color: #999; }
+}

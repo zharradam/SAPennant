@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using SAPennant.API.Domain;
 using SAPennant.API.Models;
 using SAPennant.API.Repositories.Interfaces;
 using SAPennant.API.Services;
@@ -17,13 +18,16 @@ public class SyncController : ControllerBase
     private readonly ISeasonRepository _seasons;
     private readonly IAppSettingRepository _appSettings;
     private readonly SettingsService _settings;
+    private readonly IUsageEventRepository _usage;
 
     public SyncController(
         GolfboxSyncService sync,
         ISeasonRepository seasons,
         IAppSettingRepository appSettings,
-        SettingsService settings)
+        SettingsService settings,
+        IUsageEventRepository usage)
     {
+        _usage = usage;
         _sync = sync;
         _seasons = seasons;
         _appSettings = appSettings;
@@ -113,6 +117,15 @@ public class SyncController : ControllerBase
     {
         await _settings.SetBoolAsync("AutoSyncEnabled", enabled);
         return Ok(new { enabled });
+    }
+
+    /// Usage summary for the last `days` Adelaide days; 0 means everything.
+    [HttpGet("usage")]
+    public async Task<IActionResult> Usage([FromQuery] int days = 30)
+    {
+        var today = UsageEvents.AdelaideDay(DateTime.UtcNow);
+        var from = days <= 0 ? DateOnly.MinValue : today.AddDays(-(days - 1));
+        return Ok(await _usage.GetSummaryAsync(from));
     }
 
     [HttpGet("maintenance")]

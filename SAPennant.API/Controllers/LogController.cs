@@ -2,6 +2,9 @@ using System.ComponentModel.DataAnnotations;
 using System.Security.Cryptography;
 using System.Text;
 using Microsoft.AspNetCore.Mvc;
+using SAPennant.API.Domain;
+using SAPennant.API.Models;
+using SAPennant.API.Repositories.Interfaces;
 
 namespace SAPennant.API.Controllers;
 
@@ -10,10 +13,12 @@ namespace SAPennant.API.Controllers;
 public class LogController : ControllerBase
 {
     private readonly ILogger<LogController> _logger;
+    private readonly IUsageEventRepository _usage;
 
-    public LogController(ILogger<LogController> logger)
+    public LogController(ILogger<LogController> logger, IUsageEventRepository usage)
     {
         _logger = logger;
+        _usage = usage;
     }
 
     public class FrontendLogEntry
@@ -31,7 +36,7 @@ public class LogController : ControllerBase
     // Anonymous write endpoint: cap the body so it can't be used to flood Loki.
     [HttpPost]
     [RequestSizeLimit(4096)]
-    public IActionResult Log([FromBody] FrontendLogEntry entry)
+    public async Task<IActionResult> Log([FromBody] FrontendLogEntry entry)
     {
         // Prefer the browser-generated anonymous ids (stable per browser /
         // per session); fall back to the IP+UA hash for old cached clients.
@@ -52,6 +57,7 @@ public class LogController : ControllerBase
             using (BeginFrontendScope("usage", visitor, sid))
                 _logger.LogInformation("{Event:l} {Data:l} [{Tag:l}]",
                     entry.Context ?? "event", entry.Message, tag);
+            await SaveUsageAsync(entry, vid, sid);
             return Ok();
         }
 
@@ -95,5 +101,30 @@ public class LogController : ControllerBase
         var ua = Request.Headers.UserAgent.ToString();
         var hash = SHA256.HashData(Encoding.UTF8.GetBytes($"{ip}|{ua}"));
         return Convert.ToHexString(hash)[..6].ToLower();
+    }
+
+    // Kept for the admin usage view; Loki only retains two weeks. A database
+    // hiccup must never fail the log call itself.
+    private async Task SaveUsageAsync(FrontendLogEntry entry, string? visitorId, string? sessionId)
+    {
+        try
+        {
+            var now = DateTime.UtcNow;
+            var ev = entry.Context ?? "event";
+            await _usage.AddAsync(new UsageEvent
+            {
+                At = now,
+                Day = UsageEvents.AdelaideDay(now),
+                Event = ev.Length > 40 ? ev[..40] : ev,
+                Detail = entry.Message,
+                VisitorId = visitorId,
+                SessionId = sessionId,
+            });
+            await _usage.SaveChangesAsync();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Could not store usage event");
+        }
     }
 }

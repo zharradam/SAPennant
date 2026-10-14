@@ -1,7 +1,12 @@
-import { Component, OnInit, signal } from '@angular/core';
+import { Component, OnInit, computed, signal } from '@angular/core';
+import { UsageSummary } from '../models/pennant.models';
 import { PennantService } from '../pennant.service';
 import { AuthService } from '../auth.service';
 import { LoggingService } from '../logging.service';
+
+function isoDay(d: Date): string {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
 
 interface SyncStatus {
   year: number;
@@ -35,6 +40,42 @@ export class AdminComponent implements OnInit {
   authError = signal<string | null>(null);
   isSyncingUnsettled = signal(false);
   isSyncEnabled = signal(false);
+  usage = signal<UsageSummary | null>(null);
+  usageDays = signal(30);
+  usageError = signal(false);
+  readonly usageWindows = [7, 30, 90, 365, 0]; // 0 = everything
+
+  // Visits-per-day bars with the empty days filled in, sized for the SVG.
+  usageChart = computed(() => {
+    const u = this.usage();
+    if (!u) return null;
+    const byDay = new Map(u.days.map(d => [d.day, d]));
+    const today = new Date();
+    const days = this.usageDays();
+    const first = days > 0 ? new Date(today.getFullYear(), today.getMonth(), today.getDate() - (days - 1))
+      : u.days.length ? new Date(u.days[0].day) : today;
+    const width = 600, height = 170, left = 30, top = 20, base = height - 20;
+    const labels: string[] = [];
+    for (const d = new Date(first); d <= today; d.setDate(d.getDate() + 1)) labels.push(isoDay(d));
+    const max = Math.max(1, ...labels.map(l => byDay.get(l)?.visits ?? 0));
+    const w = (width - left) / labels.length;
+    const bars = labels.map((day, i) => {
+      const row = byDay.get(day);
+      const h = ((row?.visits ?? 0) / max) * (base - top);
+      return { day, visits: row?.visits ?? 0, visitors: row?.visitors ?? 0, x: left + i * w, y: base - h, w: Math.max(1, w - 1), h };
+    });
+    return { width, height, left, base, max, bars };
+  });
+
+  usageLists = computed(() => {
+    const u = this.usage();
+    return u ? [
+      { title: 'Actions', rows: u.byEvent },
+      { title: 'Top searches', rows: u.topSearches },
+      { title: 'Top players', rows: u.topPlayers },
+      { title: 'Top clubs', rows: u.topClubs },
+    ] : [];
+  });
   isMaintenanceMode = signal(false);
   intervalError = signal<string | null>(null);
   isBackingUp = signal(false);
@@ -132,10 +173,24 @@ export class AdminComponent implements OnInit {
   // with a stored token and again after a fresh login, so the toggles show
   // the server's saved state rather than their defaults.
   private loadAdminData(): void {
+    this.loadUsage();
     this.loadSeasons();
     this.pennant.refreshLastUpdated();
     this.pennant.getSyncStatus().subscribe(s => this.isSyncEnabled.set(s.enabled));
     this.pennant.getPollingInterval().subscribe(r => this.pollingInterval.set(r.minutes));
+  }
+
+  setUsageDays(days: number): void {
+    this.usageDays.set(days);
+    this.loadUsage();
+  }
+
+  private loadUsage(): void {
+    this.usageError.set(false);
+    this.pennant.getUsage(this.usageDays()).subscribe({
+      next: u => this.usage.set(u),
+      error: () => this.usageError.set(true),
+    });
   }
 
   logout(): void {

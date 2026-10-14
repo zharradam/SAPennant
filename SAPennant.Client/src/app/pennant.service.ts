@@ -1,7 +1,7 @@
 import { Injectable, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, tap, map } from 'rxjs';
-import { PlayerMatch, ClubPlayer } from './models/pennant.models';
+import { PlayerMatch, ClubPlayer, UsageSummary } from './models/pennant.models';
 import { environment } from '../environments/environment';
 
 @Injectable({
@@ -222,6 +222,11 @@ export class PennantService {
 
   downloadBackup(): Observable<Blob> {
     return this.http.get(`${this.API_URL}/backup`, { responseType: 'blob' });
+  }
+
+  // days = 0 means everything on record.
+  getUsage(days: number): Observable<UsageSummary> {
+    return this.http.get<UsageSummary>(`${this.API_URL}/sync/usage?days=${days}`);
   }
 
   getPollingInterval() {
